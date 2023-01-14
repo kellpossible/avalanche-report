@@ -1,7 +1,7 @@
 use axum::{
     body::{boxed, Full},
     handler::HandlerWithoutStateExt,
-    http::{header, StatusCode, Uri},
+    http::{header, StatusCode, Uri, HeaderMap},
     response::{Html, IntoResponse, Response},
     routing::{get, post},
     Router,
@@ -15,7 +15,12 @@ use tracing_appender::rolling::Rotation;
 use crate::options::Options;
 
 mod fs;
+mod i18n;
 mod options;
+
+#[derive(RustEmbed)]
+#[folder = "i18n/"]
+struct Localizations;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -52,7 +57,6 @@ async fn main() -> eyre::Result<()> {
 
     options_init.logs.present();
 
-    tracing::debug!("Hello world");
     // build our application with a route
     let app = Router::new()
         // `GET /` goes to `root`
@@ -77,7 +81,8 @@ async fn clicked() -> Html<&'static str> {
     Html("Clicked")
 }
 
-async fn index() -> Html<String> {
+async fn index(headers: HeaderMap) -> Html<String> {
+    headers.get("Accept-Language")
     index_impl().unwrap()
 }
 
