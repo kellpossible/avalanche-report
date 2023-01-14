@@ -1,13 +1,16 @@
 use axum::{
     body::{boxed, Full},
     handler::HandlerWithoutStateExt,
-    http::{header, StatusCode, Uri, HeaderMap},
+    http::{header, StatusCode, Uri},
+    middleware,
     response::{Html, IntoResponse, Response},
     routing::{get, post},
-    Router,
+    Extension, Router,
 };
 use eyre::Context;
 use html_builder::Html5;
+use i18n::I18nLoader;
+use i18n_embed_fl::fl;
 use rust_embed::RustEmbed;
 use std::fmt::Write;
 use tracing_appender::rolling::Rotation;
@@ -17,10 +20,6 @@ use crate::options::Options;
 mod fs;
 mod i18n;
 mod options;
-
-#[derive(RustEmbed)]
-#[folder = "i18n/"]
-struct Localizations;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -57,12 +56,15 @@ async fn main() -> eyre::Result<()> {
 
     options_init.logs.present();
 
+    i18n::load_languages().wrap_err("Error loading languages")?;
+
     // build our application with a route
     let app = Router::new()
         // `GET /` goes to `root`
         .route("/", get(index))
         .nest("/logs/", axum_reporting::serve_logs(reporting_options))
         .route("/clicked", post(clicked))
+        .route_layer(middleware::from_fn(i18n::middleware))
         .route_service("/dist/*file", dist_handler.into_service())
         .fallback_service(get(not_found));
 
@@ -77,16 +79,15 @@ async fn main() -> eyre::Result<()> {
     Ok(())
 }
 
-async fn clicked() -> Html<&'static str> {
-    Html("Clicked")
+async fn clicked(Extension(loader): Extension<I18nLoader>) -> Html<String> {
+    Html(fl!(loader, "button-clicked"))
 }
 
-async fn index(headers: HeaderMap) -> Html<String> {
-    headers.get("Accept-Language")
-    index_impl().unwrap()
+async fn index(Extension(loader): Extension<I18nLoader>) -> Html<String> {
+    index_impl(loader).unwrap()
 }
 
-fn index_impl() -> Result<Html<String>, std::fmt::Error> {
+fn index_impl(loader: I18nLoader) -> Result<Html<String>, std::fmt::Error> {
     let mut buf = html_builder::Buffer::new();
     buf.doctype();
     let mut html = buf.html();
@@ -99,20 +100,15 @@ fn index_impl() -> Result<Html<String>, std::fmt::Error> {
     )?;
     let mut body = html.body();
     let mut h1 = body.h1().attr(r#"class="text-3xl font-bold underline""#);
-    writeln!(h1, "Hello World!")?;
+    h1.write_str(&fl!(loader, "hello-world"))?;
 
-    body.write_str(
-        r##"
-    <button id="button" hx-post="/clicked"
-        hx-trigger="click"
-            hx-target="#button"
-        hx-swap="outerHTML"
-    >
-        Click Me!
-    </button>
-    "##,
-    )
-    .unwrap();
+    let mut button = body
+        .button()
+        .attr(r#"id="button""#)
+        .attr(r#"hx-post="/clicked""#)
+        .attr(r##"hx-target="#button""##)
+        .attr(r#"hx-swap="outerHTML""#);
+    button.write_str(&fl!(loader, "button-click-me"))?;
 
     body.write_str(r#"<script src="/dist/main.js"></script>"#)?;
 

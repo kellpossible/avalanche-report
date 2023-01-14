@@ -23,4 +23,7 @@ sea-query = { version = "0.28", features = ["thread-safe", "backend-sqlite"]}
 axum-reporting = { git = "https://github.com/kellpossible/axum-reporting.git" }
 ron = "0.8"
 i18n-embed = { version = "0.13.8", features = ["fluent-system"] }
+i18n-embed-fl = "0.6.5"
+once_cell = "1.17.0"
+unic-langid = "0.9.1"
 # refinery = { version = "0.8", features = ["rusqlite"]}
