@@ -1,0 +1,9 @@
+FROM alpine AS deploy
+
+WORKDIR /avalanche-report
+
+# Copy our build
+COPY ./target/x86_64-unknown-linux-musl/release/avalanche-report ./
+
+STOPSIGNAL SIGINT
+CMD ["/avalanche-report/avalanche-report"]

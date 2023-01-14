@@ -1,0 +1,13 @@
+{
+  "devDependencies": {
+    "tailwindcss": "^3.2.4",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1"
+  },
+  "dependencies": {
+    "htmx.org": "^1.8.4"
+  },
+  "scripts": {
+    "build": "webpack"
+  }
+}

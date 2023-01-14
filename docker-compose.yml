@@ -1,0 +1,15 @@
+version: "3.9"  # optional since v1.27.0
+services:
+  email-weather:
+    build: .
+    volumes:
+      - type: volume
+        source: data-volume
+        target: /data-volume
+        volume:
+          nocopy: true
+    environment:
+      DATA_DIR: /data-volume
+
+volumes:
+  data-volume:
