@@ -1,5 +1,3 @@
-use std::net::SocketAddr;
-
 use axum::{
     body::{boxed, Full},
     handler::HandlerWithoutStateExt,
@@ -8,28 +6,70 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use eyre::Context;
 use html_builder::Html5;
 use rust_embed::RustEmbed;
 use std::fmt::Write;
+use tracing_appender::rolling::Rotation;
+
+use crate::options::Options;
+
+mod fs;
+mod options;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> eyre::Result<()> {
+    axum_reporting::setup_error_hooks()?;
+    let options_init = Options::initialize().await;
+    let options: &'static Options = options_init
+        .result
+        .map(|options| Box::leak(Box::new(options)))
+        .map_err(|error| {
+            options_init.logs.print();
+            error
+        })?;
+
+    fs::create_dir_if_not_exists(&options.data_dir)
+        .wrap_err_with(|| format!("Unable to create data directory {:?}", options.data_dir))
+        .map_err(|error| {
+            options_init.logs.print();
+            error
+        })?;
+
+    let reporting_options: &'static axum_reporting::Options =
+        Box::leak(Box::new(axum_reporting::Options {
+            default_filter: "warn,avalanche_report=debug".to_owned(),
+            page_title: "avalanche-report".to_owned(),
+            data_dir: options.data_dir.clone(),
+            log_rotation: Rotation::DAILY,
+        }));
+
+    let _reporting_guard = axum_reporting::setup_logging(reporting_options).map_err(|error| {
+        options_init.logs.print();
+        error
+    })?;
+
+    options_init.logs.present();
+
+    tracing::debug!("Hello world");
     // build our application with a route
     let app = Router::new()
         // `GET /` goes to `root`
         .route("/", get(index))
+        .nest("/logs/", axum_reporting::serve_logs(reporting_options))
         .route("/clicked", post(clicked))
         .route_service("/dist/*file", dist_handler.into_service())
         .fallback_service(get(not_found));
 
     // run our app with hyper
     // `axum::Server` is a re-export of `hyper::Server`
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    println!("listening on {addr}");
+    let addr = &options.listen_address;
+    tracing::info!("listening on {addr}");
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
-        .await
-        .unwrap();
+        .await?;
+
+    Ok(())
 }
 
 async fn clicked() -> Html<&'static str> {
