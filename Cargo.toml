@@ -10,8 +10,9 @@ axum = "0.6.2"
 eyre = "0.6.8"
 html-builder = "0.4.0"
 mime_guess = "2.0.4"
-rust-embed = { version = "6.4.2", features = ["axum-ex"] }
+rust-embed = { version = "6.4.2"}
 tokio = { version = "1.24.1", features = ["macros", "rt-multi-thread"] }
 deadpool-sqlite = "0.5.0"
 sea-query = { version = "0.28", features = ["thread-safe", "backend-sqlite"]}
+axum-reporting = { git = "https://github.com/kellpossible/axum-reporting.git" }
 # refinery = { version = "0.8", features = ["rusqlite"]}

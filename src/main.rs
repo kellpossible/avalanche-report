@@ -2,10 +2,11 @@ use std::net::SocketAddr;
 
 use axum::{
     body::{boxed, Full},
+    handler::HandlerWithoutStateExt,
     http::{header, StatusCode, Uri},
     response::{Html, IntoResponse, Response},
     routing::{get, post},
-    Router, handler::HandlerWithoutStateExt,
+    Router,
 };
 use html_builder::Html5;
 use rust_embed::RustEmbed;
@@ -54,7 +55,8 @@ fn index_impl() -> Result<Html<String>, std::fmt::Error> {
     let mut h1 = body.h1().attr(r#"class="text-3xl font-bold underline""#);
     writeln!(h1, "Hello World!")?;
 
-    body.write_str(r##"
+    body.write_str(
+        r##"
     <button id="button" hx-post="/clicked"
         hx-trigger="click"
             hx-target="#button"
@@ -62,7 +64,9 @@ fn index_impl() -> Result<Html<String>, std::fmt::Error> {
     >
         Click Me!
     </button>
-    "##).unwrap();
+    "##,
+    )
+    .unwrap();
 
     body.write_str(r#"<script src="/dist/main.js"></script>"#)?;
 
