@@ -42,6 +42,7 @@ async fn main() -> eyre::Result<()> {
             page_title: "avalanche-report".to_owned(),
             data_dir: options.data_dir.clone(),
             log_rotation: Rotation::DAILY,
+            log_file_name: "avalanche-report".to_owned(),
         }));
 
     let _reporting_guard = axum_reporting::setup_logging(reporting_options).map_err(|error| {

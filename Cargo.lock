@@ -139,7 +139,7 @@ dependencies = [
 [[package]]
 name = "axum-reporting"
 version = "0.1.0"
-source = "git+https://github.com/kellpossible/axum-reporting.git#516f34f1b43dcc1ab284872c2e0f16364e6a26f1"
+source = "git+https://github.com/kellpossible/axum-reporting.git#704a2a71abf1707a3c1ae7182abe1191c86f5133"
 dependencies = [
  "ansi-to-html",
  "axum",

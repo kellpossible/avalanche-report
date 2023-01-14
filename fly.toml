@@ -1,0 +1,29 @@
+# fly.toml file generated for georgia-avalanche-report on 2023-01-14T14:22:41+11:00
+
+app = "georgia-avalanche-report"
+
+[env]
+  OPTIONS = "Options(\n    data_dir: \"/data-volume\",\n    listen_address: \"[::]:8080\",\n    base_url: \"https://georgia-avalanche-report.fly.dev/\",\n)"
+
+[mounts]
+  destination = "/data-volume"
+  source = "georgia_avalanche_report_data"
+
+[[services]]
+  internal_port = 8080
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = "80"
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = "443"
+
+  [[services.tcp_checks]]
+    grace_period = "1s"
+    interval = "15s"
+    port = "8080"
+    restart_limit = 0
+    timeout = "2s"
