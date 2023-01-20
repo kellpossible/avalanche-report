@@ -26,4 +26,5 @@ i18n-embed = { version = "0.13.8", features = ["fluent-system"] }
 i18n-embed-fl = "0.6.5"
 once_cell = "1.17.0"
 unic-langid = "0.9.1"
+resvg = "0.28" # required only for svg to png diagram generation
 # refinery = { version = "0.8", features = ["rusqlite"]}

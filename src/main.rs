@@ -17,6 +17,7 @@ use tracing_appender::rolling::Rotation;
 
 use crate::options::Options;
 
+mod diagrams;
 mod fs;
 mod i18n;
 mod options;
@@ -62,6 +63,7 @@ async fn main() -> eyre::Result<()> {
     let app = Router::new()
         // `GET /` goes to `root`
         .route("/", get(index))
+        .nest("/diagrams", diagrams::router())
         .nest("/logs/", axum_reporting::serve_logs(reporting_options))
         .route("/clicked", post(clicked))
         .route_layer(middleware::from_fn(i18n::middleware))
