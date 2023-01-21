@@ -1,8 +1,10 @@
 use axum::{
     extract::Query,
-    http::{header, HeaderMap},
-    response::{Html, IntoResponse},
+    http::{header, HeaderMap, StatusCode},
+    response::IntoResponse,
 };
+use eyre::Context;
+use resvg::{tiny_skia, usvg};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -24,6 +26,7 @@ enum HazardLevel {
 }
 
 const WHITE: &str = "#ffffffff";
+const BLACK: &str = "#000000ff";
 
 impl HazardLevel {
     fn colour_hex(&self) -> &'static str {
@@ -32,7 +35,7 @@ impl HazardLevel {
             HazardLevel::Medium => "#fdff22ff",
             HazardLevel::Considerable => "#f88000ff",
             HazardLevel::High => "#f80000ff",
-            HazardLevel::Extreme => "#00000000",
+            HazardLevel::Extreme => BLACK,
         }
     }
 }
@@ -107,4 +110,41 @@ pub async fn svg_handler(elevation_hazard: Query<ElevationHazard>) -> impl IntoR
     let mut headers = HeaderMap::new();
     headers.insert(header::CONTENT_TYPE, "image/svg+xml".parse().unwrap());
     (headers, generate_svg(elevation_hazard.0))
+}
+
+fn generate_png(elevation_hazard: ElevationHazard) -> eyre::Result<Vec<u8>> {
+    let svg = generate_svg(elevation_hazard);
+    let options = usvg::Options::default();
+    let tree = usvg::Tree::from_str(&svg, &options)?;
+    let pixmap_size = tree.size.to_screen_size();
+    let mut pixmap = tiny_skia::Pixmap::new(pixmap_size.width(), pixmap_size.height())
+        .ok_or_else(|| eyre::eyre!("Unable to create pixmap"))?;
+    resvg::render(
+        &tree,
+        usvg::FitTo::Original,
+        Default::default(),
+        pixmap.as_mut(),
+    )
+    .ok_or_else(|| eyre::eyre!("Error rendering svg"))?;
+    pixmap.encode_png().map_err(eyre::Error::from)
+}
+
+pub async fn png_handler(
+    elevation_hazard: Query<ElevationHazard>,
+) -> axum::response::Result<impl IntoResponse> {
+    let mut headers = HeaderMap::new();
+    headers.insert(header::CONTENT_TYPE, "image/png".parse().unwrap());
+    let png_data = tokio::task::spawn_blocking(move || {
+        generate_png(elevation_hazard.0).wrap_err("Error generating png")
+    })
+    .await
+    .map_err(|error| {
+        tracing::error!("{:?}", error);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?
+    .map_err(|error| {
+        tracing::error!("{:?}", error);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    Ok((headers, png_data))
 }
