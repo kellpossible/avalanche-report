@@ -12,7 +12,9 @@ use axum::{
 use eyre::Context;
 use once_cell::sync::Lazy;
 use regex::{Captures, Regex};
+use resvg::{tiny_skia, usvg};
 use serde::Deserialize;
+use usvg_text_layout::{fontdb, TreeTextToPath};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Aspect {
@@ -219,4 +221,54 @@ mod test {
         });
         insta::assert_snapshot!(svg);
     }
+}
+
+const FONT_DATA: &[u8] = include_bytes!("./fonts/agane/Aganè 55 (roman).ttf");
+static FONT_DB: Lazy<fontdb::Database> = Lazy::new(|| {
+    let mut db = fontdb::Database::new();
+    db.load_font_data(FONT_DATA.to_vec());
+    db.set_sans_serif_family("Aganè");
+    db
+});
+
+fn generate_png(aspect_elevation: AspectElevation) -> eyre::Result<Vec<u8>> {
+    let svg = generate_svg(aspect_elevation);
+    let options = usvg::Options::default();
+    let mut tree = usvg::Tree::from_str(&svg, &options)?;
+    tree.convert_text(&*FONT_DB, options.keep_named_groups);
+    let pixmap_size = tree.size.to_screen_size();
+    let mut pixmap = tiny_skia::Pixmap::new(pixmap_size.width(), pixmap_size.height())
+        .ok_or_else(|| eyre::eyre!("Unable to create pixmap"))?;
+    resvg::render(
+        &tree,
+        usvg::FitTo::Original,
+        Default::default(),
+        pixmap.as_mut(),
+    )
+    .ok_or_else(|| eyre::eyre!("Error rendering svg"))?;
+    pixmap.encode_png().map_err(eyre::Error::from)
+}
+
+pub async fn png_handler(
+    Query(aspect_elevation_query): Query<AspectElevationQuery>,
+) -> axum::response::Result<impl IntoResponse> {
+    let mut headers = HeaderMap::new();
+    headers.insert(header::CONTENT_TYPE, "image/png".parse().unwrap());
+    let aspect_elevation = AspectElevation::try_from(aspect_elevation_query).map_err(|error| {
+        tracing::error!("{:?}", error);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    let png_data = tokio::task::spawn_blocking(move || {
+        generate_png(aspect_elevation).wrap_err("Error generating png")
+    })
+    .await
+    .map_err(|error| {
+        tracing::error!("{:?}", error);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?
+    .map_err(|error| {
+        tracing::error!("{:?}", error);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    Ok((headers, png_data))
 }
