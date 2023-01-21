@@ -19,7 +19,7 @@ enum ElevationBand {
 #[serde(rename_all = "snake_case")]
 enum HazardLevel {
     Low = 1,
-    Medium = 2,
+    Moderate = 2,
     Considerable = 3,
     High = 4,
     Extreme = 5,
@@ -32,7 +32,7 @@ impl HazardLevel {
     fn colour_hex(&self) -> &'static str {
         match self {
             HazardLevel::Low => "#00bb0aff",
-            HazardLevel::Medium => "#fdff22ff",
+            HazardLevel::Moderate => "#fdff22ff",
             HazardLevel::Considerable => "#f88000ff",
             HazardLevel::High => "#f80000ff",
             HazardLevel::Extreme => BLACK,
@@ -42,21 +42,21 @@ impl HazardLevel {
 
 #[derive(Deserialize)]
 pub struct ElevationHazard {
-    band: ElevationBand,
-    level: HazardLevel,
+    elevation_band: ElevationBand,
+    hazard_level: HazardLevel,
 }
 
 pub fn generate_svg(elevation_hazard: ElevationHazard) -> String {
-    let high_alpine_colour = match elevation_hazard.band {
-        ElevationBand::HighAlpine => elevation_hazard.level.colour_hex(),
+    let high_alpine_colour = match elevation_hazard.elevation_band {
+        ElevationBand::HighAlpine => elevation_hazard.hazard_level.colour_hex(),
         _ => WHITE,
     };
-    let alpine_colour = match elevation_hazard.band {
-        ElevationBand::Alpine => elevation_hazard.level.colour_hex(),
+    let alpine_colour = match elevation_hazard.elevation_band {
+        ElevationBand::Alpine => elevation_hazard.hazard_level.colour_hex(),
         _ => WHITE,
     };
-    let sub_alpine_colour = match elevation_hazard.band {
-        ElevationBand::SubAlpine => elevation_hazard.level.colour_hex(),
+    let sub_alpine_colour = match elevation_hazard.elevation_band {
+        ElevationBand::SubAlpine => elevation_hazard.hazard_level.colour_hex(),
         _ => WHITE,
     };
 
