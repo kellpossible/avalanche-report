@@ -185,49 +185,11 @@ pub async fn svg_handler(
     Ok((headers, generate_svg(aspect_elevation)))
 }
 
-#[cfg(test)]
-mod test {
-    use std::collections::HashSet;
-
-    use super::{generate_svg, Aspect, AspectElevation};
-
-    #[test]
-    fn test_generate_svg_empty() {
-        let svg = generate_svg(AspectElevation {
-            high_alpine: vec![].into_iter().collect(),
-            alpine: vec![].into_iter().collect(),
-            sub_alpine: vec![].into_iter().collect(),
-        });
-        insta::assert_snapshot!(svg);
-    }
-
-    #[test]
-    fn test_generate_svg_all_aspects() {
-        let all_aspects: HashSet<Aspect> = Aspect::enumerate().into_iter().cloned().collect();
-        let svg = generate_svg(AspectElevation {
-            high_alpine: all_aspects.clone(),
-            alpine: all_aspects.clone(),
-            sub_alpine: all_aspects.clone(),
-        });
-        insta::assert_snapshot!(svg);
-    }
-
-    #[test]
-    fn test_generate_svg_alpine_n_w() {
-        let svg = generate_svg(AspectElevation {
-            high_alpine: HashSet::default(),
-            alpine: vec![Aspect::N, Aspect::NW].into_iter().collect(),
-            sub_alpine: HashSet::default(),
-        });
-        insta::assert_snapshot!(svg);
-    }
-}
-
-const FONT_DATA: &[u8] = include_bytes!("./fonts/agane/Aganè 55 (roman).ttf");
+const FONT_DATA: &[u8] = include_bytes!("./fonts/noto/NotoSans-RegularWithGeorgian.ttf");
 static FONT_DB: Lazy<fontdb::Database> = Lazy::new(|| {
     let mut db = fontdb::Database::new();
     db.load_font_data(FONT_DATA.to_vec());
-    db.set_sans_serif_family("Aganè");
+    db.set_sans_serif_family("Noto Sans");
     db
 });
 
@@ -271,4 +233,42 @@ pub async fn png_handler(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
     Ok((headers, png_data))
+}
+
+#[cfg(test)]
+mod test {
+    use std::collections::HashSet;
+
+    use super::{generate_svg, Aspect, AspectElevation};
+
+    #[test]
+    fn test_generate_svg_empty() {
+        let svg = generate_svg(AspectElevation {
+            high_alpine: vec![].into_iter().collect(),
+            alpine: vec![].into_iter().collect(),
+            sub_alpine: vec![].into_iter().collect(),
+        });
+        insta::assert_snapshot!(svg);
+    }
+
+    #[test]
+    fn test_generate_svg_all_aspects() {
+        let all_aspects: HashSet<Aspect> = Aspect::enumerate().into_iter().cloned().collect();
+        let svg = generate_svg(AspectElevation {
+            high_alpine: all_aspects.clone(),
+            alpine: all_aspects.clone(),
+            sub_alpine: all_aspects.clone(),
+        });
+        insta::assert_snapshot!(svg);
+    }
+
+    #[test]
+    fn test_generate_svg_alpine_n_w() {
+        let svg = generate_svg(AspectElevation {
+            high_alpine: HashSet::default(),
+            alpine: vec![Aspect::N, Aspect::NW].into_iter().collect(),
+            sub_alpine: HashSet::default(),
+        });
+        insta::assert_snapshot!(svg);
+    }
 }
