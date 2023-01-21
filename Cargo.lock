@@ -101,6 +101,7 @@ dependencies = [
  "rust-embed",
  "sea-query",
  "serde",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-appender",

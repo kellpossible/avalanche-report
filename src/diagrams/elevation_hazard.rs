@@ -106,10 +106,10 @@ pub fn generate_svg(elevation_hazard: ElevationHazard) -> String {
     )
 }
 
-pub async fn svg_handler(elevation_hazard: Query<ElevationHazard>) -> impl IntoResponse {
+pub async fn svg_handler(Query(elevation_hazard): Query<ElevationHazard>) -> impl IntoResponse {
     let mut headers = HeaderMap::new();
     headers.insert(header::CONTENT_TYPE, "image/svg+xml".parse().unwrap());
-    (headers, generate_svg(elevation_hazard.0))
+    (headers, generate_svg(elevation_hazard))
 }
 
 fn generate_png(elevation_hazard: ElevationHazard) -> eyre::Result<Vec<u8>> {
@@ -130,12 +130,12 @@ fn generate_png(elevation_hazard: ElevationHazard) -> eyre::Result<Vec<u8>> {
 }
 
 pub async fn png_handler(
-    elevation_hazard: Query<ElevationHazard>,
+    Query(elevation_hazard): Query<ElevationHazard>,
 ) -> axum::response::Result<impl IntoResponse> {
     let mut headers = HeaderMap::new();
     headers.insert(header::CONTENT_TYPE, "image/png".parse().unwrap());
     let png_data = tokio::task::spawn_blocking(move || {
-        generate_png(elevation_hazard.0).wrap_err("Error generating png")
+        generate_png(elevation_hazard).wrap_err("Error generating png")
     })
     .await
     .map_err(|error| {
