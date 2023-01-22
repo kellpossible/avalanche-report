@@ -156,7 +156,7 @@ expression: svg
          transform="matrix(0.77377649,0,0,0.77377649,12.014638,12.743225)"
          style="filter:url(#filter14548)">
         <path
-           style="fill:#276fdcff;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
            d="M 40.442995,20.357528 53.614589,52.089988 66.790797,20.357528 53.616896,11.420351 40.442995,20.357528"
            id="alpine-n" />
         <path
@@ -184,7 +184,7 @@ expression: svg
            d="M 21.788067,65.377483 53.520528,52.205888 21.788067,39.02968 12.85089,52.203583 l 8.937177,13.1739"
            id="alpine-w" />
         <path
-           style="fill:#276fdcff;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
            d="M 21.765855,39.000415 53.517817,52.12493 40.396565,20.369705 24.761671,23.365523 21.765855,39.000415"
            id="alpine-nw" />
         <g
@@ -363,7 +363,7 @@ expression: svg
          id="tspan19595-3-8-2-5"
          style="fill:#949494;fill-opacity:1;stroke-width:0.0932036"
          x="84.281174"
-         y="96.145058">High Alpine</tspan></text>
+         y="96.145058">Test High Alpine</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:3.72815px;line-height:1.25;font-family:sans-serif;fill:#949494;fill-opacity:1;stroke:none;stroke-width:0.0932036"
@@ -373,7 +373,7 @@ expression: svg
          id="tspan19595-3-8-2-5-1"
          style="fill:#949494;fill-opacity:1;stroke-width:0.0932036"
          x="84.186043"
-         y="100.61887">Alpine</tspan></text>
+         y="100.61887">Test Alpine</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:3.72815px;line-height:1.25;font-family:sans-serif;fill:#949494;fill-opacity:1;stroke:none;stroke-width:0.0932036"
@@ -383,7 +383,7 @@ expression: svg
          id="tspan19595-3-8-2-5-1-6"
          style="fill:#949494;fill-opacity:1;stroke-width:0.0932036"
          x="83.879623"
-         y="104.94333">Sub Alpine</tspan></text>
+         y="104.94333">Test Sub Alpine</tspan></text>
     <path
        style="fill:none;stroke:#949494;stroke-width:0.516356;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        d="m 64.435612,60.6561 14.923551,34.575374 h 3.786994"

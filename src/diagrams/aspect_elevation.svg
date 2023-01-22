@@ -86,7 +86,7 @@
      id="layer1">
     <g
        id="g31088"
-       transform="translate(0.18364702,-0.51634072)">
+       transform="matrix(0.97579052,0,0,0.97579052,2.0270775,-0.47586203)">
       <g
          id="g13171-2-0"
          transform="matrix(1.0255827,0,0,1.0255827,-1.2904195,-0.54032355)">
@@ -272,83 +272,133 @@
     </g>
     <text
        xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="50.301849"
-       y="8.8709421"
+       style="font-style:normal;font-weight:normal;font-size:10.3271px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.258177"
+       x="50.931942"
+       y="8.6841602"
        id="text19597"><tspan
          id="tspan19595"
-         style="stroke-width:0.264583"
-         x="50.301849"
-         y="8.8709421">N</tspan></text>
+         style="stroke-width:0.258177"
+         x="50.931942"
+         y="8.6841602">N</tspan></text>
     <text
        xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="50.288094"
-       y="104.20834"
+       style="font-style:normal;font-weight:normal;font-size:10.3271px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.258177"
+       x="50.918518"
+       y="101.7135"
        id="text19597-1"><tspan
          id="tspan19595-9"
-         style="stroke-width:0.264583"
-         x="50.288094"
-         y="104.20834">S</tspan></text>
+         style="stroke-width:0.258177"
+         x="50.918518"
+         y="101.7135">S</tspan></text>
     <text
        xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="97.111259"
-       y="56.430908"
+       style="font-style:normal;font-weight:normal;font-size:10.3271px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.258177"
+       x="96.608124"
+       y="55.092724"
        id="text19597-1-8"><tspan
          id="tspan19595-9-4"
-         style="stroke-width:0.264583"
-         x="97.111259"
-         y="56.430908">E</tspan></text>
+         style="stroke-width:0.258177"
+         x="96.608124"
+         y="55.092724">E</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.3271px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.258177"
+       x="2.1534076"
+       y="55.26144"
+       id="text19597-1-4"><tspan
+         id="tspan19595-9-7"
+         style="stroke-width:0.258177"
+         x="2.1534076"
+         y="55.26144">W</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:8.7291px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.218228"
+       x="9.0398493"
+       y="21.564278"
+       id="text19597-9"><tspan
+         id="tspan19595-3"
+         style="stroke-width:0.218228"
+         x="9.0398493"
+         y="21.564278">NW</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:8.7291px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.218228"
+       x="84.740166"
+       y="21.129356"
+       id="text19597-9-8"><tspan
+         id="tspan19595-3-4"
+         style="stroke-width:0.218228"
+         x="84.740166"
+         y="21.129356">NE</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:8.7291px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.218228"
+       x="12.422907"
+       y="89.021591"
+       id="text19597-9-5"><tspan
+         id="tspan19595-3-8"
+         style="stroke-width:0.218228"
+         x="12.422907"
+         y="89.021591">SW</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:8.7291px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.218228"
+       x="83.339653"
+       y="88.756363"
+       id="text19597-9-5-6"><tspan
+         id="tspan19595-3-8-2"
+         style="stroke-width:0.218228"
+         x="83.339653"
+         y="88.756363">SE</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:3.72815px;line-height:1.25;font-family:sans-serif;fill:#949494;fill-opacity:1;stroke:none;stroke-width:0.0932036"
+       x="74.976891"
+       y="94.307472"
+       id="high-alpine-text"><tspan
+         id="tspan19595-3-8-2-5"
+         style="fill:#949494;fill-opacity:1;stroke-width:0.0932036"
+         x="74.976891"
+         y="94.307472">High Alpine</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:3.72815px;line-height:1.25;font-family:sans-serif;fill:#949494;fill-opacity:1;stroke:none;stroke-width:0.0932036"
+       x="75.062263"
+       y="98.625389"
+       id="alpine-text"><tspan
+         id="tspan19595-3-8-2-5-1"
+         style="fill:#949494;fill-opacity:1;stroke-width:0.0932036"
+         x="75.062263"
+         y="98.625389">Alpine</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:3.72815px;line-height:1.25;font-family:sans-serif;fill:#949494;fill-opacity:1;stroke:none;stroke-width:0.0932036"
+       x="74.907005"
+       y="102.63634"
+       id="sub-alpine-text"><tspan
+         id="tspan19595-3-8-2-5-1-6"
+         style="fill:#949494;fill-opacity:1;stroke-width:0.0932036"
+         x="74.907005"
+         y="102.63634">Sub Alpine</tspan></text>
+    <path
+       style="fill:none;stroke:#949494;stroke-width:0.516356;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 63.906445,60.6561 7.272752,32.356616 h 3.408865"
+       id="path1367" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="0.31311145"
-       y="56.603809"
-       id="text19597-1-4"><tspan
-         id="tspan19595-9-7"
-         style="stroke-width:0.264583"
-         x="0.31311145"
-         y="56.603809">W</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:8.94567px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.223642"
-       x="7.3704052"
-       y="22.070616"
-       id="text19597-9"><tspan
-         id="tspan19595-3"
-         style="stroke-width:0.223642"
-         x="7.3704052"
-         y="22.070616">NW</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:8.94567px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.223642"
-       x="84.94886"
-       y="21.624905"
-       id="text19597-9-8"><tspan
-         id="tspan19595-3-4"
-         style="stroke-width:0.223642"
-         x="84.94886"
-         y="21.624905">NE</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:8.94567px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.223642"
-       x="10.837397"
-       y="91.201553"
-       id="text19597-9-5"><tspan
-         id="tspan19595-3-8"
-         style="stroke-width:0.223642"
-         x="10.837397"
-         y="91.201553">SW</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:8.94567px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.223642"
-       x="83.513596"
-       y="90.929749"
-       id="text19597-9-5-6"><tspan
-         id="tspan19595-3-8-2"
-         style="stroke-width:0.223642"
-         x="83.513596"
-         y="90.929749">SE</tspan></text>
+       x="85.497597"
+       y="95.825203"
+       id="text11595"><tspan
+         id="tspan11593"
+         style="stroke-width:0.264583" /></text>
+    <path
+       style="font-variation-settings:normal;opacity:1;vector-effect:none;fill:none;fill-opacity:1;stroke:#949494;stroke-width:0.516357;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;-inkscape-stroke:none;stop-color:#000000;stop-opacity:1"
+       d="m 54.318379,75.34468 16.401538,21.889514 h 3.876889"
+       id="path16117" />
+    <path
+       style="font-variation-settings:normal;opacity:1;vector-effect:none;fill:none;fill-opacity:1;stroke:#949494;stroke-width:0.516357;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;-inkscape-stroke:none;stop-color:#000000;stop-opacity:1"
+       d="m 54.149135,86.58348 16.010113,14.75671 h 4.441969"
+       id="path28344" />
   </g>
 </svg>

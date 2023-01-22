@@ -1,5 +1,4 @@
 use std::{
-    borrow::Cow,
     collections::{HashMap, HashSet},
     str::FromStr,
 };
@@ -75,11 +74,14 @@ impl FromStr for Aspect {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct AspectElevation {
     high_alpine: HashSet<Aspect>,
+    high_alpine_text: Option<String>,
     alpine: HashSet<Aspect>,
+    alpine_text: Option<String>,
     sub_alpine: HashSet<Aspect>,
+    sub_alpine_text: Option<String>,
 }
 
 fn comma_separated_to_vec(comma_separated: String) -> eyre::Result<HashSet<Aspect>> {
@@ -100,26 +102,29 @@ fn comma_separated_to_vec(comma_separated: String) -> eyre::Result<HashSet<Aspec
 impl TryFrom<AspectElevationQuery> for AspectElevation {
     type Error = eyre::Error;
 
-    fn try_from(value: AspectElevationQuery) -> Result<Self, Self::Error> {
-        let high_alpine = value
+    fn try_from(query: AspectElevationQuery) -> Result<Self, Self::Error> {
+        let high_alpine = query
             .high_alpine
             .map(comma_separated_to_vec)
             .unwrap_or(Ok(HashSet::default()))
             .wrap_err("Error deserializing high_alpine")?;
-        let alpine = value
+        let alpine = query
             .alpine
             .map(comma_separated_to_vec)
             .unwrap_or(Ok(HashSet::default()))
             .wrap_err("Error deserializing alpine")?;
-        let sub_alpine = value
+        let sub_alpine = query
             .sub_alpine
             .map(comma_separated_to_vec)
             .unwrap_or(Ok(HashSet::default()))
             .wrap_err("Error deserializing sub_alpine")?;
         Ok(Self {
             high_alpine,
+            high_alpine_text: query.high_alpine_text,
             alpine,
+            alpine_text: query.alpine_text,
             sub_alpine,
+            sub_alpine_text: query.sub_alpine_text,
         })
     }
 }
@@ -127,8 +132,11 @@ impl TryFrom<AspectElevationQuery> for AspectElevation {
 #[derive(Deserialize, Debug)]
 pub struct AspectElevationQuery {
     high_alpine: Option<String>,
+    high_alpine_text: Option<String>,
     alpine: Option<String>,
+    alpine_text: Option<String>,
     sub_alpine: Option<String>,
+    sub_alpine_text: Option<String>,
 }
 
 const SVG_TEMPLATE: &str = include_str!("./aspect_elevation.svg");
@@ -140,16 +148,23 @@ static PATH_ID_RE: Lazy<Regex> = Lazy::new(|| {
     .expect("Unable to compile svg path id regex")
 });
 
-fn generate_svg(aspect_elevation: AspectElevation) -> Cow<'static, str> {
-    let high_alpine_ids = aspect_elevation.high_alpine.into_iter().map(|aspect| {
+static TEXT_RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(
+        r#"<text([^/])*id="(?P<id>[a-z\-]+)"(.|\s)*?<tspan(.|\s)*?>(?P<text>.*?)<[/]tspan>(.|\s)*?<[/]text>"#
+    )
+    .expect("Unable to compile svg text regex")
+});
+
+fn generate_svg(aspect_elevation: AspectElevation) -> String {
+    let high_alpine_ids = aspect_elevation.high_alpine.iter().map(|aspect| {
         let id = aspect.id();
         format!("high-alpine-{id}")
     });
-    let alpine_ids = aspect_elevation.alpine.into_iter().map(|aspect| {
+    let alpine_ids = aspect_elevation.alpine.iter().map(|aspect| {
         let id = aspect.id();
         format!("alpine-{id}")
     });
-    let sub_alpine_ids = aspect_elevation.sub_alpine.into_iter().map(|aspect| {
+    let sub_alpine_ids = aspect_elevation.sub_alpine.iter().map(|aspect| {
         let id = aspect.id();
         format!("sub-alpine-{id}")
     });
@@ -160,7 +175,7 @@ fn generate_svg(aspect_elevation: AspectElevation) -> Cow<'static, str> {
         .map(|id| (id, FILLED_COLOUR))
         .collect();
 
-    PATH_ID_RE.replace_all(SVG_TEMPLATE, |captures: &Captures| {
+    let svg = PATH_ID_RE.replace_all(SVG_TEMPLATE, |captures: &Captures| {
         let id = captures.name("id").unwrap().as_str();
         let captured_string = captures.get(0).unwrap().as_str();
         if let Some(colour) = colour_map.get(id) {
@@ -169,7 +184,40 @@ fn generate_svg(aspect_elevation: AspectElevation) -> Cow<'static, str> {
         } else {
             captured_string.to_string()
         }
-    })
+    });
+
+    TEXT_RE
+        .replace_all(&svg, |captures: &Captures| {
+            let id = captures.name("id").unwrap().as_str();
+            let captured_string = captures.get(0).unwrap().as_str();
+            let original_text = captures.name("text").unwrap().as_str();
+
+            match id {
+                "high-alpine-text" => {
+                    if let Some(high_alpine_text) = &aspect_elevation.high_alpine_text {
+                        captured_string.replace(original_text, &high_alpine_text)
+                    } else {
+                        captured_string.to_string()
+                    }
+                }
+                "alpine-text" => {
+                    if let Some(alpine_text) = &aspect_elevation.alpine_text {
+                        captured_string.replace(original_text, &alpine_text)
+                    } else {
+                        captured_string.to_string()
+                    }
+                }
+                "sub-alpine-text" => {
+                    if let Some(sub_alpine_text) = &aspect_elevation.sub_alpine_text {
+                        captured_string.replace(original_text, &sub_alpine_text)
+                    } else {
+                        captured_string.to_string()
+                    }
+                }
+                _ => captured_string.to_string()
+            }
+        })
+        .to_string()
 }
 
 pub async fn svg_handler(
@@ -243,11 +291,7 @@ mod test {
 
     #[test]
     fn test_generate_svg_empty() {
-        let svg = generate_svg(AspectElevation {
-            high_alpine: vec![].into_iter().collect(),
-            alpine: vec![].into_iter().collect(),
-            sub_alpine: vec![].into_iter().collect(),
-        });
+        let svg = generate_svg(AspectElevation::default());
         insta::assert_snapshot!(svg);
     }
 
@@ -258,6 +302,7 @@ mod test {
             high_alpine: all_aspects.clone(),
             alpine: all_aspects.clone(),
             sub_alpine: all_aspects.clone(),
+            ..AspectElevation::default()
         });
         insta::assert_snapshot!(svg);
     }
@@ -268,6 +313,18 @@ mod test {
             high_alpine: HashSet::default(),
             alpine: vec![Aspect::N, Aspect::NW].into_iter().collect(),
             sub_alpine: HashSet::default(),
+            ..AspectElevation::default()
+        });
+        insta::assert_snapshot!(svg);
+    }
+
+    #[test]
+    fn test_generate_svg_text() {
+        let svg = generate_svg(AspectElevation {
+            high_alpine_text: Some("Test High Alpine".to_owned()),
+            alpine_text: Some("Test Alpine".to_owned()),
+            sub_alpine_text: Some("Test Sub Alpine".to_owned()),
+            ..AspectElevation::default()
         });
         insta::assert_snapshot!(svg);
     }
