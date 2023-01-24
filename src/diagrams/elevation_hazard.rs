@@ -18,11 +18,12 @@ enum ElevationBand {
 #[derive(Deserialize)]
 #[serde(rename_all = "snake_case")]
 enum HazardLevel {
-    Low = 1,
-    Moderate = 2,
-    Considerable = 3,
-    High = 4,
-    Extreme = 5,
+    NoRating,
+    Low,
+    Moderate,
+    Considerable,
+    High,
+    Extreme,
 }
 
 const WHITE: &str = "#ffffffff";
@@ -31,10 +32,11 @@ const BLACK: &str = "#000000ff";
 impl HazardLevel {
     fn colour_hex(&self) -> &'static str {
         match self {
-            HazardLevel::Low => "#00bb0aff",
-            HazardLevel::Moderate => "#fdff22ff",
-            HazardLevel::Considerable => "#f88000ff",
-            HazardLevel::High => "#f80000ff",
+            HazardLevel::NoRating => "#ccccccff",
+            HazardLevel::Low => "#57bb51ff",
+            HazardLevel::Moderate => "#fee85bff",
+            HazardLevel::Considerable => "#fd923aff",
+            HazardLevel::High => "#fc3329ff",
             HazardLevel::Extreme => BLACK,
         }
     }
