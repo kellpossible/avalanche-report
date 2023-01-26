@@ -1,0 +1,14 @@
+// Transforms a + character inside a div into a crosshair.
+#crosshair {
+    left: calc(50% - 10px);
+    top: calc(50% - 10px); 
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    z-index: 10000;
+    text-align: center;
+    font-weight: normal;
+    font-size: 16px;
+    color: #222;
+    text-shadow: 1px 1px 3px #fff;
+}

@@ -88,9 +88,11 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "axum-reporting",
+ "buildstructor",
  "color-eyre",
  "deadpool-sqlite",
  "eyre",
+ "fs_extra",
  "html-builder",
  "i18n-embed",
  "i18n-embed-fl",
@@ -104,6 +106,7 @@ dependencies = [
  "sea-query",
  "serde",
  "serde_json",
+ "tinytemplate",
  "tokio",
  "tracing",
  "tracing-appender",
@@ -221,6 +224,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69cce20737498f97b993470a6e536b8523f0af7892a4f928cceb1ac5e52ebe7e"
 dependencies = [
  "generic-array",
+]
+
+[[package]]
+name = "buildstructor"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32e1c120c6c832d6101eeb3170eeaeec6aca98759b59c37a1f78b3becfa482a5"
+dependencies = [
+ "lazy_static",
+ "proc-macro2",
+ "quote",
+ "str_inflector",
+ "syn",
+ "thiserror",
+ "try_match",
 ]
 
 [[package]]
@@ -543,6 +561,12 @@ checksum = "a9c384f161156f5260c24a097c56119f9be8c798586aecc13afbcbe7b7e26bf8"
 dependencies = [
  "percent-encoding",
 ]
+
+[[package]]
+name = "fs_extra"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2022715d62ab30faffd124d40b76f4134a550a87792276512b18d63272333394"
 
 [[package]]
 name = "futures"
@@ -1576,6 +1600,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "str_inflector"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec0b848d5a7695b33ad1be00f84a3c079fe85c9278a325ff9159e6c99cef4ef7"
+dependencies = [
+ "lazy_static",
+ "regex",
+]
+
+[[package]]
 name = "strict-num"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1714,6 +1748,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8aeafdfd935e4a7fe16a91ab711fa52d54df84f9c8f7ca5837a9d1d902ef4c2"
 dependencies = [
  "displaydoc",
+]
+
+[[package]]
+name = "tinytemplate"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be4d6b5f19ff7664e8c98d03e2139cb510db9b0a60b55f8e8709b689d939b6bc"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -1915,6 +1959,27 @@ name = "try-lock"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3528ecfd12c466c6f163363caf2d02a71161dd5e1cc6ae7b34207ea2d42d81ed"
+
+[[package]]
+name = "try_match"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "789f9cd474cc74c591dcc98669b846e158f2409ace4e6e342502ab44a41c584b"
+dependencies = [
+ "try_match_inner",
+]
+
+[[package]]
+name = "try_match_inner"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "607e6b75bc1bdf1a60d4201c500ca965834c11f30e25921cfd28569315db49a9"
+dependencies = [
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "ttf-parser"

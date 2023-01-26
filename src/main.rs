@@ -8,18 +8,22 @@ use axum::{
     Extension, Router,
 };
 use eyre::Context;
-use html_builder::Html5;
-use i18n::I18nLoader;
+use html_builder::{Html5, Node};
+use i18n::{I18nLoader, LOADER};
 use i18n_embed_fl::fl;
 use rust_embed::RustEmbed;
-use std::fmt::Write;
+use std::{fmt::Write, marker::PhantomData};
 use tracing_appender::rolling::Rotation;
 
 use crate::options::Options;
 
+mod components;
 mod diagrams;
+mod error;
+mod forecast_areas;
 mod fs;
 mod i18n;
+mod observations;
 mod options;
 
 #[tokio::main]
@@ -62,13 +66,16 @@ async fn main() -> eyre::Result<()> {
     // build our application with a route
     let app = Router::new()
         // `GET /` goes to `root`
-        .route("/", get(index))
+        .route("/", get(index_handler))
+        .route("/clicked", post(clicked))
         .nest("/diagrams", diagrams::router())
         .nest("/logs/", axum_reporting::serve_logs(reporting_options))
-        .route("/clicked", post(clicked))
-        .route_layer(middleware::from_fn(i18n::middleware))
+        .nest("/observations", observations::router())
+        .nest("/forecast-areas", forecast_areas::router())
         .route_service("/dist/*file", dist_handler.into_service())
-        .fallback_service(get(not_found));
+        .route_service("/static/*file", static_handler.into_service())
+        .fallback_service(get(not_found_handler))
+        .route_layer(middleware::from_fn(i18n::middleware));
 
     // run our app with hyper
     // `axum::Server` is a re-export of `hyper::Server`
@@ -85,70 +92,102 @@ async fn clicked(Extension(loader): Extension<I18nLoader>) -> Html<String> {
     Html(fl!(loader, "button-clicked"))
 }
 
-async fn index(Extension(loader): Extension<I18nLoader>) -> Html<String> {
-    index_impl(loader).unwrap()
+async fn index_handler(Extension(loader): Extension<I18nLoader>) -> impl IntoResponse {
+    components::Base::builder()
+        .i18n(loader.clone())
+        .body(&|body: &mut Node| {
+            let mut h1 = body.h1().attr(r#"class="text-3xl font-bold underline""#);
+            h1.write_str(&fl!(loader, "hello-world"))?;
+
+            let mut button = body
+                .button()
+                .attr(r#"id="button""#)
+                .attr(r#"hx-post="/clicked""#)
+                .attr(r##"hx-target="#button""##)
+                .attr(r#"hx-swap="outerHTML""#);
+            button.write_str(&fl!(loader, "button-click-me"))?;
+            Ok(())
+        })
+        .build()
+        .into_response()
 }
 
-fn index_impl(loader: I18nLoader) -> Result<Html<String>, std::fmt::Error> {
-    let mut buf = html_builder::Buffer::new();
-    buf.doctype();
-    let mut html = buf.html();
-    let mut head = html.head();
-    head.write_str(
-        r#"<meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <link href="/dist/output.css" rel="stylesheet">
-          "#,
-    )?;
-    let mut body = html.body();
-    let mut h1 = body.h1().attr(r#"class="text-3xl font-bold underline""#);
-    h1.write_str(&fl!(loader, "hello-world"))?;
-
-    let mut button = body
-        .button()
-        .attr(r#"id="button""#)
-        .attr(r#"hx-post="/clicked""#)
-        .attr(r##"hx-target="#button""##)
-        .attr(r#"hx-swap="outerHTML""#);
-    button.write_str(&fl!(loader, "button-click-me"))?;
-
-    body.write_str(r#"<script src="/dist/main.js"></script>"#)?;
-
-    Ok(Html(buf.finish()))
-}
-
-// We use a wildcard matcher ("/dist/*file") to match against everything
-// within our defined assets directory. This is the directory on our Asset
-// struct below, where folder = "examples/public/".
-async fn dist_handler(uri: Uri) -> impl IntoResponse {
+async fn dist_handler(uri: Uri, Extension(loader): Extension<I18nLoader>) -> impl IntoResponse {
     let mut path = uri.path().trim_start_matches('/').to_string();
 
     if path.starts_with("dist/") {
         path = path.replace("dist/", "");
     }
 
-    StaticFile(path)
+    DistFile::get(path, loader)
 }
 
-// Finally, we use a fallback route for anything that didn't match.
-async fn not_found() -> Html<&'static str> {
-    Html("<h1>404</h1><p>Not Found</p>")
+async fn static_handler(uri: Uri, Extension(loader): Extension<I18nLoader>) -> impl IntoResponse {
+    let mut path = uri.path().trim_start_matches('/').to_string();
+
+    if path.starts_with("static/") {
+        path = path.replace("static/", "");
+    }
+
+    StaticFile::get(path, loader)
+}
+
+/// Create a 404 not found response
+async fn not_found_handler(
+    Extension(loader): Extension<I18nLoader>,
+) -> axum::response::Result<impl IntoResponse> {
+    not_found(loader)
+}
+
+fn not_found(loader: I18nLoader) -> axum::response::Result<impl IntoResponse> {
+    Ok((
+        StatusCode::NOT_FOUND,
+        components::Base::builder()
+            .i18n(loader)
+            .body(&|body: &mut Node| {
+                body.h1().write_str("404")?;
+                body.p().write_str("Not Found")?;
+                Ok(())
+            })
+            .build()
+            .into_response(),
+    ))
 }
 
 #[derive(RustEmbed)]
 #[folder = "dist"]
 struct DistDir;
+type DistFile<T> = EmbeddedFile<DistDir, T>;
 
-pub struct StaticFile<T>(pub T);
+#[derive(RustEmbed)]
+#[folder = "static"]
+struct StaticDir;
+type StaticFile<T> = EmbeddedFile<StaticDir, T>;
 
-impl<T> IntoResponse for StaticFile<T>
+pub struct EmbeddedFile<E, T> {
+    pub path: T,
+    loader: I18nLoader,
+    embed: PhantomData<E>,
+}
+
+impl<E, T> EmbeddedFile<E, T> {
+    pub fn get(path: T, loader: I18nLoader) -> Self {
+        Self {
+            path,
+            loader,
+            embed: PhantomData,
+        }
+    }
+}
+
+impl<E, T> IntoResponse for EmbeddedFile<E, T>
 where
-    T: Into<String>,
+    E: RustEmbed,
+    T: AsRef<str>,
 {
     fn into_response(self) -> Response {
-        let path = self.0.into();
-
-        match DistDir::get(path.as_str()) {
+        let path: &str = self.path.as_ref();
+        match E::get(path) {
             Some(content) => {
                 let body = boxed(Full::from(content.data));
                 let mime = mime_guess::from_path(path).first_or_octet_stream();
@@ -157,10 +196,7 @@ where
                     .body(body)
                     .unwrap()
             }
-            None => Response::builder()
-                .status(StatusCode::NOT_FOUND)
-                .body(boxed(Full::from("404")))
-                .unwrap(),
+            None => not_found(self.loader).into_response(),
         }
     }
 }

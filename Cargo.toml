@@ -30,7 +30,12 @@ once_cell = "1.17.0"
 unic-langid = "0.9.1"
 resvg = { version = "0.28.0", default-features = false, features = ["filter", "text", "memmap-fonts"] } # required only for svg to png diagram generation
 usvg-text-layout = { version = "0.28.0", default-features = false, features = ["memmap-fonts"]}
+buildstructor = "0.5"
+tinytemplate = "1.2.1"
 # refinery = { version = "0.8", features = ["rusqlite"]}
 
 [dev-dependencies]
 insta = { version = "1.26.0", features = ["json"]}
+
+[build-dependencies]
+fs_extra = "1.2.0"

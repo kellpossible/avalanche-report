@@ -7,6 +7,8 @@ use eyre::Context;
 use resvg::{tiny_skia, usvg};
 use serde::Deserialize;
 
+use crate::error::{handle_eyre_error, handle_std_error};
+
 #[derive(Deserialize)]
 #[serde(rename_all = "snake_case")]
 enum ElevationBand {
@@ -140,13 +142,7 @@ pub async fn png_handler(
         generate_png(elevation_hazard).wrap_err("Error generating png")
     })
     .await
-    .map_err(|error| {
-        tracing::error!("{:?}", error);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?
-    .map_err(|error| {
-        tracing::error!("{:?}", error);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+    .map_err(handle_std_error)?
+    .map_err(handle_eyre_error)?;
     Ok((headers, png_data))
 }
