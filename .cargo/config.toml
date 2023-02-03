@@ -1,0 +1,3 @@
+[env]
+# Enable the sqlite rtree module https://sqlite.org/rtree.html
+LIBSQLITE3_FLAGS = "-DSQLITE_ENABLE_RTREE=1"

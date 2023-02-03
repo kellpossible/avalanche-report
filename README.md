@@ -6,5 +6,6 @@ A simple self-hosted web server for creating and managing an avalanche forecast 
 
 ```bash
 $ npm install
+$ npx tailwindcss --input src/index.css --output dist/index.css
 $ cargo build --release
 ```

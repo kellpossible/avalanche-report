@@ -1,4 +1,5 @@
-target
-node_modules
 data
+dist
+node_modules
+target
 fly.toml

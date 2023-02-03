@@ -1,5 +1,4 @@
 use axum::{
-    extract::Query,
     response::{IntoResponse, Redirect},
     routing::{get, post},
     Extension, Form, Router,

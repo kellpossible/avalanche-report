@@ -1,6 +1,6 @@
 use axum::{
     extract::Query,
-    http::{header, HeaderMap, StatusCode},
+    http::{header, HeaderMap},
     response::IntoResponse,
 };
 use eyre::Context;

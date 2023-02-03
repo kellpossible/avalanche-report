@@ -9,7 +9,7 @@ use axum::{
 };
 use eyre::Context;
 use html_builder::{Html5, Node};
-use i18n::{I18nLoader, LOADER};
+use i18n::I18nLoader;
 use i18n_embed_fl::fl;
 use rust_embed::RustEmbed;
 use std::{fmt::Write, marker::PhantomData};
@@ -69,13 +69,13 @@ async fn main() -> eyre::Result<()> {
         .route("/", get(index_handler))
         .route("/clicked", post(clicked))
         .nest("/diagrams", diagrams::router())
-        .nest("/logs/", axum_reporting::serve_logs(reporting_options))
+        .nest("/logs", axum_reporting::serve_logs(reporting_options))
         .nest("/observations", observations::router())
         .nest("/forecast-areas", forecast_areas::router())
         .route_service("/dist/*file", dist_handler.into_service())
         .route_service("/static/*file", static_handler.into_service())
-        .fallback_service(get(not_found_handler))
-        .route_layer(middleware::from_fn(i18n::middleware));
+        .fallback(not_found_handler)
+        .layer(middleware::from_fn(i18n::middleware));
 
     // run our app with hyper
     // `axum::Server` is a re-export of `hyper::Server`
