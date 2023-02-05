@@ -21,6 +21,7 @@ use secrecy::SecretString;
 use serde::Serialize;
 use std::{fmt::Write, marker::PhantomData};
 use tracing_appender::rolling::Rotation;
+use unic_langid::LanguageIdentifier;
 
 use crate::{options::Options, secrets::Secrets};
 
@@ -116,10 +117,10 @@ async fn main() -> eyre::Result<()> {
     Ok(())
 }
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 struct ForecastFileDetails {
     forecast: ForecastDetails,
-    language: String,
+    language: LanguageIdentifier,
 }
 
 #[derive(Serialize, PartialEq, Eq, Clone)]
@@ -129,6 +130,7 @@ struct ForecastDetails {
     forecaster: String,
 }
 
+#[derive(Clone)]
 struct ForecastFile {
     details: ForecastFileDetails,
     file: FileMetadata,
@@ -168,7 +170,8 @@ fn parse_forecast_details(file_name: &str) -> eyre::Result<ForecastFileDetails> 
     let language = name_parts
         .next()
         .ok_or_else(|| eyre::eyre!("No language specified"))?
-        .to_owned();
+        .parse()
+        .wrap_err("Unable to parse language")?;
 
     let forecast_details = ForecastDetails {
         area,
@@ -180,6 +183,14 @@ fn parse_forecast_details(file_name: &str) -> eyre::Result<ForecastFileDetails> 
         forecast: forecast_details,
         language,
     })
+}
+
+fn format_language_name(language: &LanguageIdentifier) -> Option<String> {
+    match language.language.as_str() {
+        "en" => Some("English".to_owned()),
+        "ka" => Some("ქართული".to_owned()),
+        _ => None,
+    }
 }
 
 async fn index_handler(
@@ -232,7 +243,7 @@ async fn index_handler_impl(
             acc
         });
 
-    forecasts.sort_by(|a, b| a.details.time.partial_cmp(&b.details.time).unwrap());
+    forecasts.sort_by(|a, b| b.details.time.cmp(&a.details.time));
 
     Ok(components::Base::builder()
         .i18n(loader.clone())
@@ -247,22 +258,35 @@ async fn index_handler_impl(
                         .attr(r#"class="text-2xl font-bold""#)
                         .write_str(&format!("Current Forecast - {time}"))?;
                 } else {
+                    if i == 1 {
+                        body.h2()
+                            .attr(r#"class="text-2xl font-bold""#)
+                            .write_str(&format!("Forecast Archive"))?;
+                    }
                     body.h3()
                         .attr(r#"class="text-xl font-bold""#)
                         .write_str(&format!("{time}"))?;
                 }
 
+
+                let mut files = forecast.files.clone();
+                files.sort_by(|a, b| a.details.language.cmp(&b.details.language));
+
                 for forecast_file in &forecast.files {
                     let file = &forecast_file.file;
                     let file_id = &file.id;
                     let name = &file.name;
+                    let text = format_language_name(&forecast_file.details.language)
+                        .map(|language| format!("{language} (PDF)"))
+                        .unwrap_or_else(|| file.name.clone());
+
                     body.a()
                         .attr(
                             r#"class="text-blue-600 hover:text-blue-800 visited:text-purple-600""#,
                         )
                         .attr(&format!(r#"href="/forecasts/{file_id}""#))
                         .attr(&format!(r#"download="{name}""#))
-                        .write_str(&file.name)?;
+                        .write_str(&text)?;
                 }
                 body.br();
             }
