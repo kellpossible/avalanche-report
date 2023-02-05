@@ -9,7 +9,10 @@ use std::fmt::Write;
 
 use crate::{components, i18n::I18nLoader};
 
-pub fn router() -> Router {
+pub fn router<S>() -> Router<S>
+where
+    S: Clone + Send + Sync + 'static,
+{
     Router::new()
         .route("/", get(index_handler))
         .route("/submit", post(submit_handler))

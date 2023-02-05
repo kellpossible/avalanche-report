@@ -28,6 +28,11 @@ pub struct Options {
     /// Default is `127.0.0.1:3000`.
     #[serde(default = "default_listen_address")]
     pub listen_address: SocketAddr,
+    /// Directory where secrets are loaded from (and the token cache is stored).
+    ///
+    /// Default is `secrets`.
+    #[serde(default = "default_secrets_dir")]
+    pub secrets_dir: PathBuf,
 }
 
 impl Default for Options {
@@ -36,6 +41,7 @@ impl Default for Options {
             data_dir: default_data_dir(),
             base_url: default_base_url(),
             listen_address: default_listen_address(),
+            secrets_dir: default_secrets_dir(),
         }
     }
 }
@@ -52,6 +58,10 @@ fn default_base_url() -> url::Url {
 
 fn default_listen_address() -> SocketAddr {
     SocketAddr::from(([127, 0, 0, 1], 3000))
+}
+
+fn default_secrets_dir() -> PathBuf {
+    "secrets".into()
 }
 
 impl std::fmt::Display for Options {
