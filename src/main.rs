@@ -23,10 +23,11 @@ use std::{fmt::Write, marker::PhantomData};
 use tracing_appender::rolling::Rotation;
 use unic_langid::LanguageIdentifier;
 
-use crate::{options::Options, secrets::Secrets};
+use crate::{options::Options, secrets::Secrets, state::AppState, templates::Templates};
 
 mod components;
 mod diagrams;
+mod env;
 mod error;
 mod forecast_areas;
 mod fs;
@@ -35,32 +36,19 @@ mod i18n;
 mod observations;
 mod options;
 mod secrets;
-
-#[derive(Clone)]
-struct AppState {
-    secrets: &'static Secrets,
-    client: reqwest::Client,
-}
+mod state;
+mod templates;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
     axum_reporting::setup_error_hooks()?;
 
-    let options_init = Options::initialize().await;
-    let options: &'static Options = options_init
-        .result
-        .map(|options| Box::leak(Box::new(options)))
-        .map_err(|error| {
-            options_init.logs.print();
-            error
-        })?;
+    env::initialize()?;
+
+    let options: &'static Options = Box::leak(Box::new(Options::initialize().await?));
 
     fs::create_dir_if_not_exists(&options.data_dir)
-        .wrap_err_with(|| format!("Unable to create data directory {:?}", options.data_dir))
-        .map_err(|error| {
-            options_init.logs.print();
-            error
-        })?;
+        .wrap_err_with(|| format!("Unable to create data directory {:?}", options.data_dir))?;
 
     let reporting_options: &'static axum_reporting::Options =
         Box::leak(Box::new(axum_reporting::Options {
@@ -71,40 +59,44 @@ async fn main() -> eyre::Result<()> {
             log_file_name: "avalanche-report".to_owned(),
         }));
 
-    let _reporting_guard = axum_reporting::setup_logging(reporting_options).map_err(|error| {
-        options_init.logs.print();
-        error
-    })?;
+    let _reporting_guard = axum_reporting::initialize(reporting_options)?;
 
-    options_init.logs.present();
+    let secrets = Box::leak(Box::new(Secrets::initialize()?));
 
-    let secrets = Box::leak(Box::new(
-        Secrets::initialize(&options.secrets_dir)
-            .await
-            .wrap_err("Error while initializing secrets")?,
-    ));
+    let i18n = i18n::initialize();
+    crate::i18n::load_languages(&i18n).wrap_err("Error loading languages")?;
 
-    i18n::load_languages().wrap_err("Error loading languages")?;
+    let templates = Templates::initialize()?;
 
     let state = AppState {
         secrets,
         client: reqwest::Client::new(),
+        i18n,
+        templates,
     };
 
     // build our application with a route
     let app = Router::new()
         // `GET /` goes to `root`
         .route("/", get(index_handler))
+        .route("/test", get(templates::handler))
         .route("/forecasts/:file_id", get(forecast_handler))
         .nest("/diagrams", diagrams::router())
         .nest("/observations", observations::router())
         .nest("/forecast-areas", forecast_areas::router())
         .route_service("/dist/*file", dist_handler.into_service())
         .route_service("/static/*file", static_handler.into_service())
-        .with_state(state)
         .nest("/logs", axum_reporting::serve_logs(reporting_options))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            templates::middleware,
+        ))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            i18n::middleware,
+        ))
         .fallback(not_found_handler)
-        .layer(middleware::from_fn(i18n::middleware));
+        .with_state(state);
 
     // run our app with hyper
     // `axum::Server` is a re-export of `hyper::Server`
@@ -215,7 +207,7 @@ async fn index_handler_impl(
         }
         None => {
             tracing::warn!("Unable to list files, no Google Drive api key secret is specified");
-            Vec::new()
+            return Ok(StatusCode::INTERNAL_SERVER_ERROR.into_response());
         }
     };
     let (mut forecasts, errors): (Vec<Forecast>, Vec<eyre::Error>) = files
@@ -247,6 +239,10 @@ async fn index_handler_impl(
 
     Ok(components::Base::builder()
         .i18n(loader.clone())
+        .head(&|head: &mut Node| {
+            head.title().write_str("Gudauri Avalanche Forecast")?;
+            Ok(())
+        })
         .body(&|body: &mut Node| {
             let mut h1 = body.h1().attr(r#"class="text-3xl font-bold""#);
             h1.write_str("Gudauri Avalanche Forecasts")?;
@@ -267,7 +263,6 @@ async fn index_handler_impl(
                         .attr(r#"class="text-xl font-bold""#)
                         .write_str(&format!("{time}"))?;
                 }
-
 
                 let mut files = forecast.files.clone();
                 files.sort_by(|a, b| a.details.language.cmp(&b.details.language));

@@ -3,4 +3,4 @@ dist
 node_modules
 target
 fly.toml
-secrets
+.env

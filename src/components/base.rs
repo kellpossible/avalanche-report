@@ -31,7 +31,7 @@ impl<'n> Base<'n> {
         head.meta()
             .attr(r#"name="viewport""#)
             .attr(r#"content="width=device-width, initial-scale=1.0""#);
-        stylesheet(&mut head, "/dist/index.css");
+        stylesheet(&mut head, "/dist/style.css");
         script_src(&mut head, "/dist/htmx.js");
         Option::transpose(self.head.map(|h| h.run(&mut head)))?;
 

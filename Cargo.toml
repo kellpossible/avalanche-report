@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 axum = { version = "0.6.2", features = ["headers"] }
+dotenvy = "0.15.6"
 ansi-to-html = "0.1.2"
 eyre = "0.6.8"
 bytes = "1.4.0"
@@ -21,6 +22,7 @@ http = "0.2.8"
 serde_json = "1.0.91"
 tracing = "0.1"
 mime_guess = "2.0.4"
+mime = "0.3.16"
 rust-embed = { version = "6.4.2"}
 regex = "1.7.1"
 tokio = { version = "1.24.1", features = ["macros", "rt-multi-thread"] }
@@ -37,9 +39,12 @@ chrono = { version = "0.4.23", features = ["serde"] }
 chrono-tz = "0.8.1"
 resvg = { version = "0.28.0", default-features = false, features = ["filter", "text", "memmap-fonts"] } # required only for svg to png diagram generation
 reqwest = { version = "0.11.14", default-features = false, features = ["json", "stream", "rustls-tls"] }
-secrecy = "0.8.0"
+secrecy = { version = "0.8.0", features = ["serde"] }
 usvg-text-layout = { version = "0.28.0", default-features = false, features = ["memmap-fonts"]}
 buildstructor = "0.5"
+minijinja = { version = "0.30.2", features = ["source", "builtins", "urlencode", "json"] }
+minijinja-autoreload = { version = "0.30.2" }
+async-trait = "0.1.64"
 # refinery = { version = "0.8", features = ["rusqlite"]}
 
 [dev-dependencies]
