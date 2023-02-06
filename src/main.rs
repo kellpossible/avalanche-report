@@ -80,6 +80,7 @@ async fn main() -> eyre::Result<()> {
         // `GET /` goes to `root`
         .route("/", get(index_handler))
         .route("/test", get(templates::handler))
+        .route("/test/inside", get(templates::handler))
         .route("/forecasts/:file_id", get(forecast_handler))
         .nest("/diagrams", diagrams::router())
         .nest("/observations", observations::router())
