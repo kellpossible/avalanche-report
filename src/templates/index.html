@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}
+    Gudauri Avalanche Forecast
+{% endblock title %}
+{% block body %}
+    <h1 class="text-3xl font-bold">Gudauri Avalanche Forecast</h1>
+    {% for forecast in forecasts %}
+        {% if loop.index0 == 0 %}
+            <h2 class="text-2xl font-bold">Latest Forecast</h2>
+        {% else %}
+            {% if loop.index0 == 1 %}<h2 class="text-2xl font-bold">Forecast Archive</h2>{% endif %}
+        {% endif %}
+        <h3 class="text-xl font-bold">{{ forecast.details.time }}</h3>
+        {% for file in forecast.files %}
+            <a class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
+               href="/forecasts/{{ file.file.id }}"
+               download="{{ file.file.name }}">
+                {% if file.details.language_name %}
+                    {{ file.details.language_name }} (PDF)
+                {% else %}
+                    {{ file.details.language }} (PDF)
+                {% endif %}
+            </a>
+        {% endfor %}
+    {% endfor %}
+    {% if (errors | length) != 0 %}
+        <h2 class="text-2xl font-bold text-rose-600">Errors Reading Forecast Files</h2>
+        {% for error in errors %}
+            <h3 class="text-xl font-bold text-rose-600">Error {{ loop.index }}</h3>
+            {% autoescape false %}
+                <pre>{{ ansi_to_html(error) }}</pre>
+            {% endautoescape %}
+        {% endfor %}
+    {% endif %}
+{% endblock body %}

@@ -3,9 +3,9 @@ use futures::TryStreamExt;
 use http::HeaderValue;
 use reqwest::{header::CONTENT_TYPE, Url};
 use secrecy::{ExposeSecret, SecretString};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FileMetadata {
     pub mime_type: String,

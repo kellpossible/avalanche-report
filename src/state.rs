@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use axum::extract::FromRef;
 
 use crate::{i18n::I18nLoader, secrets::Secrets, templates::Templates};
