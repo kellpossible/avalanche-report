@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}
+    Observation Position
+{% endblock title %}
+{% block head %}
+    <link rel="stylesheet" href="/dist/leaflet.css">
+    <script src="/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="/dist/Leaflet.GeotagPhoto.css">
+    <script src="/dist/Leaflet.GeotagPhoto.js"></script>
+    <link rel="stylesheet" href="/dist/L.Control.MapCenterCoord.css">
+    <script src="/dist/L.Control.MapCenterCoord.js"></script>
+    <link rel="stylesheet" href="/static/map/map.css">
+{% endblock head %}
+{% block body %}
+    <h1 class="text-3xl font-bold">Observation Position</h1>
+    <p>Specify the position of your observation before proceeding to the Google Form.</p>
+    <br>
+    <form class="space-y-2" method="post" action="/observations/submit">
+        <label for="position" class="text-gray-700 text-sm font-bold mb-2">Position of Observation</label>
+        <input type="text"
+               id="position"
+               name="position"
+               class="shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+               value=""
+               readonly>
+        <div id="map" style="width: 600px; height: 400px;"></div>
+        <input type="submit"
+               class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+               value="Go to Google Form">
+    </form>
+    <script src="/static/map/map.js"></script>
+{% endblock body %}

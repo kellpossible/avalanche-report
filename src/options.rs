@@ -1,13 +1,8 @@
-use axum_reporting::DelayedLogs;
-use std::{
-    net::SocketAddr,
-    path::{Path, PathBuf},
-};
+use std::{net::SocketAddr, path::PathBuf};
 
 use eyre::Context;
 use ron::ser::PrettyConfig;
 use serde::{ser::Error, Deserialize, Serialize};
-use tracing::Level;
 
 /// Global options for the application.
 #[derive(Debug, Serialize, Deserialize)]
@@ -63,79 +58,48 @@ impl std::fmt::Display for Options {
     }
 }
 
-/// Result of [`Options::initialize()`].
-pub struct OptionsInit {
-    /// Options that were initialized.
-    pub result: eyre::Result<Options>,
-    /// Messages that are destined to logged after tracing has been
-    /// initialized.
-    pub logs: DelayedLogs,
-}
-
 impl Options {
-    /// Initialize the options using the `OPTIONS` environment variable, otherwise load from file
-    /// `options.ron` by default. If `OPTIONS` contains a file path, it will load the options from
-    /// that path, if `OPTIONS` contains a RON file definition then it will load the options from
-    /// the string contained in the variable.
-    pub async fn initialize() -> OptionsInit {
-        let mut logs = DelayedLogs::default();
-        let result = initialize_impl(&mut logs).await;
-
-        OptionsInit { result, logs }
-    }
-}
-
-async fn initialize_impl(logs: &mut DelayedLogs) -> eyre::Result<Options> {
-    let result = match std::env::var("OPTIONS") {
-        Ok(options) => match ron::from_str(&options) {
-            Ok(options) => {
-                logs.push(
-                    Level::INFO,
-                    "Options loaded from `OPTIONS` environment variable",
-                );
-                Ok(options)
-            }
-            Err(error) => {
-                let path = PathBuf::from(&options);
-                if path.is_file() {
-                    let options_str = tokio::fs::read_to_string(&path).await?;
-                    let options: Options = ron::from_str(&options_str).wrap_err_with(|| {
-                        format!("Error deserializing options file: {:?}", path)
-                    })?;
-                    logs.push(Level::INFO, format!("Options loaded from file specified in `OPTIONS` environment variable: {:?}", path));
+    /// Initialize the options using the `OPTIONS` environment variable. If `OPTIONS` contains a
+    /// file path, it will load the options from that path, if `OPTIONS` contains a RON file
+    /// definition then it will load the options from the string contained in the variable.
+    pub async fn initialize() -> eyre::Result<Options> {
+        let result = match std::env::var("OPTIONS") {
+            Ok(options) => match ron::from_str(&options) {
+                Ok(options) => {
+                    println!("INFO: Options loaded from `OPTIONS` environment variable");
                     Ok(options)
-                } else {
-                    Err(error).wrap_err_with(|| {
-                        format!(
-                            "Error deserializing options from `OPTIONS` environment variable \
-                        string, or you have specified a file path which does not exist: {:?}",
-                            options
-                        )
-                    })
                 }
-            }
-        },
-        Err(std::env::VarError::NotPresent) => {
-            let path = Path::new("options.ron");
-            if !path.is_file() {
-                logs.push(Level::INFO, "No options found, using defaults");
+                Err(error) => {
+                    let path = PathBuf::from(&options);
+                    if path.is_file() {
+                        let options_str = tokio::fs::read_to_string(&path).await?;
+                        let options: Options = ron::from_str(&options_str).wrap_err_with(|| {
+                            format!("Error deserializing options file: {:?}", path)
+                        })?;
+                        println!("INFO: Options loaded from file specified in `OPTIONS` environment variable: {:?}", path);
+                        Ok(options)
+                    } else {
+                        Err(error).wrap_err_with(|| {
+                            format!(
+                                "Error deserializing options from `OPTIONS` environment variable \
+                            string, or you have specified a file path which does not exist: {:?}",
+                                options
+                            )
+                        })
+                    }
+                }
+            },
+            Err(std::env::VarError::NotPresent) => {
+                println!("INFO: No OPTIONS environment variable found, using default options.");
                 return Ok(Options::default());
             }
-            let options_str = tokio::fs::read_to_string(&path).await?;
-            let options = ron::from_str(&options_str)
-                .wrap_err_with(|| format!("Error deserializing options file: {:?}", path))?;
-
-            logs.push(
-                Level::INFO,
-                format!("Options loaded from default file: {:?}", path),
-            );
-
-            Ok(options)
+            Err(error) => {
+                return Err(error).wrap_err("Error reading `OPTIONS` environment variable")
+            }
+        };
+        if let Ok(options) = &result {
+            println!("INFO: {options}")
         }
-        Err(error) => return Err(error).wrap_err("Error reading `OPTIONS` environment variable"),
-    };
-    if let Ok(options) = &result {
-        logs.push(Level::INFO, format!("{}", options));
+        result
     }
-    result
 }

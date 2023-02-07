@@ -3,7 +3,11 @@
 app = "georgia-avalanche-report"
 
 [env]
-  OPTIONS = "Options(\n    data_dir: \"/data-volume\",\n    listen_address: \"[::]:8080\",\n    base_url: \"https://georgia-avalanche-report.fly.dev/\",\n)"
+  OPTIONS = """Options(
+    data_dir: "/data-volume",
+    listen_address: "[::]:8080",
+    base_url: "https://georgia-avalanche-report.fly.dev/",
+  )"""
 
 [mounts]
   destination = "/data-volume"
@@ -16,6 +20,7 @@ app = "georgia-avalanche-report"
   [[services.ports]]
     handlers = ["http"]
     port = "80"
+    force_https = true
 
   [[services.ports]]
     handlers = ["tls", "http"]

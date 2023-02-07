@@ -90,7 +90,7 @@ expression: svg
      id="layer1">
     <g
        id="g31088"
-       transform="matrix(0.97579052,0,0,0.97579052,2.5562442,-0.47586206)">
+       transform="matrix(0.97579052,0,0,0.97579052,2.0270775,-0.47586203)">
       <g
          id="g13171-2-0"
          transform="matrix(1.0255827,0,0,1.0255827,-1.2904195,-0.54032355)">
@@ -277,116 +277,116 @@ expression: svg
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:10.3271px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.258177"
-       x="51.461109"
+       x="50.931942"
        y="8.6841602"
        id="text19597"><tspan
          id="tspan19595"
          style="stroke-width:0.258177"
-         x="51.461109"
+         x="50.931942"
          y="8.6841602">N</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:10.3271px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.258177"
-       x="51.447685"
-       y="101.71349"
+       x="50.918518"
+       y="101.7135"
        id="text19597-1"><tspan
          id="tspan19595-9"
          style="stroke-width:0.258177"
-         x="51.447685"
-         y="101.71349">S</tspan></text>
+         x="50.918518"
+         y="101.7135">S</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:10.3271px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.258177"
-       x="97.137291"
+       x="96.608124"
        y="55.092724"
        id="text19597-1-8"><tspan
          id="tspan19595-9-4"
          style="stroke-width:0.258177"
-         x="97.137291"
+         x="96.608124"
          y="55.092724">E</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:10.3271px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.258177"
-       x="2.6825743"
+       x="2.1534076"
        y="55.26144"
        id="text19597-1-4"><tspan
          id="tspan19595-9-7"
          style="stroke-width:0.258177"
-         x="2.6825743"
+         x="2.1534076"
          y="55.26144">W</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:8.7291px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.218228"
-       x="9.5690155"
+       x="9.0398493"
        y="21.564278"
        id="text19597-9"><tspan
          id="tspan19595-3"
          style="stroke-width:0.218228"
-         x="9.5690155"
+         x="9.0398493"
          y="21.564278">NW</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:8.7291px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.218228"
-       x="85.269333"
+       x="84.740166"
        y="21.129356"
        id="text19597-9-8"><tspan
          id="tspan19595-3-4"
          style="stroke-width:0.218228"
-         x="85.269333"
+         x="84.740166"
          y="21.129356">NE</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:8.7291px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.218228"
-       x="12.952073"
+       x="12.422907"
        y="89.021591"
        id="text19597-9-5"><tspan
          id="tspan19595-3-8"
          style="stroke-width:0.218228"
-         x="12.952073"
+         x="12.422907"
          y="89.021591">SW</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:8.7291px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.218228"
-       x="83.86882"
+       x="83.339653"
        y="88.756363"
        id="text19597-9-5-6"><tspan
          id="tspan19595-3-8-2"
          style="stroke-width:0.218228"
-         x="83.86882"
+         x="83.339653"
          y="88.756363">SE</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:3.72815px;line-height:1.25;font-family:sans-serif;fill:#949494;fill-opacity:1;stroke:none;stroke-width:0.0932036"
-       x="84.281174"
-       y="96.145058"
+       x="74.976891"
+       y="94.307472"
        id="high-alpine-text"><tspan
          id="tspan19595-3-8-2-5"
          style="fill:#949494;fill-opacity:1;stroke-width:0.0932036"
-         x="84.281174"
-         y="96.145058">High Alpine</tspan></text>
+         x="74.976891"
+         y="94.307472">High Alpine</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:3.72815px;line-height:1.25;font-family:sans-serif;fill:#949494;fill-opacity:1;stroke:none;stroke-width:0.0932036"
-       x="84.186043"
-       y="100.61887"
+       x="75.062263"
+       y="98.625389"
        id="alpine-text"><tspan
          id="tspan19595-3-8-2-5-1"
          style="fill:#949494;fill-opacity:1;stroke-width:0.0932036"
-         x="84.186043"
-         y="100.61887">Alpine</tspan></text>
+         x="75.062263"
+         y="98.625389">Alpine</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:3.72815px;line-height:1.25;font-family:sans-serif;fill:#949494;fill-opacity:1;stroke:none;stroke-width:0.0932036"
-       x="83.879623"
-       y="104.94333"
+       x="74.907005"
+       y="102.63634"
        id="sub-alpine-text"><tspan
          id="tspan19595-3-8-2-5-1-6"
          style="fill:#949494;fill-opacity:1;stroke-width:0.0932036"
-         x="83.879623"
-         y="104.94333">Sub Alpine</tspan></text>
+         x="74.907005"
+         y="102.63634">Sub Alpine</tspan></text>
     <path
        style="fill:none;stroke:#949494;stroke-width:0.516356;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 64.435612,60.6561 14.923551,34.575374 h 3.786994"
+       d="m 63.906445,60.6561 7.272752,32.356616 h 3.408865"
        id="path1367" />
     <text
        xml:space="preserve"
@@ -398,11 +398,11 @@ expression: svg
          style="stroke-width:0.264583" /></text>
     <path
        style="font-variation-settings:normal;opacity:1;vector-effect:none;fill:none;fill-opacity:1;stroke:#949494;stroke-width:0.516357;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;-inkscape-stroke:none;stop-color:#000000;stop-opacity:1"
-       d="m 54.847546,75.34468 23.582652,24.223992 h 4.651383"
+       d="m 54.318379,75.34468 16.401538,21.889514 h 3.876889"
        id="path16117" />
     <path
        style="font-variation-settings:normal;opacity:1;vector-effect:none;fill:none;fill-opacity:1;stroke:#949494;stroke-width:0.516357;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;-inkscape-stroke:none;stop-color:#000000;stop-opacity:1"
-       d="m 54.678302,86.58348 22.883877,16.86631 h 5.556068"
+       d="m 54.149135,86.58348 16.010113,14.75671 h 4.441969"
        id="path28344" />
   </g>
 </svg>

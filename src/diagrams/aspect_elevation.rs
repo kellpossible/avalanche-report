@@ -15,7 +15,7 @@ use resvg::{tiny_skia, usvg};
 use serde::Deserialize;
 use usvg_text_layout::{fontdb, TreeTextToPath};
 
-use crate::error::{handle_eyre_error, handle_std_error};
+use crate::error::{map_eyre_error, map_std_error};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Aspect {
@@ -229,7 +229,7 @@ pub async fn svg_handler(
     // headers.insert(header::CONTENT_TYPE, "image/svg+xml".parse().unwrap());
     headers.insert(header::CONTENT_TYPE, "image/svg+xml".parse().unwrap());
     let aspect_elevation =
-        AspectElevation::try_from(aspect_elevation_query).map_err(handle_eyre_error)?;
+        AspectElevation::try_from(aspect_elevation_query).map_err(map_eyre_error)?;
     Ok((headers, generate_svg(aspect_elevation)))
 }
 
@@ -245,7 +245,7 @@ fn generate_png(aspect_elevation: AspectElevation) -> eyre::Result<Vec<u8>> {
     let svg = generate_svg(aspect_elevation);
     let options = usvg::Options::default();
     let mut tree = usvg::Tree::from_str(&svg, &options)?;
-    tree.convert_text(&*FONT_DB, options.keep_named_groups);
+    tree.convert_text(&*FONT_DB);
     let pixmap_size = tree.size.to_screen_size();
     let mut pixmap = tiny_skia::Pixmap::new(pixmap_size.width(), pixmap_size.height())
         .ok_or_else(|| eyre::eyre!("Unable to create pixmap"))?;
@@ -265,13 +265,13 @@ pub async fn png_handler(
     let mut headers = HeaderMap::new();
     headers.insert(header::CONTENT_TYPE, "image/png".parse().unwrap());
     let aspect_elevation =
-        AspectElevation::try_from(aspect_elevation_query).map_err(handle_eyre_error)?;
+        AspectElevation::try_from(aspect_elevation_query).map_err(map_eyre_error)?;
     let png_data = tokio::task::spawn_blocking(move || {
         generate_png(aspect_elevation).wrap_err("Error generating png")
     })
     .await
-    .map_err(handle_std_error)?
-    .map_err(handle_eyre_error)?;
+    .map_err(map_std_error)?
+    .map_err(map_eyre_error)?;
     Ok((headers, png_data))
 }
 
