@@ -11,7 +11,7 @@ use unic_langid::LanguageIdentifier;
 
 use crate::{
     error::{map_eyre_error, map_std_error},
-    forecast::{parse_forecast_details, ForecastDetails, ForecastFileDetails},
+    forecast::{parse_forecast_name, ForecastDetails, ForecastFileDetails},
     google_drive::{self, FileMetadata},
     state::AppState,
     templates::TemplatesWithContext, i18n::I18nLoader,
@@ -103,7 +103,7 @@ pub async fn handler(
         .filter(|file| file.mime_type == "application/pdf")
         .map(|file| {
             let filename = &file.name;
-            let details = parse_forecast_details(filename).wrap_err_with(|| {
+            let details = parse_forecast_name(filename).wrap_err_with(|| {
                     eyre::eyre!("Error parsing forecast details from file {filename:?}")
                 })
                 .suggestion("Name file according to the standard format.\n e.g. \"Gudauri_2023-01-24T17:00_LF.en.pdf\"")?;

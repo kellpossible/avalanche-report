@@ -23,7 +23,7 @@ pub struct ForecastFileDetails {
 
 
 
-pub fn parse_forecast_details(file_name: &str) -> eyre::Result<ForecastFileDetails> {
+pub fn parse_forecast_name(file_name: &str) -> eyre::Result<ForecastFileDetails> {
     let mut name_parts = file_name.split('.');
     let details = name_parts
         .next()
@@ -97,15 +97,29 @@ async fn handler_impl(
 
 #[cfg(test)]
 mod test {
-    use super::parse_forecast_details;
+    use super::parse_forecast_name;
 
     #[test]
-    fn test_parse_forecast_details() {
-        let forecast_details = parse_forecast_details("Gudauri_2023-01-24T17:00_LF.pdf").unwrap();
+    fn test_parse_forecast_name() {
+        let forecast_details = parse_forecast_name("Gudauri_2023-01-24T17:00_LF.pdf").unwrap();
         insta::assert_json_snapshot!(forecast_details, @r###"
         {
-          "area": "Gudauri",
-          "time": "2023-01-24T17:00:00+04"
+          "forecast": {
+            "area": "Gudauri",
+            "time": [
+              2023,
+              24,
+              17,
+              0,
+              0,
+              0,
+              4,
+              0,
+              0
+            ],
+            "forecaster": "LF"
+          },
+          "language": "pdf"
         }
         "###);
     }
