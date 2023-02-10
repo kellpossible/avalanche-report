@@ -7,6 +7,8 @@ edition = "2021"
 
 [dependencies]
 axum = { version = "0.6.2", features = ["headers"] }
+base64 = "0.21.0"
+bcrypt = "0.14.0"
 dotenvy = "0.15.6"
 ansi-to-html = "0.1.2"
 eyre = "0.6.8"
@@ -26,6 +28,9 @@ mime_guess = "2.0.4"
 mime = "0.3.16"
 rust-embed = { version = "6.4.2"}
 regex = "1.7.1"
+tower = "0.4"
+http-body = "0.4"
+tower-http = { version = "0.3", features = ["trace", "auth"] }
 tokio = { version = "1.24.1", features = ["macros", "rt-multi-thread"] }
 deadpool-sqlite = "0.5.0"
 libsqlite3-sys = { version = "0.25", features = ["bundled"] }
@@ -52,3 +57,6 @@ insta = { version = "1.26.0", features = ["json"]}
 
 [build-dependencies]
 fs_extra = "1.2.0"
+
+[workspace]
+members = ["admin-password-hash"]

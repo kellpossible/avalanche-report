@@ -1,35 +1,58 @@
 {% extends "base.html" %}
+{% macro forecast_block(forecast) %}
+    <h3 class="text-xl font-bold">{{ forecast.details.time }}</h3>
+    {% for file in forecast.files %}
+        <a class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
+           href="/forecasts/{{ file.file.id }}"
+           download="{{ file.file.name }}">
+            {% if file.details.language_name %}
+                {{ file.details.language_name }} (PDF)
+            {% else %}
+                {{ file.details.language }} (PDF)
+            {% endif %}
+        </a>
+    {% endfor %}
+{% endmacro %}
 {% block title %}
     Gudauri Avalanche Forecast
 {% endblock title %}
 {% block body %}
-    <h1 class="text-3xl font-bold">Gudauri Avalanche Forecast</h1>
-    {% for forecast in forecasts %}
-        {% if loop.index0 == 0 %}
-            <h2 class="text-2xl font-bold">Latest Forecast</h2>
-        {% else %}
-            {% if loop.index0 == 1 %}<h2 class="text-2xl font-bold">Forecast Archive</h2>{% endif %}
-        {% endif %}
-        <h3 class="text-xl font-bold">{{ forecast.details.time }}</h3>
-        {% for file in forecast.files %}
-            <a class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
-               href="/forecasts/{{ file.file.id }}"
-               download="{{ file.file.name }}">
-                {% if file.details.language_name %}
-                    {{ file.details.language_name }} (PDF)
-                {% else %}
-                    {{ file.details.language }} (PDF)
-                {% endif %}
-            </a>
-        {% endfor %}
-    {% endfor %}
-    {% if (errors | length) != 0 %}
-        <h2 class="text-2xl font-bold text-rose-600">Errors Reading Forecast Files</h2>
-        {% for error in errors %}
-            <h3 class="text-xl font-bold text-rose-600">Error {{ loop.index }}</h3>
-            {% autoescape false %}
-                <pre>{{ ansi_to_html(error) }}</pre>
-            {% endautoescape %}
-        {% endfor %}
-    {% endif %}
+    <h1 class="text-5xl font-bold text-center">Gudauri Avalanche Forecast</h1>
+    <div class="flex items-center justify-center w-screen">
+        <div class="p-2 w-full md:min-w-3xl md:max-w-3xl text-center">
+            <figure class="py-5">
+                <iframe src="https://psavalancheconsulting.github.io/ElevationMap.html"
+                        class="w-full"
+                        height="500px"></iframe>
+                <figcaption class="italic">
+                    Forecast Area and Elevation Zones
+                </figcaption>
+            </figure>
+            <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
+            {% if (forecasts | length) == 0 %}
+                <p class="text-2xl font-bold text-rose-600">No Forecasts Available</p>
+            {% else %}
+                <div class="py-10">
+                    <h2 class="text-4xl font-bold">Latest Forecast</h2>
+                    {{ forecast_block(forecast=forecasts[0]) }}
+                </div>
+                <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
+                <div class="py-5 text-slate-500">
+                    <h2 class="text-2xl font-bold py-2">Forecast Archive</h2>
+                    {% for forecast in forecasts[1:] %}
+                        {{ forecast_block(forecast=forecast) }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% if (errors | length) != 0 %}
+                <h2 class="text-2xl font-bold text-rose-600">Errors Reading Forecast Files</h2>
+                {% for error in errors %}
+                    <h3 class="text-xl font-bold text-rose-600">Error {{ loop.index }}</h3>
+                    {% autoescape false %}
+                        <pre>{{ ansi_to_html(error) }}</pre>
+                    {% endautoescape %}
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
 {% endblock body %}

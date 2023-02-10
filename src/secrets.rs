@@ -1,5 +1,6 @@
 use std::env::VarError;
 
+use color_eyre::Help;
 use eyre::Context;
 use secrecy::SecretString;
 
@@ -8,6 +9,7 @@ use secrecy::SecretString;
 /// deployment situations that support hidden/secret/protected variables.
 pub struct Secrets {
     pub google_drive_api_key: Option<SecretString>,
+    pub admin_password_hash: SecretString,
 }
 
 impl Secrets {
@@ -26,8 +28,28 @@ impl Secrets {
             }
         };
 
+        let admin_password_hash = match std::env::var("ADMIN_PASSWORD_HASH") {
+            Ok(admin_password_hash) => {
+                tracing::info!(
+                    "Admin password hash was read from ADMIN_PASSWORD_HASH environment variable"
+                );
+                SecretString::new(admin_password_hash)
+            }
+            Err(unexpected) => {
+                return Err(unexpected)
+                    .wrap_err("Error while reading ADMIN_PASSWORD_HASH environment variable")
+                    .suggestion(
+                        "ADMIN_PASSWORD_HASH environment variable must be set to run this application. \
+                        You can use the admin-password-hash binary (subproject of this one) to generate \
+                        the hash of your desired password.
+                        "
+                    )
+            }
+        };
+
         Ok(Self {
             google_drive_api_key,
+            admin_password_hash,
         })
     }
 }
