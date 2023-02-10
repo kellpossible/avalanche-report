@@ -20,14 +20,6 @@
     <h1 class="text-5xl font-bold text-center">Gudauri Avalanche Forecast</h1>
     <div class="flex items-center justify-center w-screen">
         <div class="p-2 w-full md:min-w-3xl md:max-w-3xl text-center">
-            <figure class="py-5">
-                <iframe src="https://psavalancheconsulting.github.io/ElevationMap.html"
-                        class="w-full"
-                        height="500px"></iframe>
-                <figcaption class="italic">
-                    Forecast Area and Elevation Zones
-                </figcaption>
-            </figure>
             <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
             {% if (forecasts | length) == 0 %}
                 <p class="text-2xl font-bold text-rose-600">No Forecasts Available</p>
@@ -35,6 +27,22 @@
                 <div class="py-10">
                     <h2 class="text-4xl font-bold">Latest Forecast</h2>
                     {{ forecast_block(forecast=forecasts[0]) }}
+                    <figure class="py-5">
+                        <iframe src="https://psavalancheconsulting.github.io/HazardMap.html"
+                                class="w-full"
+                                height="480px"></iframe>
+                        <figcaption class="italic">
+                            Avalanche Hazard (as of {{forecasts[0].details.time}})
+                        </figcaption>
+                    </figure>
+                    <figure class="py-5">
+                        <iframe src="https://psavalancheconsulting.github.io/ElevationMap.html"
+                                class="w-full"
+                                height="420px"></iframe>
+                        <figcaption class="italic">
+                            Forecast Area and Elevation Zones
+                        </figcaption>
+                    </figure>
                 </div>
                 <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
                 <div class="py-5 text-slate-500">
