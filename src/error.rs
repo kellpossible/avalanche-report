@@ -1,10 +1,13 @@
-use axum::{http::StatusCode, response::{IntoResponse, Html}};
+use axum::{
+    http::StatusCode,
+    response::{Html, IntoResponse},
+};
 
 pub fn map_eyre_error(error: eyre::Error) -> impl IntoResponse {
     let error = format!("{error:?}");
     (
-        StatusCode::INTERNAL_SERVER_ERROR, 
-        Html(ansi_to_html::convert_escaped(&error).unwrap_or(error))
+        StatusCode::INTERNAL_SERVER_ERROR,
+        Html(ansi_to_html::convert_escaped(&error).unwrap_or(error)),
     )
 }
 

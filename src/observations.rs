@@ -5,10 +5,9 @@ use axum::{
 };
 use serde::Deserialize;
 
-use crate::{templates, state::AppState};
+use crate::{state::AppState, templates};
 
-pub fn router() -> Router<AppState>
-{
+pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(templates::create_handler("observations.html")))
         .route("/submit", post(submit_handler))

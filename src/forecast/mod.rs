@@ -1,12 +1,16 @@
-use axum::{extract::{State, Path}, response::{IntoResponse, Response}, body::StreamBody};
-use time::{OffsetDateTime, PrimitiveDateTime};
+use axum::{
+    body::StreamBody,
+    extract::{Path, State},
+    response::{IntoResponse, Response},
+};
 use eyre::Context;
-use http::{StatusCode, header::CONTENT_TYPE};
+use http::{header::CONTENT_TYPE, StatusCode};
 use secrecy::SecretString;
 use serde::Serialize;
+use time::{OffsetDateTime, PrimitiveDateTime};
 use unic_langid::LanguageIdentifier;
 
-use crate::{error::map_eyre_error, state::AppState, google_drive};
+use crate::{error::map_eyre_error, google_drive, state::AppState};
 
 #[derive(Serialize, PartialEq, Eq, Clone)]
 pub struct ForecastDetails {
@@ -20,8 +24,6 @@ pub struct ForecastFileDetails {
     pub forecast: ForecastDetails,
     pub language: LanguageIdentifier,
 }
-
-
 
 pub fn parse_forecast_name(file_name: &str) -> eyre::Result<ForecastFileDetails> {
     let mut name_parts = file_name.split('.');
@@ -71,11 +73,9 @@ pub async fn handler(
         tracing::error!("Unable to fetch file, Google Drive API Key not specified");
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
-    Ok(
-        handler_impl(&file_id, google_drive_api_key, &state.client)
-            .await
-            .map_err(map_eyre_error)?,
-    )
+    Ok(handler_impl(&file_id, google_drive_api_key, &state.client)
+        .await
+        .map_err(map_eyre_error)?)
 }
 
 async fn handler_impl(

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% macro forecast_block(forecast) %}
-    <h3 class="text-xl font-bold">{{ forecast.details.time }}</h3>
+    <h3 class="text-xl font-bold">{{ forecast.details.formatted_time }}</h3>
     {% for file in forecast.files %}
         <a class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
            href="/forecasts/{{ file.file.id }}"
@@ -32,7 +32,7 @@
                                 class="w-full"
                                 height="480px"></iframe>
                         <figcaption class="italic">
-                            Avalanche Hazard (as of {{forecasts[0].details.time}})
+                            Avalanche Hazard (as of {{forecasts[0].details.formatted_time}})
                         </figcaption>
                     </figure>
                     <figure class="py-5">

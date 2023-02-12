@@ -1,8 +1,4 @@
-use axum::{
-    extract::State,
-    response::IntoResponse,
-    Extension,
-};
+use axum::{extract::State, response::IntoResponse, Extension};
 use color_eyre::Help;
 use eyre::Context;
 use http::StatusCode;
@@ -13,8 +9,9 @@ use crate::{
     error::{map_eyre_error, map_std_error},
     forecast::{parse_forecast_name, ForecastDetails, ForecastFileDetails},
     google_drive::{self, FileMetadata},
+    i18n::I18nLoader,
     state::AppState,
-    templates::TemplatesWithContext, i18n::I18nLoader,
+    templates::TemplatesWithContext,
 };
 
 fn format_language_name(language: &LanguageIdentifier) -> Option<String> {
@@ -25,13 +22,13 @@ fn format_language_name(language: &LanguageIdentifier) -> Option<String> {
     }
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, Debug)]
 pub struct ForecastFile {
     pub details: FormattedForecastFileDetails,
     pub file: FileMetadata,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, Debug)]
 pub struct FormattedForecastFileDetails {
     pub forecast: FormattedForecastDetails,
     pub language: String,
@@ -41,15 +38,17 @@ impl FormattedForecastFileDetails {
     fn format(value: ForecastFileDetails, i18n: &I18nLoader) -> Self {
         Self {
             forecast: FormattedForecastDetails::format(value.forecast, i18n),
-            language: format_language_name(&value.language).unwrap_or_else(|| value.language.to_string()),
+            language: format_language_name(&value.language)
+                .unwrap_or_else(|| value.language.to_string()),
         }
     }
 }
 
-#[derive(PartialEq, Clone, Serialize)]
+#[derive(PartialEq, Clone, Serialize, Debug)]
 pub struct FormattedForecastDetails {
     pub area: String,
-    pub time: String,
+    pub formatted_time: String,
+    pub time: time::OffsetDateTime,
     pub forecaster: String,
 }
 
@@ -60,22 +59,23 @@ impl FormattedForecastDetails {
         let year = value.time.year();
         let hour = value.time.hour();
         let minute = value.time.minute();
-        let time = format!("{day} {month} {year} {hour:0>2}:{minute:0>2}");
+        let formatted_time = format!("{day} {month} {year} {hour:0>2}:{minute:0>2}");
         Self {
             area: value.area,
-            time,
+            formatted_time,
+            time: value.time,
             forecaster: value.forecaster,
         }
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct Forecast {
     pub details: FormattedForecastDetails,
     pub files: Vec<ForecastFile>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 struct Index {
     forecasts: Vec<Forecast>,
     errors: Vec<String>,

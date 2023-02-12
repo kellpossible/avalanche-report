@@ -1,9 +1,8 @@
 use axum::response::IntoResponse;
 use base64::Engine;
-use http::{StatusCode, HeaderValue};
-use secrecy::{SecretString, ExposeSecret};
+use http::{HeaderValue, StatusCode};
+use secrecy::{ExposeSecret, SecretString};
 use tower_http::auth::AuthorizeRequest;
-
 
 /// Basic authentication for accessing logs.
 #[derive(Clone, Copy)]

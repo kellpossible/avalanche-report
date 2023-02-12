@@ -10,9 +10,9 @@ use axum::{
 use error::map_std_error;
 use eyre::Context;
 use rust_embed::RustEmbed;
-use tower_http::trace::TraceLayer;
 use std::marker::PhantomData;
 use templates::TemplatesWithContext;
+use tower_http::trace::TraceLayer;
 use tracing_appender::rolling::Rotation;
 
 use crate::{options::Options, secrets::Secrets, state::AppState, templates::Templates};
@@ -79,7 +79,10 @@ async fn main() -> eyre::Result<()> {
         .nest("/forecast-areas", forecast_areas::router())
         .route_service("/dist/*file", dist_handler.into_service())
         .route_service("/static/*file", static_handler.into_service())
-        .nest("/logs", logs::router(reporting_options, &secrets.admin_password_hash))
+        .nest(
+            "/logs",
+            logs::router(reporting_options, &secrets.admin_password_hash),
+        )
         .fallback(not_found_handler)
         .layer(middleware::from_fn_with_state(
             state.clone(),
