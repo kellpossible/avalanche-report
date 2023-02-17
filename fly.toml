@@ -3,11 +3,11 @@
 app = "georgia-avalanche-report"
 
 [env]
-  OPTIONS = """Options(
-    data_dir: "/data-volume",
-    listen_address: "[::]:8080",
-    base_url: "https://georgia-avalanche-report.fly.dev/",
-  )"""
+  OPTIONS = """
+    data_dir="/data-volume"
+    listen_address="[::]:8080"
+    base_url="https://avalanche.ge/"
+  """
 
 [mounts]
   destination = "/data-volume"

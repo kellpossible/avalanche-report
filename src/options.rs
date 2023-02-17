@@ -1,7 +1,6 @@
 use std::{net::SocketAddr, path::PathBuf};
 
 use eyre::Context;
-use ron::ser::PrettyConfig;
 use serde::{ser::Error, Deserialize, Serialize};
 
 /// Global options for the application.
@@ -51,9 +50,8 @@ fn default_listen_address() -> SocketAddr {
 
 impl std::fmt::Display for Options {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let options_str = ron::ser::to_string_pretty(self, PrettyConfig::default())
-            .map_err(|error| std::fmt::Error::custom(error))?;
-        f.write_str("Options")?;
+        let options_str =
+            toml::ser::to_string_pretty(self).map_err(|error| std::fmt::Error::custom(error))?;
         f.write_str(&options_str)
     }
 }
@@ -64,7 +62,7 @@ impl Options {
     /// definition then it will load the options from the string contained in the variable.
     pub async fn initialize() -> eyre::Result<Options> {
         let result = match std::env::var("OPTIONS") {
-            Ok(options) => match ron::from_str(&options) {
+            Ok(options) => match toml::from_str(&options) {
                 Ok(options) => {
                     println!("INFO: Options loaded from `OPTIONS` environment variable");
                     Ok(options)
@@ -73,9 +71,10 @@ impl Options {
                     let path = PathBuf::from(&options);
                     if path.is_file() {
                         let options_str = tokio::fs::read_to_string(&path).await?;
-                        let options: Options = ron::from_str(&options_str).wrap_err_with(|| {
-                            format!("Error deserializing options file: {:?}", path)
-                        })?;
+                        let options: Options =
+                            toml::from_str(&options_str).wrap_err_with(|| {
+                                format!("Error deserializing options file: {:?}", path)
+                            })?;
                         println!("INFO: Options loaded from file specified in `OPTIONS` environment variable: {:?}", path);
                         Ok(options)
                     } else {
@@ -91,14 +90,12 @@ impl Options {
             },
             Err(std::env::VarError::NotPresent) => {
                 println!("INFO: No OPTIONS environment variable found, using default options.");
-                return Ok(Options::default());
+                Ok(Options::default())
             }
-            Err(error) => {
-                return Err(error).wrap_err("Error reading `OPTIONS` environment variable")
-            }
+            Err(error) => Err(error).wrap_err("Error reading `OPTIONS` environment variable"),
         };
         if let Ok(options) = &result {
-            println!("INFO: {options}")
+            println!("INFO: Options:\n\x1b[34m{options}\x1b[0m")
         }
         result
     }

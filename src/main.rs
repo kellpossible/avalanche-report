@@ -17,12 +17,14 @@ use tracing_appender::rolling::Rotation;
 
 use crate::{options::Options, secrets::Secrets, state::AppState, templates::Templates};
 
+mod analytics;
 mod auth;
+mod database;
 mod diagrams;
 mod env;
 mod error;
-mod forecast;
 mod forecast_areas;
+mod forecasts;
 mod fs;
 mod google_drive;
 mod i18n;
@@ -63,17 +65,22 @@ async fn main() -> eyre::Result<()> {
 
     let templates = Templates::initialize()?;
 
+    let database = database::initialize(&options.data_dir)
+        .await
+        .wrap_err("Error initializing database")?;
+
     let state = AppState {
         secrets,
         client: reqwest::Client::new(),
         i18n,
         templates,
+        database,
     };
 
     // build our application with a route
     let app = Router::new()
         .route("/", get(index::handler))
-        .route("/forecasts/:file_id", get(forecast::handler))
+        .route("/forecasts/:file_name", get(forecasts::handler))
         .nest("/diagrams", diagrams::router())
         .nest("/observations", observations::router())
         .nest("/forecast-areas", forecast_areas::router())
@@ -92,13 +99,14 @@ async fn main() -> eyre::Result<()> {
             state.clone(),
             i18n::middleware,
         ))
+        .layer(middleware::from_fn(analytics::middleware))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 
     // run our app with hyper
     // `axum::Server` is a re-export of `hyper::Server`
     let addr = &options.listen_address;
-    tracing::info!("listening on {addr}");
+    tracing::info!("listening on http://{addr}");
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await?;

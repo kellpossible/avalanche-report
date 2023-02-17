@@ -1,18 +1,49 @@
+use std::{collections::HashMap, path::Path};
+
+use color_eyre::Help;
 use eyre::Context;
+use serde::Deserialize;
+
+use crate::options::Options;
+
+const DOTENV_PATH: &'static str = ".env.toml";
 
 pub fn initialize() -> eyre::Result<()> {
-    match dotenvy::dotenv() {
-        Err(error) => match error {
-            dotenvy::Error::Io(ref io) => match io.kind() {
-                std::io::ErrorKind::NotFound => Ok(()),
-                _ => Err(error),
-            },
-            error => Err(error),
-        },
-        Ok(path) => {
-            println!("INFO: Environment variables loaded from {path:?}");
-            Ok(())
-        }
+    let path = Path::new(DOTENV_PATH);
+    if !path.exists() {
+        return Ok(());
     }
-    .wrap_err("Error loading .env")
+    println!("INFO: loading environment variables from {path:?}");
+    let dotenv =
+        parse_dotenv(&path).wrap_err_with(|| format!("Error loading dotenv file: {path:?}"))?;
+    for (key, value) in dotenv {
+        std::env::set_var(key, value)
+    }
+    Ok(())
+}
+
+fn parse_dotenv(path: &Path) -> eyre::Result<HashMap<String, String>> {
+    let env_str = std::fs::read_to_string(path).wrap_err("Error loading dotenv file")?;
+    let env: toml::Value = toml::from_str(&env_str).wrap_err("Error parsing dotenv file")?;
+    let table: toml::value::Table = match env {
+        toml::Value::Table(table) => table,
+        unexpected => {
+            return Err(eyre::eyre!("Unexpected dotenv format {unexpected:?}"))
+                .suggestion("Should be a struct or map")
+        }
+    };
+    table
+        .into_iter()
+        .map(|(key, value)| {
+            let value = match value {
+                toml::Value::String(value) => value,
+                _ => match key.as_str() {
+                    "OPTIONS" => toml::to_string(&Options::deserialize(value)?)?,
+                    _ => toml::to_string(&value)?,
+                },
+            };
+
+            Ok((key, value))
+        })
+        .collect()
 }

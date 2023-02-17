@@ -7,7 +7,7 @@ use unic_langid::LanguageIdentifier;
 
 use crate::{
     error::{map_eyre_error, map_std_error},
-    forecast::{parse_forecast_name, ForecastDetails, ForecastFileDetails},
+    forecasts::{parse_forecast_name, ForecastDetails, ForecastFileDetails},
     google_drive::{self, FileMetadata},
     i18n::I18nLoader,
     state::AppState,
@@ -107,6 +107,18 @@ pub async fn handler(
                     eyre::eyre!("Error parsing forecast details from file {filename:?}")
                 })
                 .suggestion("Name file according to the standard format.\n e.g. \"Gudauri_2023-01-24T17:00_LF.en.pdf\"")?;
+            match details.forecast.area.as_str() {
+                "Gudauri" => (),
+                unknown => return Err(
+                    eyre::eyre!(
+                        "Unknown forecast area {unknown:?} in filename \
+                        {filename:?}"
+                    ))
+                    .suggestion(
+                        "Forecast area name is case sensitive. \
+                        Available forecast areas: Gudauri"
+                    )
+            }
             let formatted_details = FormattedForecastFileDetails::format(details, &i18n);
             Ok(ForecastFile { details: formatted_details, file })
         })

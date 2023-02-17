@@ -66,24 +66,33 @@ pub fn parse_forecast_name(file_name: &str) -> eyre::Result<ForecastFileDetails>
 }
 
 pub async fn handler(
-    Path(file_id): Path<String>,
+    Path(file_name): Path<String>,
     State(state): State<AppState>,
-) -> axum::response::Result<impl IntoResponse> {
-    let google_drive_api_key = state.secrets.google_drive_api_key.as_ref().ok_or_else(|| {
+) -> axum::response::Result<Response> {
+    let api_key = state.secrets.google_drive_api_key.as_ref().ok_or_else(|| {
         tracing::error!("Unable to fetch file, Google Drive API Key not specified");
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
-    Ok(handler_impl(&file_id, google_drive_api_key, &state.client)
+    Ok(handler_impl(&file_name, api_key, &state.client)
         .await
         .map_err(map_eyre_error)?)
 }
 
 async fn handler_impl(
-    file_id: &str,
-    google_drive_api_key: &SecretString,
+    file_name: &str,
+    api_key: &SecretString,
     client: &reqwest::Client,
-) -> eyre::Result<impl IntoResponse> {
-    let file = google_drive::get_file(&file_id, google_drive_api_key, client).await?;
+) -> eyre::Result<Response> {
+    let file_list =
+        google_drive::list_files("1so1EaO5clMvBUecCszKlruxnf0XpbWgr", api_key, client).await?;
+    let file_id = match file_list
+        .iter()
+        .find(|file_metadata| file_metadata.name == file_name)
+    {
+        Some(file_metadata) => &file_metadata.id,
+        None => return Ok(StatusCode::NOT_FOUND.into_response()),
+    };
+    let file = google_drive::get_file(file_id, api_key, client).await?;
     let builder = Response::builder();
     let builder = match file.content_type() {
         Some(content_type) => builder.header(CONTENT_TYPE, content_type),
@@ -91,7 +100,7 @@ async fn handler_impl(
     };
 
     let body = StreamBody::new(file.bytes_stream());
-    let response = builder.body(body)?;
+    let response = builder.body(body)?.into_response();
     Ok(response)
 }
 
