@@ -73,10 +73,16 @@ async fn main() -> eyre::Result<()> {
     let (analytics_sx, analytics_rx) = analytics::channel();
     let database_analytics = database.clone();
     tokio::spawn(async move {
-        analytics::process_analytics(database_analytics, analytics_rx, options.analytics_batch_rate).await
+        analytics::process_analytics(
+            database_analytics,
+            analytics_rx,
+            options.analytics_batch_rate,
+        )
+        .await
     });
 
     let state = AppState {
+        options,
         secrets,
         client: reqwest::Client::new(),
         i18n,

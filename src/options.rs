@@ -1,6 +1,7 @@
-use std::{net::SocketAddr, path::PathBuf, num::NonZeroU32};
+use std::{net::SocketAddr, num::NonZeroU32, path::PathBuf};
 
 use eyre::Context;
+use nonzero_ext::nonzero;
 use serde::{ser::Error, Deserialize, Serialize};
 
 /// Global options for the application.
@@ -22,9 +23,9 @@ pub struct Options {
     /// Default is `127.0.0.1:3000`.
     #[serde(default = "default_listen_address")]
     pub listen_address: SocketAddr,
-    /// Number of analytics event batches that can be processed per minute.
+    /// Number of analytics event batches that will be submited to the database per hour.
     ///
-    /// Default is 10.
+    /// Default is 60 (one time per minute).
     #[serde(default = "default_analytics_batch_rate")]
     pub analytics_batch_rate: NonZeroU32,
 }
@@ -55,7 +56,7 @@ fn default_listen_address() -> SocketAddr {
 }
 
 fn default_analytics_batch_rate() -> NonZeroU32 {
-    300.try_into().unwrap()
+    nonzero!(60u32)
 }
 
 impl std::fmt::Display for Options {

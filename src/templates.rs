@@ -126,7 +126,6 @@ pub async fn middleware<B>(
         .ok_or_else(|| eyre::eyre!("No current language"))
         .map_err(map_eyre_error)?
         .to_string();
-    tracing::debug!("template language: {language}");
     let i18n_fl = i18n.clone();
     let i18n_fla = i18n.clone();
     environment.add_function("fl", move |message_id: &str| i18n_fl.get(message_id));

@@ -121,6 +121,7 @@ dependencies = [
  "mime_guess",
  "minijinja",
  "minijinja-autoreload",
+ "nonzero_ext",
  "once_cell",
  "refinery",
  "regex",

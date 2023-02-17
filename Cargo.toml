@@ -30,6 +30,7 @@ rust-embed = { version = "6.4.2"}
 regex = "1.7.1"
 tower = "0.4"
 humantime = "2.1.0"
+nonzero_ext = "0.3.0"
 http-body = "0.4"
 tower-http = { version = "0.3", features = ["trace", "auth"] }
 tokio = { version = "1.24.1", features = ["macros", "rt-multi-thread"] }

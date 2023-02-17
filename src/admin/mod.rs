@@ -1,4 +1,4 @@
-use axum::{Router, routing::get};
+use axum::{routing::get, Router};
 use secrecy::SecretString;
 use tower_http::auth::RequireAuthorizationLayer;
 
@@ -10,8 +10,7 @@ mod logs;
 pub fn router(
     reporting_options: &'static axum_reporting::Options,
     admin_password_hash: &'static SecretString,
-) -> Router<AppState>
-{
+) -> Router<AppState> {
     Router::new()
         .route("/analytics", get(analytics::handler))
         .nest("/logs", logs::router(reporting_options))

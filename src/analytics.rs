@@ -1,14 +1,14 @@
-use std::{collections::HashMap, sync::mpsc::RecvError, num::{NonZeroU64, NonZeroU32}};
+use std::{collections::HashMap, num::NonZeroU32, sync::Arc};
 
 use axum::{extract::State, middleware::Next, response::Response};
-use deadpool_sqlite::rusqlite::Row;
 use eyre::Context;
-use futures::StreamExt;
+use futures::{lock::Mutex, StreamExt};
 use governor::{state::StreamRateLimitExt, Quota, RateLimiter};
-use http::{Request, Uri, StatusCode};
+use http::{Request, StatusCode, Uri};
+use nonzero_ext::nonzero;
 use sea_query::{Query, SqliteQueryBuilder};
 use sea_query_rusqlite::RusqliteBinder;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, watch};
 use tokio_stream::wrappers::ReceiverStream;
 
 use crate::{database::Database, state::AppState};
@@ -26,16 +26,14 @@ pub struct Event {
     uri: Uri,
 }
 
-async fn process_analytics_events(events: Vec<Event>, database: &Database) -> eyre::Result<()> {
-    let db = database.get().await?;
-
-    let mut events_count: HashMap<Uri, u64> = HashMap::with_capacity(1);
-    for event in events {
-        events_count
-            .entry(event.uri)
-            .and_modify(|e| *e += 1)
-            .or_insert(1);
+async fn process_analytics_events(
+    accumulator: EventsAccumulator,
+    database: &Database,
+) -> eyre::Result<()> {
+    if accumulator.is_empty() {
+        return Ok(());
     }
+    let db = database.get().await?;
 
     db.interact(move |conn| {
         let mut query = Query::insert();
@@ -47,7 +45,7 @@ async fn process_analytics_events(events: Vec<Event>, database: &Database) -> ey
             AnalyticsIden::Time,
         ]);
 
-        for (uri, count) in events_count {
+        for (uri, count) in accumulator {
             query.values_panic([
                 uuid::Uuid::new_v4().into(),
                 uri.to_string().into(),
@@ -66,39 +64,104 @@ async fn process_analytics_events(events: Vec<Event>, database: &Database) -> ey
     Ok(())
 }
 
-/// `batch_rate` is the rate that batches can be submitted to the database (per minute).
-pub async fn process_analytics(database: Database, mut rx: mpsc::Receiver<Event>, batch_rate: NonZeroU32) {
-    let limiter = RateLimiter::direct(Quota::per_minute(batch_rate));
+type EventsAccumulator = HashMap<Uri, u64>;
 
-    'main: loop {
-        if let Some(first_event) = rx.recv().await {
-            limiter.until_ready().await;
+#[tracing::instrument(skip_all)]
+async fn process_accumulated_events(
+    database: &Database,
+    rx: mpsc::Receiver<EventsAccumulator>,
+    batch_rate: NonZeroU32,
+) {
+    let limiter = RateLimiter::direct(Quota::per_hour(batch_rate).allow_burst(nonzero!(1u32)));
 
-            let mut buffer: Vec<Event> = Vec::with_capacity(50);
-            buffer.push(first_event);
-            'buffer: loop {
-                match rx.try_recv() {
-                    Ok(event) => buffer.push(event),
-                    Err(error) => match error {
-                        mpsc::error::TryRecvError::Empty => break 'buffer,
-                        mpsc::error::TryRecvError::Disconnected => break 'main,
-                    },
-                }
-            }
-
-            process_analytics_events(buffer, &database)
+    ReceiverStream::from(rx)
+        .ratelimit_stream(&limiter)
+        .for_each(|accumulator| async {
+            process_analytics_events(accumulator, database)
                 .await
                 .wrap_err("Error processing analytics events")
                 .unwrap_or_else(|error| tracing::error!("{error}"));
+        })
+        .await;
+}
+
+async fn notify_received_events_for_processing(
+    batch_tx: mpsc::Sender<EventsAccumulator>,
+    events_accumulator: Arc<Mutex<EventsAccumulator>>,
+    mut batch_events_received_rx: watch::Receiver<()>,
+) {
+    loop {
+        match batch_tx.reserve().await {
+            Ok(permit) => {
+                batch_events_received_rx
+                    .changed()
+                    .await
+                    .expect("failed to check whether events have been received");
+                let mut events_accumulator = events_accumulator.lock().await;
+                if !events_accumulator.is_empty() {
+                    permit.send(events_accumulator.clone());
+                    events_accumulator.clear();
+                } else {
+                }
+            }
+            Err(error) => {
+                tracing::warn!("batch_tx reserve error: {}", error);
+                return;
+            }
+        }
+    }
+}
+
+/// `batch_rate` is the rate that batches can be submitted to the database (per hour).
+#[tracing::instrument(skip_all)]
+pub async fn process_analytics(
+    database: Database,
+    mut rx: mpsc::Receiver<Event>,
+    batch_rate: NonZeroU32,
+) {
+    // Care must be taken not to hold a lock on this over an await.
+    let events_accumulator: Arc<Mutex<EventsAccumulator>> =
+        Arc::new(Mutex::new(EventsAccumulator::with_capacity(1)));
+    let (batch_tx, batch_rx) = mpsc::channel::<EventsAccumulator>(1);
+
+    tokio::task::spawn(async move {
+        process_accumulated_events(&database, batch_rx, batch_rate).await;
+    });
+
+    let (events_received_tx, events_received_rx) = watch::channel(());
+    let batch_events_accumulator = events_accumulator.clone();
+    let batch_events_received_rx = events_received_rx.clone();
+    tokio::task::spawn(async move {
+        notify_received_events_for_processing(
+            batch_tx,
+            batch_events_accumulator,
+            batch_events_received_rx,
+        )
+        .await;
+    });
+    loop {
+        if let Some(event) = rx.recv().await {
+            let mut events_accumulator = events_accumulator.lock().await;
+            events_accumulator
+                .entry(event.uri)
+                .and_modify(|e| *e += 1)
+                .or_insert(1);
+            events_received_tx
+                .send(())
+                .expect("failed to notify events received");
+        } else {
+            tracing::warn!("events_accumulator channel closed, stopping analytics processor");
+            return;
         }
     }
 }
 
 pub fn channel() -> (mpsc::Sender<Event>, mpsc::Receiver<Event>) {
-    mpsc::channel(1000)
+    mpsc::channel(100)
 }
 
 /// Middleware for performing analytics on incoming requests.
+#[tracing::instrument(skip_all)]
 pub async fn middleware<B>(state: State<AppState>, request: Request<B>, next: Next<B>) -> Response {
     let uri = request.uri().clone();
     let response = next.run(request).await;
@@ -106,12 +169,10 @@ pub async fn middleware<B>(state: State<AppState>, request: Request<B>, next: Ne
         StatusCode::NOT_FOUND => "/404".parse().expect("unable to parse uri"),
         _ => uri,
     };
-    let event = Event {
-        uri,
-    };
+    let event = Event { uri };
     state
         .analytics_sx
         .try_send(event)
-        .unwrap_or_else(|error| tracing::debug!("Error sending to analytics processor: {error}"));
+        .unwrap_or_else(|error| tracing::warn!("Error sending to analytics processor: {error}"));
     response
 }

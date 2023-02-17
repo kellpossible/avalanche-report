@@ -1,13 +1,9 @@
+use std::num::NonZeroU32;
+
 use crate::{serde::string, templates::render};
-use axum::{
-    extract::State,
-    response::{IntoResponse, Response},
-    Extension,
-};
+use axum::{extract::State, response::Response, Extension};
 use http::Uri;
-use sea_query::{
-    Alias, BinOper, Expr, Func, IntoIden, Order, Query, SeaRc, SimpleExpr, SqliteQueryBuilder,
-};
+use sea_query::{Alias, Expr, IntoIden, Order, Query, SimpleExpr, SqliteQueryBuilder};
 use sea_query_rusqlite::RusqliteBinder;
 use serde::Serialize;
 
@@ -22,6 +18,7 @@ use crate::{
 #[derive(Serialize)]
 struct AnalyticsPage {
     summaries_duration: Vec<SummariesDuration>,
+    batch_rate: NonZeroU32,
 }
 
 #[derive(Serialize)]
@@ -43,7 +40,7 @@ pub async fn handler(
 ) -> axum::response::Result<Response> {
     let mut summaries_duration = Vec::new();
     for duration in [
-        Some(time::Duration::minutes(1)),
+        Some(time::Duration::minutes(10)),
         Some(time::Duration::hours(24)),
         Some(time::Duration::days(7)),
         Some(time::Duration::days(30)),
@@ -67,7 +64,10 @@ pub async fn handler(
         })
     }
 
-    let page = AnalyticsPage { summaries_duration };
+    let page = AnalyticsPage {
+        summaries_duration,
+        batch_rate: state.options.analytics_batch_rate,
+    };
 
     let template = templates
         .environment
@@ -103,7 +103,6 @@ async fn get_analytics(
         }
 
         let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
-        tracing::debug!("{sql}");
 
         let mut statement = conn.prepare_cached(&sql)?;
         let mut rows = statement.query(&*values.as_params())?;

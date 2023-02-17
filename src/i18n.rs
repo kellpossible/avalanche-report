@@ -71,10 +71,8 @@ pub async fn middleware<B>(
     mut request: Request<B>,
     next: Next<B>,
 ) -> Response {
-    tracing::debug!("{headers:?}");
     let loader: I18nLoader =
         if let Some(accept_language) = headers.get("Accept-Language").map(parse_accept_language) {
-            tracing::debug!("AcceptLanguage: {accept_language}");
             let loader = Arc::new(
                 state
                     .i18n
