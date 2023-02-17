@@ -1,4 +1,4 @@
-use axum::{routing::get, Router};
+use axum::Router;
 use secrecy::SecretString;
 use tower_http::auth::RequireAuthorizationLayer;
 
@@ -12,7 +12,7 @@ pub fn router(
     admin_password_hash: &'static SecretString,
 ) -> Router<AppState> {
     Router::new()
-        .route("/analytics", get(analytics::handler))
+        .nest("/analytics", analytics::router())
         .nest("/logs", logs::router(reporting_options))
         .layer(RequireAuthorizationLayer::custom(MyBasicAuth {
             admin_password_hash,

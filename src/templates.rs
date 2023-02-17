@@ -10,7 +10,11 @@ use fluent::{types::FluentNumber, FluentValue};
 use http::{header::CONTENT_TYPE, Request, StatusCode};
 use rust_embed::{EmbeddedFile, RustEmbed};
 
-use crate::{error::map_eyre_error, i18n::I18nLoader, AppState};
+use crate::{
+    error::{map_eyre_error, map_std_error},
+    i18n::I18nLoader,
+    AppState,
+};
 
 #[derive(RustEmbed)]
 #[folder = "src/templates"]
@@ -157,9 +161,11 @@ pub async fn middleware<B>(
 /// Render a template into a response, `Content-Type` header is guessed using the file extension of
 /// the template name.
 pub fn render<'env>(
-    template: &minijinja::Template<'env>,
+    environment: &minijinja::Environment<'env>,
+    name: &str,
     ctx: &dyn erased_serde::Serialize,
 ) -> axum::response::Result<Response> {
+    let template = environment.get_template(name).map_err(map_std_error)?;
     let mime = mime_guess::from_path(template.name()).first();
 
     let builder = Response::builder();
@@ -238,7 +244,7 @@ pub fn render<'env>(
 //             .map_err(|error| {
 //                 (
 //                     StatusCode::INTERNAL_SERVER_ERROR,
-//                     format!("Error gettting a template for this route: {error}"),
+//                     format!("Error getting a template for this route: {error}"),
 //                 )
 //             })
 //     }
@@ -257,11 +263,7 @@ pub fn create_handler(
         templates: &TemplatesWithContext,
         template_key: &str,
     ) -> axum::response::Result<Response> {
-        let template = templates
-            .environment
-            .get_template(&template_key)
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-        render(&template, &())
+        render(&templates.environment, template_key, &())
     }
     let template_key: String = template_key.to_owned();
     move |Extension(templates): Extension<TemplatesWithContext>| {

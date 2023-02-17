@@ -69,12 +69,7 @@ pub async fn handler(
         batch_rate: state.options.analytics_batch_rate,
     };
 
-    let template = templates
-        .environment
-        .get_template("admin/analytics.html")
-        .map_err(map_std_error)?;
-
-    render(&template, &page)
+    render(&templates.environment, "admin/analytics.html", &page)
 }
 
 async fn get_analytics(

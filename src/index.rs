@@ -11,7 +11,7 @@ use crate::{
     google_drive::{self, FileMetadata},
     i18n::I18nLoader,
     state::AppState,
-    templates::TemplatesWithContext,
+    templates::{render, TemplatesWithContext},
 };
 
 fn format_language_name(language: &LanguageIdentifier) -> Option<String> {
@@ -144,5 +144,5 @@ pub async fn handler(
         .environment
         .get_template("index.html")
         .map_err(map_std_error)?;
-    Ok(crate::templates::render(&template, &index).into_response())
+    render(&templates.environment, "index.html", &index)
 }

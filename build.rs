@@ -21,6 +21,14 @@ pub fn main() {
     }
 
     deploy_file(
+        "./node_modules/uplot/dist/uPlot.iife.min.js",
+        dist_dir.join("uPlot.js"),
+    );
+    deploy_file(
+        "./node_modules/uplot/dist/uPlot.min.css",
+        dist_dir.join("uPlot.css"),
+    );
+    deploy_file(
         "./node_modules/htmx.org/dist/htmx.min.js",
         dist_dir.join("htmx.js"),
     );

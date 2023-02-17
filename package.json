@@ -6,6 +6,7 @@
     "htmx.org": "^1.8.4",
     "leaflet": "^1.9.3",
     "leaflet-geotag-photo": "^0.6.2",
-    "leaflet-locationpicker": "^0.3.4"
+    "leaflet-locationpicker": "^0.3.4",
+    "uplot": "^1.6.24"
   }
 }
