@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, path::PathBuf};
+use std::{net::SocketAddr, path::PathBuf, num::NonZeroU32};
 
 use eyre::Context;
 use serde::{ser::Error, Deserialize, Serialize};
@@ -22,6 +22,11 @@ pub struct Options {
     /// Default is `127.0.0.1:3000`.
     #[serde(default = "default_listen_address")]
     pub listen_address: SocketAddr,
+    /// Number of analytics event batches that can be processed per minute.
+    ///
+    /// Default is 10.
+    #[serde(default = "default_analytics_batch_rate")]
+    pub analytics_batch_rate: NonZeroU32,
 }
 
 impl Default for Options {
@@ -30,6 +35,7 @@ impl Default for Options {
             data_dir: default_data_dir(),
             base_url: default_base_url(),
             listen_address: default_listen_address(),
+            analytics_batch_rate: default_analytics_batch_rate(),
         }
     }
 }
@@ -46,6 +52,10 @@ fn default_base_url() -> url::Url {
 
 fn default_listen_address() -> SocketAddr {
     SocketAddr::from(([127, 0, 0, 1], 3000))
+}
+
+fn default_analytics_batch_rate() -> NonZeroU32 {
+    300.try_into().unwrap()
 }
 
 impl std::fmt::Display for Options {

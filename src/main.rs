@@ -17,6 +17,7 @@ use tracing_appender::rolling::Rotation;
 
 use crate::{options::Options, secrets::Secrets, state::AppState, templates::Templates};
 
+mod admin;
 mod analytics;
 mod auth;
 mod database;
@@ -29,10 +30,10 @@ mod fs;
 mod google_drive;
 mod i18n;
 mod index;
-mod logs;
 mod observations;
 mod options;
 mod secrets;
+mod serde;
 mod state;
 mod templates;
 
@@ -69,12 +70,19 @@ async fn main() -> eyre::Result<()> {
         .await
         .wrap_err("Error initializing database")?;
 
+    let (analytics_sx, analytics_rx) = analytics::channel();
+    let database_analytics = database.clone();
+    tokio::spawn(async move {
+        analytics::process_analytics(database_analytics, analytics_rx, options.analytics_batch_rate).await
+    });
+
     let state = AppState {
         secrets,
         client: reqwest::Client::new(),
         i18n,
         templates,
         database,
+        analytics_sx,
     };
 
     // build our application with a route
@@ -87,8 +95,8 @@ async fn main() -> eyre::Result<()> {
         .route_service("/dist/*file", dist_handler.into_service())
         .route_service("/static/*file", static_handler.into_service())
         .nest(
-            "/logs",
-            logs::router(reporting_options, &secrets.admin_password_hash),
+            "/admin",
+            admin::router(reporting_options, &secrets.admin_password_hash),
         )
         .fallback(not_found_handler)
         .layer(middleware::from_fn_with_state(
@@ -99,7 +107,10 @@ async fn main() -> eyre::Result<()> {
             state.clone(),
             i18n::middleware,
         ))
-        .layer(middleware::from_fn(analytics::middleware))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            analytics::middleware,
+        ))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 

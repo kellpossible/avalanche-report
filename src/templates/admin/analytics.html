@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}
+    Analytics
+{% endblock title %}
+{% block body %}
+    <h1 class="text-5xl font-bold">Analytics</h1>
+    {% for summary_duration in summaries_duration %}
+        <h1 class="text-2xl font-bold">
+            {% if summary_duration.formatted_duration %}
+                Past {{ summary_duration.formatted_duration }}
+            {% else %}
+                All Time
+            {% endif %}
+        </h1>
+        <table>
+            <tr>
+                <th>Uri</th>
+                <th>Visits</th>
+            </tr>
+            {% for summary in summary_duration.summaries %}
+                <tr>
+                    <td>{{ summary.uri }}</td>
+                    <td>{{ summary.visits }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+        <br>
+    {% endfor %}
+{% endblock body %}

@@ -1,18 +1,20 @@
-use axum::Router;
+use axum::{Router, routing::get};
 use secrecy::SecretString;
 use tower_http::auth::RequireAuthorizationLayer;
 
-use crate::auth::MyBasicAuth;
+use crate::{auth::MyBasicAuth, state::AppState};
 
-pub fn router<S>(
+mod analytics;
+mod logs;
+
+pub fn router(
     reporting_options: &'static axum_reporting::Options,
     admin_password_hash: &'static SecretString,
-) -> Router<S>
-where
-    S: Clone + Send + Sync + 'static,
+) -> Router<AppState>
 {
     Router::new()
-        .nest("/", axum_reporting::serve_logs(reporting_options))
+        .route("/analytics", get(analytics::handler))
+        .nest("/logs", logs::router(reporting_options))
         .layer(RequireAuthorizationLayer::custom(MyBasicAuth {
             admin_password_hash,
         }))
