@@ -3,8 +3,12 @@
 <script>
 {% set function_name = "plot_chart" ~ (chart_id | replace("-", "_")) %}
 function {{ function_name }}() {
-    let data = {{ data | tojson }};
-    let opts = {
+    const currentLocalDate = new Date();
+    let offsetMinutes = currentLocalDate.getTimezoneOffset();
+
+    const data = {{ data | tojson }};
+    data[0] = data[0].map(timestamp => timestamp + offsetMinutes);
+    const opts = {
       width: 800,
       height: 600,
       series: [
@@ -22,7 +26,7 @@ function {{ function_name }}() {
       ],
     };
 
-    let chartRoot = document.getElementById("{{chart_id}}");
+    const chartRoot = document.getElementById("{{chart_id}}");
     new uPlot(opts, data, chartRoot);
 }
 {{ function_name }}()
