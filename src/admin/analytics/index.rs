@@ -96,6 +96,7 @@ async fn get_analytics(
                     "SUM(\"{}\") as vs",
                     AnalyticsIden::Visits.into_iden().to_string()
                 )))
+                .and_where(Expr::col(AnalyticsIden::Uri).not_like("/admin/analytics%"))
                 .group_by_col(AnalyticsIden::Uri)
                 .order_by(visitor_sum, Order::Desc)
                 .limit(20)
