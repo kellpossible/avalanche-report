@@ -1,6 +1,11 @@
 use std::num::NonZeroU32;
 
-use crate::{serde::string, templates::render};
+use crate::{
+    database::{DatabaseInstance, DATETIME_FORMAT},
+    serde::string,
+    templates::render,
+    types::Time,
+};
 use axum::{extract::State, response::Response, Extension};
 use http::Uri;
 use sea_query::{Alias, Expr, IntoIden, Order, Query, SimpleExpr, SqliteQueryBuilder};
@@ -9,7 +14,6 @@ use serde::Serialize;
 
 use crate::{
     analytics::AnalyticsIden,
-    database::Database,
     error::{map_eyre_error, map_std_error},
     state::AppState,
     templates::TemplatesWithContext,
@@ -24,6 +28,8 @@ struct AnalyticsPage {
 #[derive(Serialize)]
 struct SummariesDuration {
     formatted_duration: Option<String>,
+    from: Option<Time>,
+    to: Time,
     summaries: Vec<Summary>,
 }
 
@@ -35,8 +41,9 @@ struct Summary {
 }
 
 pub async fn handler(
-    State(state): State<AppState>,
     Extension(templates): Extension<TemplatesWithContext>,
+    Extension(database): Extension<DatabaseInstance>,
+    State(state): State<AppState>,
 ) -> axum::response::Result<Response> {
     let mut summaries_duration = Vec::new();
     for duration in [
@@ -46,10 +53,9 @@ pub async fn handler(
         Some(time::Duration::days(30)),
         None,
     ] {
-        let from = duration
-            .as_ref()
-            .map(|duration| time::OffsetDateTime::now_utc() - *duration);
-        let summaries = get_analytics(&state.database, from)
+        let to = Time::now_utc();
+        let from = duration.as_ref().map(|duration| to - *duration);
+        let summaries = get_analytics(&database, from)
             .await
             .map_err(map_eyre_error)?;
 
@@ -61,6 +67,8 @@ pub async fn handler(
         summaries_duration.push(SummariesDuration {
             formatted_duration,
             summaries,
+            from,
+            to,
         })
     }
 
@@ -73,47 +81,49 @@ pub async fn handler(
 }
 
 async fn get_analytics(
-    database: &Database,
-    from: Option<time::OffsetDateTime>,
+    database: &DatabaseInstance,
+    from: Option<Time>,
 ) -> eyre::Result<Vec<Summary>> {
-    let db = database.get().await?;
-    db.interact(move |conn| {
-        let mut query = Query::select();
-        let visitor_sum = Alias::new("vs");
+    database
+        .interact(move |conn| {
+            let mut query = Query::select();
+            let visitor_sum = Alias::new("vs");
 
-        query
-            .distinct()
-            .columns([AnalyticsIden::Uri])
-            .expr(Expr::cust(&format!(
-                "SUM(\"{}\") as vs",
-                AnalyticsIden::Visits.into_iden().to_string()
-            )))
-            .group_by_col(AnalyticsIden::Uri)
-            .order_by(visitor_sum, Order::Desc)
-            .limit(20)
-            .from(AnalyticsIden::Table);
+            query
+                .distinct()
+                .columns([AnalyticsIden::Uri])
+                .expr(Expr::cust(&format!(
+                    "SUM(\"{}\") as vs",
+                    AnalyticsIden::Visits.into_iden().to_string()
+                )))
+                .group_by_col(AnalyticsIden::Uri)
+                .order_by(visitor_sum, Order::Desc)
+                .limit(20)
+                .from(AnalyticsIden::Table);
 
-        if let Some(from) = from {
-            query.and_where(Expr::col(AnalyticsIden::Time).gt(SimpleExpr::Value(from.into())));
-        }
+            if let Some(from) = from {
+                let from_time_string = from.format(&DATETIME_FORMAT)?;
+                query.and_where(
+                    Expr::col(AnalyticsIden::Time).gt(SimpleExpr::Value(from_time_string.into())),
+                );
+            }
 
-        let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
+            let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
 
-        let mut statement = conn.prepare_cached(&sql)?;
-        let mut rows = statement.query(&*values.as_params())?;
-        let mut summaries: Vec<Summary> = Vec::new();
-        while let Some(row) = rows.next()? {
-            let uri: String = row.get_unwrap(0);
-            let visits = row.get_unwrap(1);
-            let summary = Summary {
-                uri: uri.parse()?,
-                visits,
-            };
-            summaries.push(summary);
-        }
+            let mut statement = conn.prepare_cached(&sql)?;
+            let mut rows = statement.query(&*values.as_params())?;
+            let mut summaries: Vec<Summary> = Vec::new();
+            while let Some(row) = rows.next()? {
+                let uri: String = row.get_unwrap(0);
+                let visits = row.get_unwrap(1);
+                let summary = Summary {
+                    uri: uri.parse()?,
+                    visits,
+                };
+                summaries.push(summary);
+            }
 
-        Ok::<_, eyre::Error>(summaries)
-    })
-    .await
-    .map_err(|error| eyre::eyre!("{error}"))?
+            Ok::<_, eyre::Error>(summaries)
+        })
+        .await?
 }

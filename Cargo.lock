@@ -123,16 +123,18 @@ dependencies = [
  "minijinja-autoreload",
  "nonzero_ext",
  "once_cell",
- "refinery",
  "regex",
  "reqwest",
  "resvg",
+ "rusqlite",
  "rust-embed",
  "sea-query",
  "sea-query-rusqlite",
  "secrecy",
  "serde",
  "serde_json",
+ "sha2",
+ "thiserror",
  "time",
  "tokio",
  "tokio-stream",
@@ -285,6 +287,16 @@ checksum = "e412e2cd0f2b2d93e02543ceae7917b3c70331573df19ee046bcbc35e45e87d7"
 dependencies = [
  "byteorder",
  "cipher",
+]
+
+[[package]]
+name = "bstr"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b7f0778972c64420fdedc63f09919c8a88bda7b25135357fd25a5d9f3257e832"
+dependencies = [
+ "memchr",
+ "serde",
 ]
 
 [[package]]
@@ -846,6 +858,19 @@ name = "gimli"
 version = "0.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dec7af912d60cdbd3677c1af9352ebae6fb8394d165568a2234df0fa00f87793"
+
+[[package]]
+name = "globset"
+version = "0.4.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "029d74589adefde59de1a0c4f4732695c32805624aec7b68d91503d4dba79afc"
+dependencies = [
+ "aho-corasick",
+ "bstr",
+ "fnv",
+ "log",
+ "regex",
+]
 
 [[package]]
 name = "governor"
@@ -1710,50 +1735,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "refinery"
-version = "0.8.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a65acc0e1f0e7c80480aacb5087e3509b85806985f54dd7dfeafee4c3128943a"
-dependencies = [
- "refinery-core",
- "refinery-macros",
-]
-
-[[package]]
-name = "refinery-core"
-version = "0.8.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d3af3c282b6dae2e9952b28a637ee8148ee34ef6edfd0415df6de2799d4fc3b"
-dependencies = [
- "async-trait",
- "cfg-if",
- "lazy_static",
- "log",
- "regex",
- "rusqlite",
- "serde",
- "siphasher",
- "thiserror",
- "time",
- "toml 0.5.10",
- "url",
- "walkdir",
-]
-
-[[package]]
-name = "refinery-macros"
-version = "0.8.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d6feea59ecc7e3ebf27244271063f3dfb59226629e2661f535c771fcb358ae9"
-dependencies = [
- "proc-macro2",
- "quote",
- "refinery-core",
- "regex",
- "syn",
-]
-
-[[package]]
 name = "regex"
 version = "1.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1922,7 +1903,6 @@ dependencies = [
  "libsqlite3-sys",
  "serde_json",
  "smallvec",
- "time",
  "uuid",
 ]
 
@@ -1956,6 +1936,7 @@ version = "7.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c1669d81dfabd1b5f8e2856b8bbe146c6192b0ba22162edc738ac0a5de18f054"
 dependencies = [
+ "globset",
  "sha2",
  "walkdir",
 ]
@@ -2055,7 +2036,6 @@ dependencies = [
  "sea-query-attr",
  "sea-query-derive",
  "serde_json",
- "time",
  "uuid",
 ]
 

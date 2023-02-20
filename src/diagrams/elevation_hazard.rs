@@ -1,5 +1,5 @@
 use axum::{
-    extract::Query,
+    extract,
     http::{header, HeaderMap},
     response::IntoResponse,
 };
@@ -45,22 +45,22 @@ impl HazardLevel {
 }
 
 #[derive(Deserialize)]
-pub struct ElevationHazard {
+pub struct Query {
     elevation_band: ElevationBand,
     hazard_level: HazardLevel,
 }
 
-pub fn generate_svg(elevation_hazard: ElevationHazard) -> String {
-    let high_alpine_colour = match elevation_hazard.elevation_band {
-        ElevationBand::HighAlpine => elevation_hazard.hazard_level.colour_hex(),
+pub fn generate_svg(query: Query) -> String {
+    let high_alpine_colour = match query.elevation_band {
+        ElevationBand::HighAlpine => query.hazard_level.colour_hex(),
         _ => WHITE,
     };
-    let alpine_colour = match elevation_hazard.elevation_band {
-        ElevationBand::Alpine => elevation_hazard.hazard_level.colour_hex(),
+    let alpine_colour = match query.elevation_band {
+        ElevationBand::Alpine => query.hazard_level.colour_hex(),
         _ => WHITE,
     };
-    let sub_alpine_colour = match elevation_hazard.elevation_band {
-        ElevationBand::SubAlpine => elevation_hazard.hazard_level.colour_hex(),
+    let sub_alpine_colour = match query.elevation_band {
+        ElevationBand::SubAlpine => query.hazard_level.colour_hex(),
         _ => WHITE,
     };
 
@@ -110,13 +110,13 @@ pub fn generate_svg(elevation_hazard: ElevationHazard) -> String {
     )
 }
 
-pub async fn svg_handler(Query(elevation_hazard): Query<ElevationHazard>) -> impl IntoResponse {
+pub async fn svg_handler(extract::Query(query): extract::Query<Query>) -> impl IntoResponse {
     let mut headers = HeaderMap::new();
     headers.insert(header::CONTENT_TYPE, "image/svg+xml".parse().unwrap());
-    (headers, generate_svg(elevation_hazard))
+    (headers, generate_svg(query))
 }
 
-fn generate_png(elevation_hazard: ElevationHazard) -> eyre::Result<Vec<u8>> {
+fn generate_png(elevation_hazard: Query) -> eyre::Result<Vec<u8>> {
     let svg = generate_svg(elevation_hazard);
     let options = usvg::Options::default();
     let tree = usvg::Tree::from_str(&svg, &options)?;
@@ -134,7 +134,7 @@ fn generate_png(elevation_hazard: ElevationHazard) -> eyre::Result<Vec<u8>> {
 }
 
 pub async fn png_handler(
-    Query(elevation_hazard): Query<ElevationHazard>,
+    extract::Query(elevation_hazard): extract::Query<Query>,
 ) -> axum::response::Result<impl IntoResponse> {
     let mut headers = HeaderMap::new();
     headers.insert(header::CONTENT_TYPE, "image/png".parse().unwrap());

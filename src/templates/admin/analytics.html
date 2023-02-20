@@ -4,7 +4,7 @@
 {% endblock title %}
 {% block head %}
     <link rel="stylesheet" href="/dist/uPlot.css">
-    <!-- <script src="/dist/uPlot.js"></script> -->
+    <script src="/dist/uPlot.js"></script>
 {% endblock head %}
 {% block body %}
     <h1 class="text-5xl font-bold">Analytics</h1>
@@ -31,10 +31,14 @@
                     {% set graph_id = "graph-" ~ summary_duration_index ~ "-" ~ (summary.uri | urlencode | replace("/", "-") | replace(".", "-") | replace("%", "-")) %}
                     <tr>
                         <td>
+                            {% set graph_get_uri = "analytics/graph?uri=" ~ (summary.uri | urlencode) %}
+                            {% if summary_duration.to %}
+                                {% set graph_get_uri = graph_get_uri ~ "&from=" ~ (summary_duration.from | urlencode) %}
+                            {% endif %}
                             <a class="text-blue-600 hover:text-blue-800"
                                href="#"
                                hx-target="#{{ graph_id }}"
-                               hx-get="analytics/graph"
+                               hx-get="{{ graph_get_uri }}"
                                hx-swap="innerHTML">{{ summary.uri }}</a>
                         </td>
                         <td>{{ summary.visits }}</td>

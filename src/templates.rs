@@ -9,6 +9,7 @@ use axum::{
 use fluent::{types::FluentNumber, FluentValue};
 use http::{header::CONTENT_TYPE, Request, StatusCode};
 use rust_embed::{EmbeddedFile, RustEmbed};
+use uuid::Uuid;
 
 use crate::{
     error::{map_eyre_error, map_std_error},
@@ -148,6 +149,7 @@ pub async fn middleware<B>(
             .with_source(error)
         })
     });
+    environment.add_function("uuid", || Uuid::new_v4().to_string());
     environment.add_global("LANGUAGE", language);
     environment.add_global("URI", request.uri().to_string());
     environment.add_global("PATH", request.uri().path().to_string());

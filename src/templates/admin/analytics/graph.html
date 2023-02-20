@@ -1,1 +1,29 @@
-Graph of {{ route }}
+{% set chart_id = uuid() %}
+<div id="{{ chart_id }}"></div>
+<script>
+{% set function_name = "plot_chart" ~ (chart_id | replace("-", "_")) %}
+function {{ function_name }}() {
+    let data = {{ data | tojson }};
+    let opts = {
+      width: 800,
+      height: 600,
+      series: [
+        {},
+        {
+          spanGaps: true,
+
+          // in-legend display
+          label: "Visits",
+          // series style
+          stroke: "red",
+          width: 2,
+
+        }
+      ],
+    };
+
+    let chartRoot = document.getElementById("{{chart_id}}");
+    new uPlot(opts, data, chartRoot);
+}
+{{ function_name }}()
+</script>

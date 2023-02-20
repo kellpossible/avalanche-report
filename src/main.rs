@@ -36,6 +36,7 @@ mod secrets;
 mod serde;
 mod state;
 mod templates;
+mod types;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -116,6 +117,10 @@ async fn main() -> eyre::Result<()> {
         .layer(middleware::from_fn_with_state(
             state.clone(),
             analytics::middleware,
+        ))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            database::middleware,
         ))
         .layer(TraceLayer::new_for_http())
         .with_state(state);

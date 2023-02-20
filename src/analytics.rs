@@ -4,21 +4,79 @@ use axum::{extract::State, middleware::Next, response::Response};
 use eyre::Context;
 use futures::{lock::Mutex, StreamExt};
 use governor::{state::StreamRateLimitExt, Quota, RateLimiter};
-use http::{Request, StatusCode, Uri};
+use http::{Request, StatusCode};
 use nonzero_ext::nonzero;
-use sea_query::{Query, SqliteQueryBuilder};
+use rusqlite::Row;
+use sea_query::{Query, SimpleExpr, SqliteQueryBuilder};
 use sea_query_rusqlite::RusqliteBinder;
 use tokio::sync::{mpsc, watch};
 use tokio_stream::wrappers::ReceiverStream;
+use uuid::Uuid;
 
-use crate::{database::Database, state::AppState};
+use crate::{
+    database::{Database, DATETIME_FORMAT},
+    state::AppState,
+    types::{self, Uri},
+};
 
 #[sea_query::enum_def]
 pub struct Analytics {
     pub id: uuid::Uuid,
     pub uri: Uri,
     pub visits: u64,
-    pub time: time::OffsetDateTime,
+    pub time: types::Time,
+}
+
+impl TryFrom<&Row<'_>> for Analytics {
+    type Error = rusqlite::Error;
+
+    fn try_from(row: &Row<'_>) -> Result<Self, Self::Error> {
+        let id: Uuid = row.get(AnalyticsIden::Id.as_ref())?;
+        let uri = row.get(AnalyticsIden::Uri.as_ref())?;
+        let visits = row.get(AnalyticsIden::Visits.as_ref())?;
+        let time = row.get(AnalyticsIden::Time.as_ref())?;
+
+        Ok(Analytics {
+            id,
+            uri,
+            visits,
+            time,
+        })
+    }
+}
+
+impl AsRef<str> for AnalyticsIden {
+    fn as_ref(&self) -> &str {
+        match self {
+            AnalyticsIden::Table => "analytics",
+            AnalyticsIden::Id => "id",
+            AnalyticsIden::Uri => "uri",
+            AnalyticsIden::Visits => "visits",
+            AnalyticsIden::Time => "time",
+        }
+    }
+}
+
+impl Analytics {
+    pub const COLUMNS: [AnalyticsIden; 4] = [
+        AnalyticsIden::Id,
+        AnalyticsIden::Uri,
+        AnalyticsIden::Visits,
+        AnalyticsIden::Time,
+    ];
+    pub const TABLE: AnalyticsIden = AnalyticsIden::Table;
+
+    pub fn values(&self) -> [SimpleExpr; 4] {
+        [
+            self.id.into(),
+            self.uri.to_string().into(),
+            self.visits.into(),
+            self.time
+                .format(&DATETIME_FORMAT)
+                .expect("Error formatting time")
+                .into(),
+        ]
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -38,20 +96,18 @@ async fn process_analytics_events(
     db.interact(move |conn| {
         let mut query = Query::insert();
 
-        query.into_table(AnalyticsIden::Table).columns([
-            AnalyticsIden::Id,
-            AnalyticsIden::Uri,
-            AnalyticsIden::Visits,
-            AnalyticsIden::Time,
-        ]);
+        query
+            .into_table(AnalyticsIden::Table)
+            .columns(Analytics::COLUMNS);
 
-        for (uri, count) in accumulator {
-            query.values_panic([
-                uuid::Uuid::new_v4().into(),
-                uri.to_string().into(),
-                count.into(),
-                time::OffsetDateTime::now_utc().into(),
-            ]);
+        for (uri, visits) in accumulator {
+            let analytics = Analytics {
+                id: uuid::Uuid::new_v4(),
+                uri,
+                visits,
+                time: time::OffsetDateTime::now_utc().into(),
+            };
+            query.values(analytics.values())?;
         }
 
         let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
@@ -163,7 +219,7 @@ pub fn channel() -> (mpsc::Sender<Event>, mpsc::Receiver<Event>) {
 /// Middleware for performing analytics on incoming requests.
 #[tracing::instrument(skip_all)]
 pub async fn middleware<B>(state: State<AppState>, request: Request<B>, next: Next<B>) -> Response {
-    let uri = request.uri().clone();
+    let uri = Uri::from(request.uri().clone());
     let response = next.run(request).await;
     let uri = match response.status() {
         StatusCode::NOT_FOUND => "/404".parse().expect("unable to parse uri"),

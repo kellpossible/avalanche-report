@@ -4,7 +4,7 @@ use std::{
 };
 
 use axum::{
-    extract::Query,
+    extract,
     http::{header, HeaderMap},
     response::IntoResponse,
 };
@@ -101,10 +101,10 @@ fn comma_separated_to_vec(comma_separated: String) -> eyre::Result<HashSet<Aspec
         .collect()
 }
 
-impl TryFrom<AspectElevationQuery> for AspectElevation {
+impl TryFrom<Query> for AspectElevation {
     type Error = eyre::Error;
 
-    fn try_from(query: AspectElevationQuery) -> Result<Self, Self::Error> {
+    fn try_from(query: Query) -> Result<Self, Self::Error> {
         let high_alpine = query
             .high_alpine
             .map(comma_separated_to_vec)
@@ -132,7 +132,7 @@ impl TryFrom<AspectElevationQuery> for AspectElevation {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct AspectElevationQuery {
+pub struct Query {
     high_alpine: Option<String>,
     high_alpine_text: Option<String>,
     alpine: Option<String>,
@@ -223,13 +223,12 @@ fn generate_svg(aspect_elevation: AspectElevation) -> String {
 }
 
 pub async fn svg_handler(
-    Query(aspect_elevation_query): Query<AspectElevationQuery>,
+    extract::Query(query): extract::Query<Query>,
 ) -> axum::response::Result<impl IntoResponse> {
     let mut headers = HeaderMap::new();
     // headers.insert(header::CONTENT_TYPE, "image/svg+xml".parse().unwrap());
     headers.insert(header::CONTENT_TYPE, "image/svg+xml".parse().unwrap());
-    let aspect_elevation =
-        AspectElevation::try_from(aspect_elevation_query).map_err(map_eyre_error)?;
+    let aspect_elevation = AspectElevation::try_from(query).map_err(map_eyre_error)?;
     Ok((headers, generate_svg(aspect_elevation)))
 }
 
@@ -260,7 +259,7 @@ fn generate_png(aspect_elevation: AspectElevation) -> eyre::Result<Vec<u8>> {
 }
 
 pub async fn png_handler(
-    Query(aspect_elevation_query): Query<AspectElevationQuery>,
+    extract::Query(aspect_elevation_query): extract::Query<Query>,
 ) -> axum::response::Result<impl IntoResponse> {
     let mut headers = HeaderMap::new();
     headers.insert(header::CONTENT_TYPE, "image/png".parse().unwrap());
