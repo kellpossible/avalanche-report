@@ -8,22 +8,24 @@ function {{ function_name }}() {
 
     const data = {{ data | tojson }};
     data[0] = data[0].map(timestamp => timestamp + offsetMinutes);
+
+    const paths = uPlot.paths.bars({size: [1, 50]});
+
     const opts = {
-      width: 800,
-      height: 600,
-      series: [
-        {},
-        {
-          spanGaps: true,
-
-          // in-legend display
-          label: "Visits",
-          // series style
-          stroke: "red",
-          width: 2,
-
-        }
-      ],
+        width: 800,
+        height: 600,
+        series: [
+            {},
+            {
+                // in-legend display
+                label: "Visits",
+                // series style
+                stroke: "red",
+                fill: "red",
+                width: 4 / devicePixelRatio,
+                paths
+            }
+        ],
     };
 
     const chartRoot = document.getElementById("{{chart_id}}");

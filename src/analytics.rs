@@ -19,11 +19,12 @@ use crate::{
     types::{self, Uri},
 };
 
+#[derive(Clone)]
 #[sea_query::enum_def]
 pub struct Analytics {
     pub id: uuid::Uuid,
     pub uri: Uri,
-    pub visits: u64,
+    pub visits: u32,
     pub time: types::Time,
 }
 
@@ -120,7 +121,7 @@ async fn process_analytics_events(
     Ok(())
 }
 
-type EventsAccumulator = HashMap<Uri, u64>;
+type EventsAccumulator = HashMap<Uri, u32>;
 
 #[tracing::instrument(skip_all)]
 async fn process_accumulated_events(

@@ -84,6 +84,14 @@ impl Sub<time::Duration> for Time {
     }
 }
 
+impl Sub<Time> for Time {
+    type Output = time::Duration;
+
+    fn sub(self, rhs: Time) -> Self::Output {
+        self.0 - rhs.0
+    }
+}
+
 #[derive(Hash, Serialize, Deserialize, Clone, PartialEq, Eq, Debug)]
 #[repr(transparent)]
 #[serde(transparent)]
