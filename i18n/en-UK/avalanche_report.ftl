@@ -1,5 +1,6 @@
 avalanche-forecast-heading = Avalanche Forecast
 forecast-area-gudauri = Gudauri
+gudauri-avalanche-forecast-heading = Gudauri Avalanche Forecast
 latest-forecast-heading = Latest Forecast
 elevation-zones-heading = Elevation Zones
 avalanche-hazard-level-heading = Avalanche Hazard Level

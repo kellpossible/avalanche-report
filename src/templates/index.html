@@ -12,7 +12,7 @@
         </a>
     {% endfor %}
 {% endmacro %}
-{% set page_title = fl("forecast-area-gudauri") ~ " " ~ fl("avalanche-forecast-heading") %}
+{% set page_title = fl("gudauri-avalanche-forecast-heading") %}
 {% block title %}
     {{ page_title }}
 {% endblock title %}
@@ -50,7 +50,7 @@
                                 class="w-full"
                                 height="480px"></iframe>
                         <figcaption class="italic">
-                            Avalanche Hazard ({{ forecasts[0].details.formatted_time }})
+                            {{ fl("avalanche-hazard-level-heading") }} ({{ forecasts[0].details.formatted_time }})
                         </figcaption>
                     </figure>
                     <figure class="py-5">

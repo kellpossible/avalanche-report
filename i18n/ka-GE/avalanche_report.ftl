@@ -1,5 +1,6 @@
 avalanche-forecast-heading = ზვავის პროგნოზი
 forecast-area-gudauri = გუდაური
+gudauri-avalanche-forecast-heading = გუდაურის ზვავის პროგნოზი
 latest-forecast-heading = უახლესი პროგნოზი
 elevation-zones-heading = სიმაღლებრივი სარტყელი
 avalanche-hazard-level-heading = ზვავსაშიშროების საფეხური
