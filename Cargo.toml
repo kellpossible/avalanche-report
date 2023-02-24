@@ -66,4 +66,4 @@ insta = { version = "1.26.0", features = ["json"]}
 fs_extra = "1.2.0"
 
 [workspace]
-members = ["admin-password-hash"]
+members = ["admin-password-hash", "forecast-spreadsheet"]
