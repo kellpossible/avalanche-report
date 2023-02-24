@@ -6,7 +6,7 @@ use serde::Serialize;
 use unic_langid::LanguageIdentifier;
 
 use crate::{
-    error::{map_eyre_error, map_std_error},
+    error::map_eyre_error,
     forecasts::{parse_forecast_name, ForecastDetails, ForecastFileDetails},
     google_drive::{self, FileMetadata},
     i18n::I18nLoader,
@@ -53,13 +53,14 @@ pub struct FormattedForecastDetails {
 }
 
 impl FormattedForecastDetails {
-    fn format(value: ForecastDetails, _i18n: &I18nLoader) -> Self {
+    fn format(value: ForecastDetails, i18n: &I18nLoader) -> Self {
         let day = value.time.day();
-        let month = value.time.month();
+        let month = value.time.month() as u8;
+        let month_name = i18n.get(&format!("month-{month}"));
         let year = value.time.year();
         let hour = value.time.hour();
         let minute = value.time.minute();
-        let formatted_time = format!("{day} {month} {year} {hour:0>2}:{minute:0>2}");
+        let formatted_time = format!("{day} {month_name} {year} {hour:0>2}:{minute:0>2}");
         Self {
             area: value.area,
             formatted_time,
@@ -139,10 +140,5 @@ pub async fn handler(
     forecasts.sort_by(|a, b| b.details.time.cmp(&a.details.time));
 
     let index = Index { forecasts, errors };
-
-    let template = templates
-        .environment
-        .get_template("index.html")
-        .map_err(map_std_error)?;
     render(&templates.environment, "index.html", &index)
 }

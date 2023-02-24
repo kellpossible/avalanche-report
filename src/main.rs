@@ -95,6 +95,7 @@ async fn main() -> eyre::Result<()> {
     // build our application with a route
     let app = Router::new()
         .route("/", get(index::handler))
+        .route("/i18n", get(i18n::handler))
         .route("/forecasts/:file_name", get(forecasts::handler))
         .nest("/diagrams", diagrams::router())
         .nest("/observations", observations::router())

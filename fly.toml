@@ -7,6 +7,7 @@ app = "georgia-avalanche-report"
     data_dir="/data-volume"
     listen_address="[::]:8080"
     base_url="https://avalanche.ge/"
+    default_language="ka-GE"
   """
 
 [mounts]
