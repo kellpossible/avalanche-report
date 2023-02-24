@@ -12,26 +12,45 @@
         </a>
     {% endfor %}
 {% endmacro %}
+{% set page_title = fl("forecast-area-gudauri") ~ " " ~ fl("avalanche-forecast-heading") %}
 {% block title %}
-    Gudauri Avalanche Forecast
+    {{ page_title }}
 {% endblock title %}
 {% block body %}
-    <h1 class="text-5xl font-bold text-center">Gudauri Avalanche Forecast</h1>
+    <h1 class="text-5xl font-bold text-center">{{ page_title }}</h1>
     <div class="flex items-center justify-center w-screen">
         <div class="p-2 w-full md:min-w-3xl md:max-w-3xl text-center">
+            <div class="pb-2">
+                <span>
+                    <label for="language-select">Language:</label>
+                    <select id="language-select"
+                            name="lang"
+                            class="p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            onchange="window.location.replace(`/i18n?lang=${this.value}&uri=${encodeURI(window.location.href)}`)">
+                        <option value="en-US"
+                                {% if LANGUAGE == "en-US" %}selected="selected"{% endif %}>
+                            🇬🇧 English
+                        </option>
+                        <option value="ka-GE"
+                                {% if LANGUAGE == "ka-GE" %}selected="selected"{% endif %}>
+                            🇬🇪 ქართული
+                        </option>
+                    </select>
+                </span>
+            </div>
             <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
             {% if (forecasts | length) == 0 %}
-                <p class="text-2xl font-bold text-rose-600">No Forecasts Available</p>
+                <p class="text-2xl font-bold text-rose-600">{{ fl("no-forecasts-available-message") }}</p>
             {% else %}
                 <div class="py-10">
-                    <h2 class="text-4xl font-bold">Latest Forecast</h2>
+                    <h2 class="text-4xl font-bold">{{ fl("latest-forecast-heading") }}</h2>
                     {{ forecast_block(forecast=forecasts[0]) }}
                     <figure class="py-5">
                         <iframe src="https://psavalancheconsulting.github.io/HazardMap.html"
                                 class="w-full"
                                 height="480px"></iframe>
                         <figcaption class="italic">
-                            Avalanche Hazard (as of {{ forecasts[0].details.formatted_time }})
+                            Avalanche Hazard ({{ forecasts[0].details.formatted_time }})
                         </figcaption>
                     </figure>
                     <figure class="py-5">
@@ -39,13 +58,13 @@
                                 class="w-full"
                                 height="420px"></iframe>
                         <figcaption class="italic">
-                            Forecast Area and Elevation Zones
+                            {{ fl("elevation-zones-heading") }}
                         </figcaption>
                     </figure>
                 </div>
                 <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
                 <div class="py-5 text-slate-500">
-                    <h2 class="text-2xl font-bold py-2">Forecast Archive</h2>
+                    <h2 class="text-2xl font-bold py-2">{{ fl("forecast-archive-heading") }}</h2>
                     {% for forecast in forecasts[1:] %}
                         {{ forecast_block(forecast=forecast) }}
                     {% endfor %}

@@ -2,7 +2,6 @@ use crate::{
     analytics::{Analytics, AnalyticsIden},
     database::DatabaseInstance,
     error::map_eyre_error,
-    serde::string,
     types::{Time, Uri},
 };
 use axum::{extract, response::Response, Extension};

@@ -28,6 +28,10 @@ pub struct Options {
     /// Default is 60 (one time per minute).
     #[serde(default = "default_analytics_batch_rate")]
     pub analytics_batch_rate: NonZeroU32,
+    /// The default selected langauge for the page (used when the user has not yet set a language
+    /// or when their browser does not provide an Accept-Language header).
+    #[serde(default = "default_default_language")]
+    pub default_language: unic_langid::LanguageIdentifier,
 }
 
 impl Default for Options {
@@ -37,6 +41,7 @@ impl Default for Options {
             base_url: default_base_url(),
             listen_address: default_listen_address(),
             analytics_batch_rate: default_analytics_batch_rate(),
+            default_language: default_default_language(),
         }
     }
 }
@@ -57,6 +62,12 @@ fn default_listen_address() -> SocketAddr {
 
 fn default_analytics_batch_rate() -> NonZeroU32 {
     nonzero!(60u32)
+}
+
+fn default_default_language() -> unic_langid::LanguageIdentifier {
+    "en-UK"
+        .parse()
+        .expect("Unable to parse language identifier")
 }
 
 impl std::fmt::Display for Options {
