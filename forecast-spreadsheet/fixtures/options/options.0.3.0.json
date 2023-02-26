@@ -1,0 +1,37 @@
+{
+    "schema_version": "0.3.0",
+    "template_version": {
+        "position": {
+            "sheet": "Form",
+            "position": {
+                "column": 6,
+                "row": 1
+            }
+        }
+    },
+    "language": {
+        "position": {
+            "sheet": "Form",
+            "position": {
+                "column": 1,
+                "row": 1
+            }
+        },
+        "map": {
+            "English": "en-UK",
+            "Georgian": "ka-GE"
+        }
+    },
+    "area": {
+        "position": {
+            "sheet": "Form",
+            "position": {
+                "column": 1,
+                "row": 2 
+            }
+        },
+        "map": {
+            "Gudauri": "gudauri"
+        }
+    }
+}

@@ -9,3 +9,6 @@ edition = "2021"
 calamine = "0.19.1"
 thiserror = "1.0.38"
 time = "0.3.19"
+unic-langid = { version = "0.9.1", features = ["serde"] }
+serde_json = "1.0.93"
+serde = { version = "1.0.152", features = ["derive"] }
