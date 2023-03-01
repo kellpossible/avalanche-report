@@ -1,43 +1,39 @@
 use crate::{
     analytics::{Analytics, AnalyticsIden},
     database::DatabaseInstance,
-    error::map_eyre_error,
-    types::{Time, Uri},
+    types::Time,
 };
-use axum::{extract, response::Response, Extension};
 use eyre::Context;
 use sea_query::{Expr, SqliteQueryBuilder};
 use sea_query_rusqlite::RusqliteBinder;
 use serde::{Deserialize, Serialize};
 use time::Duration;
 
-use crate::templates::{render, TemplatesWithContext};
-
-#[derive(Deserialize)]
-pub struct Query {
-    uri: Uri,
-    from: Option<Time>,
-    to: Option<Time>,
-}
-
 async fn get_analytics_data(
     database: &DatabaseInstance,
-    uri: Uri,
-    from: Option<Time>,
-    to: Option<Time>,
+    options: Options,
 ) -> eyre::Result<Vec<Analytics>> {
     database
         .interact(move |conn| {
             let from: Option<sea_query::Value> =
-                Option::transpose(from.map(|from| from.try_into()))?;
-            let to: Option<sea_query::Value> = Option::transpose(to.map(|to| to.try_into()))?;
-            let (sql, values) = sea_query::Query::select()
+                Option::transpose(options.from.map(|from| from.try_into()))?;
+            let to: Option<sea_query::Value> =
+                Option::transpose(options.to.map(|to| to.try_into()))?;
+            let mut query = sea_query::Query::select();
+            query
                 .columns(Analytics::COLUMNS)
                 .from(Analytics::TABLE)
-                .and_where(Expr::col(AnalyticsIden::Uri).eq(uri.to_string()))
                 .and_where_option(from.map(|from| Expr::col(AnalyticsIden::Time).gte(from)))
-                .and_where_option(to.map(|to| Expr::col(AnalyticsIden::Time).lte(to)))
-                .build_rusqlite(SqliteQueryBuilder);
+                .and_where_option(to.map(|to| Expr::col(AnalyticsIden::Time).lte(to)));
+
+            if let Some(uri_filter) = options.uri_filter {
+                query.and_where(Expr::cust_with_values(
+                    &format!("{} GLOB ?", AnalyticsIden::Uri.as_ref()),
+                    [uri_filter],
+                ));
+            }
+
+            let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
 
             let mut statement = conn.prepare_cached(&sql)?;
 
@@ -137,10 +133,22 @@ fn graph_data(data: Vec<Analytics>) -> eyre::Result<GraphData> {
     Ok(graph_data)
 }
 
+#[derive(Deserialize, Default)]
+pub struct Options {
+    pub uri_filter: Option<String>,
+    pub from: Option<Time>,
+    pub to: Option<Time>,
+}
+
+pub async fn graph_analytics(database: &DatabaseInstance, options: Options) -> eyre::Result<Graph> {
+    let analytics_data = get_analytics_data(database, options).await?;
+    let data = graph_data(analytics_data)?;
+    Ok(Graph { data })
+}
+
 #[derive(Serialize)]
-struct Graph {
-    data: GraphData,
-    uri: Uri,
+pub struct Graph {
+    pub data: GraphData,
 }
 
 ///
@@ -151,22 +159,4 @@ struct Graph {
 ///     [visits, visits, ...]
 /// ]
 /// ```
-type GraphData = Vec<Vec<minijinja::value::Value>>;
-
-#[tracing::instrument(skip_all, fields(uri = query.uri.to_string()))]
-pub async fn handler(
-    Extension(database): Extension<DatabaseInstance>,
-    Extension(templates): Extension<TemplatesWithContext>,
-    extract::Query(query): extract::Query<Query>,
-) -> axum::response::Result<Response> {
-    let data = get_analytics_data(&database, query.uri.clone(), query.from, query.to)
-        .await
-        .and_then(graph_data)
-        .map_err(map_eyre_error)?;
-    let graph = Graph {
-        data,
-        uri: query.uri,
-    };
-
-    render(&templates.environment, "admin/analytics/graph.html", &graph)
-}
+pub(super) type GraphData = Vec<Vec<minijinja::value::Value>>;

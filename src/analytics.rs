@@ -23,7 +23,7 @@ use crate::{
 #[sea_query::enum_def]
 pub struct Analytics {
     pub id: uuid::Uuid,
-    pub uri: Uri,
+    pub uri: String,
     pub visits: u32,
     pub time: types::Time,
 }
@@ -121,7 +121,7 @@ async fn process_analytics_events(
     Ok(())
 }
 
-type EventsAccumulator = HashMap<Uri, u32>;
+type EventsAccumulator = HashMap<String, u32>;
 
 #[tracing::instrument(skip_all)]
 async fn process_accumulated_events(
@@ -142,6 +142,11 @@ async fn process_accumulated_events(
         .await;
 }
 
+/// Receive a notification that a batch of events in `events_accumulator` are ready for processing
+/// and submission to the database.
+///
+/// NOTE: in the future we should be able to improve the performance reducing memory allocations
+/// and clones by having a re-usable buffer of capacity limited, pre-allocated EventsAccumulator.
 async fn notify_received_events_for_processing(
     batch_tx: mpsc::Sender<EventsAccumulator>,
     events_accumulator: Arc<Mutex<EventsAccumulator>>,
@@ -169,6 +174,10 @@ async fn notify_received_events_for_processing(
     }
 }
 
+/// Receive analytics events from [`middleware()`] via [`channel()`] and accumulate them
+/// to be submitted to the database in a rate-limited fashion in order to reduce write load during high
+/// traffic situations.
+///
 /// `batch_rate` is the rate that batches can be submitted to the database (per hour).
 #[tracing::instrument(skip_all)]
 pub async fn process_analytics(
@@ -176,6 +185,16 @@ pub async fn process_analytics(
     mut rx: mpsc::Receiver<Event>,
     batch_rate: NonZeroU32,
 ) {
+    fn accumulate_event(events_accumulator: &mut EventsAccumulator, event: Event) {
+        events_accumulator
+            // We intentionally only obtain the path section of the uri,
+            // in order to avoid combinatorial explosion of uri parameters
+            // in the database.
+            .entry(event.uri.path().to_owned())
+            .and_modify(|e| *e += 1)
+            .or_insert(1);
+    }
+
     // Care must be taken not to hold a lock on this over an await.
     let events_accumulator: Arc<Mutex<EventsAccumulator>> =
         Arc::new(Mutex::new(EventsAccumulator::with_capacity(1)));
@@ -198,11 +217,14 @@ pub async fn process_analytics(
     });
     loop {
         if let Some(event) = rx.recv().await {
-            let mut events_accumulator = events_accumulator.lock().await;
-            events_accumulator
-                .entry(event.uri)
-                .and_modify(|e| *e += 1)
-                .or_insert(1);
+            let mut events_accumulator_guard = events_accumulator.lock().await;
+            accumulate_event(&mut events_accumulator_guard, event);
+            // Accumulate all events that may be present in the channel while we still hold the
+            // events accumulator lock, we are the only consumer of events.
+            while let Ok(event) = rx.try_recv() {
+                accumulate_event(&mut events_accumulator_guard, event);
+            }
+            drop(events_accumulator_guard);
             events_received_tx
                 .send(())
                 .expect("failed to notify events received");
@@ -213,6 +235,8 @@ pub async fn process_analytics(
     }
 }
 
+/// Channel to use for transmiting analytics information from [`middleware()`] to
+/// [`process_analytics()`].
 pub fn channel() -> (mpsc::Sender<Event>, mpsc::Receiver<Event>) {
     mpsc::channel(100)
 }

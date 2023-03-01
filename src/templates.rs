@@ -111,6 +111,46 @@ fn jinja_to_fluent_args<'source>(
     }
 }
 
+/// Convert a [minijinja::value::Value] into a query string: e.g.
+/// `param=something&other_param=5` This supports a `Map<String, Value>`, and a `Seq<Seq<Value>>`
+/// (where the length of the inner `Seq` is 2, the first element is `String` and the second element
+/// is `Value`).
+fn query(query: minijinja::value::Value) -> Result<minijinja::value::Value, minijinja::Error> {
+    let query: Vec<String> = match query.kind() {
+        minijinja::value::ValueKind::Seq => {
+            query.as_seq().expect("expected sequence").iter().map(|value| {
+                let tuple = value.as_seq().ok_or_else(|| minijinja::Error::new(minijinja::ErrorKind::InvalidOperation, format!("Expected Seq of Seq, but found Seq of {:?}", value.kind())))?;
+                let mut iter = tuple.iter();
+                let key_value = iter.next().ok_or_else(|| minijinja::Error::new(minijinja::ErrorKind::InvalidOperation, "Expected Seq of Seq, inner Seq (a tuple of key and value) cannot be empty"))?;
+                let key = key_value.as_str().ok_or_else(|| minijinja::Error::new(minijinja::ErrorKind::InvalidOperation, format!("Expected Seq of Seq, inner Seq first element to be a String, instead found {key_value:?}")))?;
+                let value = iter.next().ok_or_else(|| minijinja::Error::new(minijinja::ErrorKind::InvalidOperation, "Expected Seq of Seq, inner Seq (a tuple of key and value) must contain a second element (the value)"))?;
+
+                let extra_values: Vec<minijinja::value::Value> = iter.collect();
+                if !extra_values.is_empty() {
+                    return Err(minijinja::Error::new(minijinja::ErrorKind::InvalidOperation, format!("Expected Seq of Seq, inner Seq (a tuple of key and value) must be of length 2, found {extra_values:?}")));
+                }
+                Ok::<_, minijinja::Error>(format!("{key}={value}"))
+            }).collect::<Result<_, minijinja::Error>>()?
+        }
+        minijinja::value::ValueKind::Map => query
+            .try_iter()?
+            .map(|key| {
+                query
+                    .get_item(&key)
+                    .map(|value| format!("{}={}", key.to_string(), value.to_string()))
+            })
+            .collect::<Result<_, minijinja::Error>>()?,
+        kind => {
+            return Err(minijinja::Error::new(
+                minijinja::ErrorKind::InvalidOperation,
+                format!("Expected map, found {kind:?}"),
+            ));
+        }
+    };
+
+    Ok(query.join("&").into())
+}
+
 /// Middleware that provides access to all available templates with context injected.
 pub async fn middleware<B>(
     State(state): State<AppState>,
@@ -144,15 +184,28 @@ pub async fn middleware<B>(
         ansi_to_html::convert_escaped(ansi_string).map_err(|error| {
             minijinja::Error::new(
                 minijinja::ErrorKind::InvalidOperation,
-                format!("Error while converting ANSI string to HTML"),
+                "Error while converting ANSI string to HTML".to_owned(),
             )
             .with_source(error)
         })
     });
+    let uri = request.uri();
+    let query_value: minijinja::value::Value = uri
+        .query()
+        .and_then(|query| match serde_urlencoded::from_str(query) {
+            Ok(ok) => Some(ok),
+            Err(error) => {
+                tracing::error!("Error parsing uri into QUERY variable: {error}");
+                None
+            }
+        })
+        .unwrap_or(().into());
     environment.add_function("uuid", || Uuid::new_v4().to_string());
+    environment.add_filter("query", query);
     environment.add_global("LANGUAGE", language);
-    environment.add_global("URI", request.uri().to_string());
-    environment.add_global("PATH", request.uri().path().to_string());
+    environment.add_global("URI", uri.to_string());
+    environment.add_global("PATH", uri.path().to_string());
+    environment.add_global("QUERY", query_value);
     request.extensions_mut().insert(TemplatesWithContext {
         environment: Arc::new(environment),
     });
@@ -271,5 +324,29 @@ pub fn create_handler(
     move |Extension(templates): Extension<TemplatesWithContext>| {
         let result = render_impl(&templates, &template_key);
         Box::pin(future::ready(result))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::collections::HashMap;
+
+    use super::query;
+    #[test]
+    fn test_query_filter() {
+        let mut map = HashMap::new();
+        map.insert("test", 5);
+        map.insert("test2", 22);
+
+        let value = minijinja::value::Value::from(map);
+        insta::assert_json_snapshot!(&value, @r###"
+        {
+          "test": 5,
+          "test2": 22
+        }
+        "###);
+        let result_value = query(value).unwrap();
+        let result_value_string = result_value.as_str().unwrap().to_owned();
+        assert_eq!("test=5&test2=22", result_value_string);
     }
 }

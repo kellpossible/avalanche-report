@@ -10,44 +10,42 @@
     <h1 class="text-5xl font-bold">Analytics</h1>
     <p>Updated {{ batch_rate }} times per hour.</p>
     <br>
-    {% for summary_duration in summaries_duration %}
-        {% set summary_duration_index = loop.index0 %}
-        <h1 class="text-2xl font-bold">
-            {% if summary_duration.formatted_duration %}
-                Past {{ summary_duration.formatted_duration }}
-            {% else %}
-                All Time
-            {% endif %}
-        </h1>
-        <table>
-            <thead>
-                <tr>
-                    <th>Uri</th>
-                    <th>Visits</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for summary in summary_duration.summaries %}
-                    {% set graph_id = "graph-" ~ summary_duration_index ~ "-" ~ (summary.uri | urlencode | replace("/", "-") | replace(".", "-") | replace("%", "-")) %}
-                    <tr>
-                        <td>
-                            {% set graph_get_uri = "analytics/graph?uri=" ~ (summary.uri | urlencode) %}
-                            {% if summary_duration.to %}
-                                {% set graph_get_uri = graph_get_uri ~ "&from=" ~ (summary_duration.from | urlencode) %}
-                            {% endif %}
-                            <a class="text-blue-600 hover:text-blue-800"
-                               href="#"
-                               hx-target="#{{ graph_id }}"
-                               hx-get="{{ graph_get_uri }}"
-                               hx-swap="innerHTML">{{ summary.uri }}</a>
-                        </td>
-                        <td>{{ summary.visits }}</td>
-                    </tr>
-                    <tr id="{{ graph_id }}" hx-swap-oob="true">
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <br>
-    {% endfor %}
+    <span>
+        <label for="duration-select">Period:</label>
+        <select id="duration-select"
+                name="duration"
+                autocomplete="off"
+                hx-get="analytics"
+                hx-target="#summaries-duration"
+                hx-push-url="true"
+                hx-headers='{"X-Template": "admin/analytics/summaries_duration.html"}'
+                class="p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+            {% for option in duration_options %}
+                <option value="{{ option.duration }}"
+                        {% if option.duration == summaries_duration.duration_option.duration %} selected="selected"{% endif %}>
+                    {{ option.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </span>
+    <span>
+        <label for="uri-filter">Filter:</label>
+        {% if QUERY %}
+            {% set uri_filter = QUERY.uri_filter %}
+        {% endif %}
+        <input id="uri-filter"
+               name="uri_filter"
+               value="{{ uri_filter }}"
+               class="border">
+        <button class="p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                hx-get="analytics"
+                hx-push-url="true"
+                hx-headers='{"X-Template": "admin/analytics/summaries_duration.html"}'
+                hx-include="[name='uri_filter']"
+                hx-target="#summaries-duration">
+            Apply
+        </button>
+    </span>
+    <div id="summaries-duration">{% include "admin/analytics/summaries_duration.html" %}</div>
+    <br>
 {% endblock body %}

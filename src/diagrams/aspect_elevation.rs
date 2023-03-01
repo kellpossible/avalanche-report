@@ -197,21 +197,21 @@ fn generate_svg(aspect_elevation: AspectElevation) -> String {
             match id {
                 "high-alpine-text" => {
                     if let Some(high_alpine_text) = &aspect_elevation.high_alpine_text {
-                        captured_string.replace(original_text, &high_alpine_text)
+                        captured_string.replace(original_text, high_alpine_text)
                     } else {
                         captured_string.to_string()
                     }
                 }
                 "alpine-text" => {
                     if let Some(alpine_text) = &aspect_elevation.alpine_text {
-                        captured_string.replace(original_text, &alpine_text)
+                        captured_string.replace(original_text, alpine_text)
                     } else {
                         captured_string.to_string()
                     }
                 }
                 "sub-alpine-text" => {
                     if let Some(sub_alpine_text) = &aspect_elevation.sub_alpine_text {
-                        captured_string.replace(original_text, &sub_alpine_text)
+                        captured_string.replace(original_text, sub_alpine_text)
                     } else {
                         captured_string.to_string()
                     }
@@ -244,7 +244,7 @@ fn generate_png(aspect_elevation: AspectElevation) -> eyre::Result<Vec<u8>> {
     let svg = generate_svg(aspect_elevation);
     let options = usvg::Options::default();
     let mut tree = usvg::Tree::from_str(&svg, &options)?;
-    tree.convert_text(&*FONT_DB);
+    tree.convert_text(&FONT_DB);
     let pixmap_size = tree.size.to_screen_size();
     let mut pixmap = tiny_skia::Pixmap::new(pixmap_size.width(), pixmap_size.height())
         .ok_or_else(|| eyre::eyre!("Unable to create pixmap"))?;

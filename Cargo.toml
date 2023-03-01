@@ -16,6 +16,7 @@ bytes = "1.4.0"
 url = { version = "2.3", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
 erased-serde = "0.3.24"
+serde_urlencoded = "0.7.1"
 color-eyre = "0.6"
 fluent = "0.16.0"
 futures = "0.3.26"

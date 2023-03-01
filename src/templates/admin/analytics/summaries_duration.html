@@ -1,12 +1,34 @@
+<h1 class="text-2xl font-bold">{{ summaries_duration.duration_option.name }}</h1>
 {% set chart_id = uuid() %}
 <div id="{{ chart_id }}"></div>
+<table>
+    <thead>
+        <tr>
+            <th>Uri</th>
+            <th>Visits</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for summary in summaries_duration.summaries %}
+            <tr>
+                <td>
+                    <a class="text-blue-600 hover:text-blue-800"
+                       href="?duration={{ summaries_duration.duration_option.duration }}&uri_filter={{ summary.uri }}">{{ summary.uri }}</a>
+                </td>
+                <td>{{ summary.visits }}</td>
+            </tr>
+            <tr id="{{ graph_id }}">
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
 <script>
 {% set function_name = "plot_chart" ~ (chart_id | replace("-", "_")) %}
 function {{ function_name }}() {
     const currentLocalDate = new Date();
     let offsetMinutes = currentLocalDate.getTimezoneOffset();
 
-    const data = {{ data | tojson }};
+    const data = {{ graph.data | tojson }};
     data[0] = data[0].map(timestamp => timestamp + offsetMinutes);
 
     const paths = uPlot.paths.bars({size: [1, 50]});

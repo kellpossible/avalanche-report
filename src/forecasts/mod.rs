@@ -39,7 +39,7 @@ pub fn parse_forecast_name(file_name: &str) -> eyre::Result<ForecastFileDetails>
         .next()
         .ok_or_else(|| eyre::eyre!("No time specified"))?;
     let format = time::macros::format_description!("[year]-[month]-[day]T[hour]:[minute]");
-    let time = PrimitiveDateTime::parse(&time_string, &format)
+    let time = PrimitiveDateTime::parse(time_string, &format)
         .wrap_err_with(|| format!("Error parsing time {time_string:?}"))?
         .assume_offset(time::macros::offset!(+4));
     let forecaster = details_split
@@ -73,9 +73,9 @@ pub async fn handler(
         tracing::error!("Unable to fetch file, Google Drive API Key not specified");
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
-    Ok(handler_impl(&file_name, api_key, &state.client)
+    handler_impl(&file_name, api_key, &state.client)
         .await
-        .map_err(map_eyre_error)?)
+        .map_err(map_eyre_error)
 }
 
 async fn handler_impl(
