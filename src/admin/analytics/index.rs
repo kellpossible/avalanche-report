@@ -164,6 +164,7 @@ struct AnalyticsPage {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "kebab-case")]
 pub struct Query {
     duration: Option<Duration>,
     /// A filter with glob support, like `/forecast/*`

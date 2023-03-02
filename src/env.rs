@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::Path};
+use std::{collections::HashMap, path::Path, env::VarError};
 
 use color_eyre::Help;
 use eyre::Context;
@@ -17,7 +17,14 @@ pub fn initialize() -> eyre::Result<()> {
     let dotenv =
         parse_dotenv(path).wrap_err_with(|| format!("Error loading dotenv file: {path:?}"))?;
     for (key, value) in dotenv {
-        std::env::set_var(key, value)
+        match std::env::var(&key) {
+            Err(VarError::NotPresent) => {
+                std::env::set_var(key, value)
+            },
+            _ => {
+                tracing::info!("Environment variable {key} already set.")
+            }
+        }
     }
     Ok(())
 }

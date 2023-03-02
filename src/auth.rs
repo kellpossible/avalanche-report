@@ -2,13 +2,27 @@ use axum::response::IntoResponse;
 use base64::Engine;
 use http::{HeaderValue, StatusCode};
 use secrecy::{ExposeSecret, SecretString};
+use std::sync::Arc;
+use tokio::sync::OnceCell;
 use tower_http::auth::AuthorizeRequest;
 
 /// Basic authentication for accessing logs.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MyBasicAuth {
     /// `admin` user password hash, hashed using bcrypt.
-    pub admin_password_hash: &'static SecretString,
+    admin_password_hash: &'static SecretString,
+    /// SECURITY: If someone has access to my RAM then they can read the plain text password coming in
+    /// anyway.
+    admin_password_cached: Arc<OnceCell<SecretString>>,
+}
+
+impl MyBasicAuth {
+    pub fn new(admin_password_hash: &'static SecretString) -> Self {
+        Self {
+            admin_password_hash,
+            admin_password_cached: Arc::default(),
+        }
+    }
 }
 
 impl<B> AuthorizeRequest<B> for MyBasicAuth {
@@ -18,7 +32,11 @@ impl<B> AuthorizeRequest<B> for MyBasicAuth {
         &mut self,
         request: &mut axum::http::Request<B>,
     ) -> Result<(), axum::http::Response<Self::ResponseBody>> {
-        if check_auth(request, self.admin_password_hash) {
+        if check_auth(
+            request,
+            self.admin_password_hash,
+            &*self.admin_password_cached,
+        ) {
             Ok(())
         } else {
             let unauthorized_response = axum::http::Response::builder()
@@ -56,6 +74,7 @@ fn parse_auth_header_credentials(header: &HeaderValue) -> Option<BasicCredential
 fn check_auth<B>(
     request: &axum::http::Request<B>,
     admin_password_hash: &'static SecretString,
+    admin_password_cached: &OnceCell<SecretString>,
 ) -> bool {
     let credentials: BasicCredentials =
         if let Some(auth_header) = request.headers().get("Authorization") {
@@ -68,10 +87,19 @@ fn check_auth<B>(
             return false;
         };
 
-    let password_match = bcrypt::verify(
-        credentials.password.expose_secret(),
-        admin_password_hash.expose_secret(),
-    )
-    .unwrap_or(false);
+    let password_match = if let Some(admin_password_cached) = admin_password_cached.get() {
+        credentials.password.expose_secret() == admin_password_cached.expose_secret()
+    } else {
+        let password_match = bcrypt::verify(
+            credentials.password.expose_secret(),
+            admin_password_hash.expose_secret(),
+        )
+        .unwrap_or(false);
+
+        if password_match {
+            drop(admin_password_cached.set(credentials.password))
+        }
+        password_match
+    };
     credentials.username == "admin" && password_match
 }

@@ -14,7 +14,7 @@ pub fn router(
     Router::new()
         .nest("/analytics", analytics::router())
         .nest("/logs", logs::router(reporting_options))
-        .layer(RequireAuthorizationLayer::custom(MyBasicAuth {
+        .layer(RequireAuthorizationLayer::custom(MyBasicAuth::new(
             admin_password_hash,
-        }))
+        )))
 }

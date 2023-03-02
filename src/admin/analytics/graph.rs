@@ -9,10 +9,17 @@ use sea_query_rusqlite::RusqliteBinder;
 use serde::{Deserialize, Serialize};
 use time::Duration;
 
+#[derive(Clone, Copy)]
+struct AnalyticsData {
+    /// Time in seconds since epoch.
+    time: i64,
+    visits: u32,
+}
+
 async fn get_analytics_data(
     database: &DatabaseInstance,
     options: Options,
-) -> eyre::Result<Vec<Analytics>> {
+) -> eyre::Result<Vec<AnalyticsData>> {
     database
         .interact(move |conn| {
             let from: Option<sea_query::Value> =
@@ -44,7 +51,11 @@ async fn get_analytics_data(
             {
                 let analytics =
                     analytics_result.wrap_err("Error converting query row into `Analytics`")?;
-                data.push(analytics);
+                let analytics_data = AnalyticsData {
+                    time: analytics.time.unix_timestamp(),
+                    visits: analytics.visits,
+                };
+                data.push(analytics_data);
             }
 
             Ok::<_, eyre::Error>(data)
@@ -52,8 +63,8 @@ async fn get_analytics_data(
         .await?
 }
 
-/// Condenses the data into periods of `window`.
-fn condense_data(data: Vec<Analytics>, window: Duration) -> Vec<Analytics> {
+/// Condenses the data into periods of `window_seconds`.
+fn condense_data(data: Vec<AnalyticsData>, window_seconds: i64) -> Vec<AnalyticsData> {
     let mut condensed_data = Vec::new();
     let mut i = 0;
     let mut j;
@@ -62,20 +73,20 @@ fn condense_data(data: Vec<Analytics>, window: Duration) -> Vec<Analytics> {
         let mut condensed = data[i].clone();
 
         j = i + 1;
-        while j < data.len() && *data[j].time - *condensed.time <= (window / 2) {
+        while j < data.len() && data[j].time - condensed.time <= (window_seconds / 2) {
             condensed.visits += data[j].visits;
             j += 1;
         }
 
         if i > 0 {
             k = i - 1;
-            while k > 0 && *condensed.time - *data[k].time <= (window / 2) {
+            while k > 0 && condensed.time - data[k].time <= (window_seconds / 2) {
                 condensed.visits += data[k].visits;
                 k -= 1;
             }
         }
 
-        while j < data.len() && *data[j].time - *condensed.time <= window {
+        while j < data.len() && data[j].time - condensed.time <= window_seconds {
             j += 1;
         }
 
@@ -86,7 +97,7 @@ fn condense_data(data: Vec<Analytics>, window: Duration) -> Vec<Analytics> {
     condensed_data
 }
 
-fn graph_data(data: Vec<Analytics>) -> eyre::Result<GraphData> {
+fn graph_data(data: Vec<AnalyticsData>) -> eyre::Result<GraphData> {
     if data.is_empty() {
         return Ok(vec![vec![], vec![]]);
     }
@@ -95,14 +106,13 @@ fn graph_data(data: Vec<Analytics>) -> eyre::Result<GraphData> {
     let data = condense_data(data, condense_window);
 
     let mut graph_data = Vec::new();
-    let (time_data, visits_data): (Vec<u64>, Vec<f64>) = data
+    let (time_data, visits_data): (Vec<i64>, Vec<f64>) = data
         .iter()
         .enumerate()
         .map(|(_i, analytics)| {
-            let time: u64 = analytics.time.unix_timestamp().try_into()?;
-            Ok::<_, eyre::Error>((time, analytics.visits))
+            Ok::<_, eyre::Error>((analytics.time, analytics.visits))
         })
-        .fold::<eyre::Result<(Vec<u64>, Vec<f64>)>, _>(
+        .fold::<eyre::Result<(Vec<i64>, Vec<f64>)>, _>(
             Ok(Default::default()),
             |acc_result, result| match acc_result {
                 Ok(mut acc) => match result {
