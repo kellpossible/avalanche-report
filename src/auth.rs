@@ -1,10 +1,11 @@
 use axum::response::IntoResponse;
 use base64::Engine;
+use futures::Future;
 use http::{HeaderValue, StatusCode};
 use secrecy::{ExposeSecret, SecretString};
-use std::sync::Arc;
+use std::{pin::Pin, sync::Arc};
 use tokio::sync::OnceCell;
-use tower_http::auth::AuthorizeRequest;
+use tower_http::auth::AsyncAuthorizeRequest;
 
 /// Basic authentication for accessing logs.
 #[derive(Clone)]
@@ -25,31 +26,41 @@ impl MyBasicAuth {
     }
 }
 
-impl<B> AuthorizeRequest<B> for MyBasicAuth {
+impl<B: Send + 'static> AsyncAuthorizeRequest<B> for MyBasicAuth {
     type ResponseBody = http_body::combinators::UnsyncBoxBody<axum::body::Bytes, axum::Error>;
+    type RequestBody = B;
+    type Future = Pin<
+        Box<
+            (dyn Future<
+                Output = Result<
+                    axum::http::Request<Self::RequestBody>,
+                    axum::http::Response<Self::ResponseBody>,
+                >,
+            > + Send),
+        >,
+    >;
 
-    fn authorize(
-        &mut self,
-        request: &mut axum::http::Request<B>,
-    ) -> Result<(), axum::http::Response<Self::ResponseBody>> {
-        if check_auth(
-            request,
-            self.admin_password_hash,
-            &*self.admin_password_cached,
-        ) {
-            Ok(())
-        } else {
-            let unauthorized_response = axum::http::Response::builder()
-                .status(StatusCode::UNAUTHORIZED)
-                .header(
-                    "WWW-Authenticate",
-                    r#"Basic realm="User Visible Realm", charset="UTF-8""#,
-                )
-                .body(axum::body::Body::empty())
-                .unwrap();
+    fn authorize(&mut self, request: axum::http::Request<Self::RequestBody>) -> Self::Future {
+        Box::pin(futures::future::ready(
+            if check_auth(
+                &request,
+                self.admin_password_hash,
+                &*self.admin_password_cached,
+            ) {
+                Ok(request)
+            } else {
+                let unauthorized_response = axum::http::Response::builder()
+                    .status(StatusCode::UNAUTHORIZED)
+                    .header(
+                        "WWW-Authenticate",
+                        r#"Basic realm="User Visible Realm", charset="UTF-8""#,
+                    )
+                    .body(axum::body::Body::empty())
+                    .unwrap();
 
-            Err(unauthorized_response.into_response())
-        }
+                Err(unauthorized_response.into_response())
+            },
+        ))
     }
 }
 
