@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% macro forecast_block(forecast) %}
+{% macro forecast_block(forecast, emphasize=false) %}
     <h3 class="text-xl font-bold">{{ forecast.details.formatted_time }}</h3>
     {% for file in forecast.files %}
-        <a class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
+        <a class="text-blue-600 hover:text-blue-800 visited:text-purple-600 {% if emphasize %}text-xl font-bold{% endif %}"
            href="/forecasts/{{ file.file.name | urlencode }}">
             {% if file.details.language_name %}
                 {{ file.details.language_name }} (PDF)
@@ -45,7 +45,7 @@
             {% else %}
                 <div class="py-10">
                     <h2 class="text-4xl font-bold">{{ fl("latest-forecast-heading") }}</h2>
-                    {{ forecast_block(forecast=forecasts[0]) }}
+                    {{ forecast_block(forecast=forecasts[0], emphasize=true) }}
                     <figure class="py-5">
                         <iframe src="https://psavalancheconsulting.github.io/HazardMap.html"
                                 class="w-full"
