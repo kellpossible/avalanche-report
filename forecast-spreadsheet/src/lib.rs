@@ -193,6 +193,7 @@ pub struct Forecast {
     recent_observations: Option<String>,
     forecast_changes: Option<String>,
     weather_forecast: Option<String>,
+    valid_for: time::Duration,
 }
 
 #[derive(Debug, Serialize)]
@@ -219,7 +220,7 @@ where
         .clone())
 }
 
-fn get_cell_value_from_str<T, RS>(
+fn get_cell_value_string<T, RS>(
     sheets: &mut Sheets<RS>,
     position: &SheetCellPosition,
 ) -> std::result::Result<Option<T>, ParseCellError>
@@ -304,15 +305,15 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
     // open_workbook_auto_from_rs(data)
     let mut sheets: Sheets<_> = open_workbook_auto_from_rs(cursor)?;
 
-    let template_version: Version =
-        get_cell_value_from_str(&mut sheets, &options.template_version)?.ok_or_else(|| {
+    let template_version: Version = get_cell_value_string(&mut sheets, &options.template_version)?
+        .ok_or_else(|| {
             Error::required_value_missing("template_version", options.template_version.clone())
         })?;
 
-    let language_name: String = get_cell_value_from_str(&mut sheets, &options.language.position)?
+    let language_name: String = get_cell_value_string(&mut sheets, &options.language.position)?
         .ok_or_else(|| {
-        Error::required_value_missing("language", options.language.position.clone())
-    })?;
+            Error::required_value_missing("language", options.language.position.clone())
+        })?;
 
     let language: unic_langid::LanguageIdentifier = options
         .language
@@ -321,7 +322,7 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         .ok_or_else(|| Error::UnknownLanguage(language_name))?
         .clone();
 
-    let area_name: String = get_cell_value_from_str(&mut sheets, &options.area.position)?
+    let area_name: String = get_cell_value_string(&mut sheets, &options.area.position)?
         .ok_or_else(|| Error::required_value_missing("area", options.area.position.clone()))?;
     let area = options
         .area
@@ -332,10 +333,10 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
 
     let forecaster = {
         let name =
-            get_cell_value_from_str(&mut sheets, &options.forecaster.name)?.ok_or_else(|| {
+            get_cell_value_string(&mut sheets, &options.forecaster.name)?.ok_or_else(|| {
                 Error::required_value_missing("forecaster.name", options.forecaster.name.clone())
             })?;
-        let organisation = get_cell_value_from_str(&mut sheets, &options.forecaster.organisation)?;
+        let organisation = get_cell_value_string(&mut sheets, &options.forecaster.organisation)?;
         Forecaster { name, organisation }
     };
 
@@ -356,25 +357,48 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         options
             .recent_observations
             .as_ref()
-            .map(|recent_observations| get_cell_value_from_str(&mut sheets, recent_observations)),
+            .map(|recent_observations| get_cell_value_string(&mut sheets, recent_observations)),
     )?
     .flatten();
-    
+
     let forecast_changes: Option<String> = Option::transpose(
         options
             .forecast_changes
             .as_ref()
-            .map(|forecast_changes| get_cell_value_from_str(&mut sheets, forecast_changes)),
+            .map(|forecast_changes| get_cell_value_string(&mut sheets, forecast_changes)),
     )?
     .flatten();
-    
+
     let weather_forecast: Option<String> = Option::transpose(
         options
             .weather_forecast
             .as_ref()
-            .map(|weather_forecast| get_cell_value_from_str(&mut sheets, weather_forecast)),
+            .map(|weather_forecast| get_cell_value_string(&mut sheets, weather_forecast)),
     )?
     .flatten();
+
+    let valid_for = {
+        let value = get_cell_value(&mut sheets, &options.valid_for)?;
+        let days: f64 = match value {
+            DataType::Int(i) => i as f64,
+            DataType::Float(f) => f,
+            DataType::Empty => {
+                return Err(Error::required_value_missing(
+                    "valid_for",
+                    options.valid_for.clone(),
+                ))
+            }
+            _ => {
+                return Err(Error::UnableToParseCell(
+                    ParseCellError::incorrect_data_type(options.valid_for.clone(), value),
+                ))
+            }
+        };
+
+        let ms = days * 24.0 * 60.0 * 60.0 * 1000.0;
+
+        time::Duration::milliseconds(ms as i64)
+    };
 
     Ok(Forecast {
         language,
@@ -385,6 +409,7 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         recent_observations,
         forecast_changes,
         weather_forecast,
+        valid_for,
     })
 }
 

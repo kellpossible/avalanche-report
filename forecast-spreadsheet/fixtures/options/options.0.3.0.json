@@ -24,5 +24,6 @@
   },
   "recent_observations": "Form!A8",
   "forecast_changes": "Form!A10",
-  "weather_forecast": "Form!A12"
+  "weather_forecast": "Form!A12",
+  "valid_for": "Form!A14"
 }
