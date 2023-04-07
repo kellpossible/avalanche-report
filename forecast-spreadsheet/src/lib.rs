@@ -383,6 +383,8 @@ pub struct AspectElevation {
 pub struct AvalancheProblem {
     pub kind: ProblemKind,
     pub aspect_elevation: IndexMap<ElevationBandId, AspectElevation>,
+    pub confidence: Option<Confidence>,
+    pub trend: Option<Trend>,
 }
 
 #[derive(Copy, Clone, Debug, Deserialize, Serialize)]
@@ -824,9 +826,55 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
                 .filter_map(std::result::Result::transpose)
                 .collect::<Result<_>>()?;
 
+            let trend: Option<Trend> = Option::transpose(problem.trend.map(|relative| {
+                let cell = problem.root.clone() + relative;
+                let kind_e = kind.clone();
+
+                Option::transpose(
+                    get_cell_value_string(&mut sheets, &cell)
+                        .with_context(Box::new(move || format!("Avalanche Problem {i} trend")))?
+                        .map(|value| {
+                            options.terms.trend.get(&value).cloned().ok_or_else(|| {
+                                Error::UnableToMapValue {
+                                    map_name: "terms.trend".to_string(),
+                                    value,
+                                }
+                            })
+                        }),
+                )
+            }))?
+            .flatten();
+
+            let confidence: Option<Confidence> =
+                Option::transpose(problem.confidence.map(|relative| {
+                    let cell = problem.root.clone() + relative;
+                    let kind_e = kind.clone();
+
+                    Option::transpose(
+                        get_cell_value_string(&mut sheets, &cell)
+                            .with_context(Box::new(move || {
+                                format!("Avalanche Problem {i} confidence")
+                            }))?
+                            .map(|value| {
+                                options
+                                    .terms
+                                    .confidence
+                                    .get(&value)
+                                    .cloned()
+                                    .ok_or_else(|| Error::UnableToMapValue {
+                                        map_name: "terms.confidence".to_string(),
+                                        value,
+                                    })
+                            }),
+                    )
+                }))?
+                .flatten();
+
             Result::Ok(Some(AvalancheProblem {
                 kind,
                 aspect_elevation,
+                trend,
+                confidence,
             }))
         })
         .filter_map(std::result::Result::transpose)

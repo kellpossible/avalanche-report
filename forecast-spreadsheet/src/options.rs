@@ -54,6 +54,8 @@ pub struct AvalancheProblem {
     pub enabled: CellPosition,
     pub kind: CellPosition,
     pub aspect_elevation: IndexMap<ElevationBandId, AspectElevation>,
+    pub confidence: Option<CellPosition>,
+    pub trend: Option<CellPosition>,
 }
 
 #[derive(Deserialize)]

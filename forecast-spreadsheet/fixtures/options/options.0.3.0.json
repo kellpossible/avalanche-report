@@ -60,6 +60,8 @@
       "root": "Form!A16",
       "enabled": "A1",
       "kind": "C2",
+      "trend": "L2",
+      "confidence": "M2",
       "aspect_elevation": {
         "high-alpine": {
           "enabled": "F2",
@@ -79,6 +81,8 @@
       "root": "Form!A24",
       "enabled": "A1",
       "kind": "C2",
+      "trend": "L2",
+      "confidence": "M2",
       "aspect_elevation": {
         "high-alpine": {
           "enabled": "F2",
@@ -98,6 +102,8 @@
       "root": "Form!A32",
       "enabled": "A1",
       "kind": "C2",
+      "trend": "L2",
+      "confidence": "M2",
       "aspect_elevation": {
         "high-alpine": {
           "enabled": "F2",
@@ -117,6 +123,8 @@
       "root": "Form!A40",
       "enabled": "A1",
       "kind": "C2",
+      "trend": "L2",
+      "confidence": "M2",
       "aspect_elevation": {
         "high-alpine": {
           "enabled": "F2",

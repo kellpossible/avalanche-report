@@ -92,7 +92,9 @@ expression: "&forecast"
             "NW"
           ]
         }
-      }
+      },
+      "confidence": "moderate",
+      "trend": "improving"
     },
     {
       "kind": "deep-slab",
@@ -117,7 +119,9 @@ expression: "&forecast"
             "E"
           ]
         }
-      }
+      },
+      "confidence": null,
+      "trend": null
     },
     {
       "kind": "wind-slab",
@@ -130,7 +134,9 @@ expression: "&forecast"
             "W"
           ]
         }
-      }
+      },
+      "confidence": "moderate",
+      "trend": "improving"
     }
   ]
 }
