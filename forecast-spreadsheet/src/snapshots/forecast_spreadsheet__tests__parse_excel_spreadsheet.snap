@@ -29,5 +29,27 @@ expression: "&forecast"
     172800,
     0
   ],
-  "description": "Large amounts of new snow in the last 48 hours with moderate winds will make human triggered avalanches likely, especially at higher elevations. A weak layer at the bottom of the snowpack could produce large avalanches if it is triggered."
+  "description": "Large amounts of new snow in the last 48 hours with moderate winds will make human triggered avalanches likely, especially at higher elevations. A weak layer at the bottom of the snowpack could produce large avalanches if it is triggered.",
+  "hazard_ratings": {
+    "high-alpine": {
+      "value": "considerable",
+      "trend": "improving",
+      "confidence": "moderate"
+    },
+    "alpine": {
+      "value": "considerable",
+      "trend": "improving",
+      "confidence": "moderate"
+    },
+    "sub-alpine": {
+      "value": "moderate",
+      "trend": "improving",
+      "confidence": "moderate"
+    },
+    "overall": {
+      "value": "considerable",
+      "trend": "no-change",
+      "confidence": "moderate"
+    }
+  }
 }

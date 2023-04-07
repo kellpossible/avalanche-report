@@ -12,7 +12,8 @@
     "position": "Form!B3",
     "map": {
       "Gudauri": "gudauri"
-    }
+    },
+    "elevation_band_boundaries": "Terms!F89"
   },
   "forecaster": {
     "name": "Form!B4",
@@ -26,5 +27,53 @@
   "forecast_changes": "Form!A10",
   "weather_forecast": "Form!A12",
   "valid_for": "Form!A14",
-  "description": "Form!A63"
+  "hazard_ratings": {
+    "inputs": {
+      "high-alpine": {
+        "root": "Form!A50",
+        "value": "C1",
+        "trend": "E1",
+        "confidence": "F1"
+      },
+      "alpine": {
+        "root": "Form!A53",
+        "value": "C1",
+        "trend": "E1",
+        "confidence": "F1"
+      },
+      "sub-alpine": {
+        "root": "Form!A56",
+        "value": "C1",
+        "trend": "E1",
+        "confidence": "F1"
+      },
+      "overall": {
+        "root": "Form!A59",
+        "value": "C1",
+        "trend": "E1",
+        "confidence": "F1"
+      }
+    }
+  },
+  "elevation_bands": ["sub-alpine", "alpine", "high-alpine"],
+  "description": "Form!A63",
+  "terms": {
+    "hazard_rating": {
+      "Low 1": "low",
+      "Moderate 2": "moderate",
+      "Considerable 3": "considerable",
+      "High 4": "high",
+      "Extreme 5": "extreme"
+    },
+    "confidence": {
+      "Low": "low",
+      "Moderate": "moderate",
+      "High": "high"
+    },
+    "trend": {
+      "Improving": "improving",
+      "No change": "no-change",
+      "Deteriorating": "deteriorating"
+    }
+  }
 }

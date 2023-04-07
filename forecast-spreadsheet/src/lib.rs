@@ -1,11 +1,12 @@
-use std::{fmt::Display, io::Cursor, num::ParseIntError, str::FromStr};
+use std::{fmt::Display, io::Cursor, num::ParseIntError, ops::Deref, str::FromStr};
 
 pub mod options;
 pub mod position;
 mod serde;
 
-use ::serde::Serialize;
+use ::serde::{Deserialize, Serialize};
 use calamine::{open_workbook_auto_from_rs, DataType, Reader, Sheets};
+use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use options::Options;
 use position::SheetCellPosition;
@@ -34,6 +35,8 @@ pub enum Error {
     InvalidLanguageIdentifier(#[from] unic_langid::LanguageIdentifierError),
     #[error("Required value {0} is missing at position {1}")]
     RequiredValueMissing(String, SheetCellPosition),
+    #[error("Unable to use map {map_name} to find a valid variant equivalent to value {value}")]
+    UnableToMapValue { map_name: String, value: String },
 }
 
 impl Error {
@@ -51,11 +54,22 @@ pub enum ParseCellErrorKind {
     FromStr(Box<dyn std::error::Error + Send + Sync + 'static>),
 }
 
-#[derive(Debug)]
 pub struct ParseCellError {
     kind: ParseCellErrorKind,
     position: SheetCellPosition,
     value: Option<DataType>,
+    context: Option<Box<dyn Fn() -> String>>,
+}
+
+impl std::fmt::Debug for ParseCellError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ParseCellError")
+            .field("kind", &self.kind)
+            .field("position", &self.position)
+            .field("value", &self.value)
+            .field("context", &self.context.as_ref().map(|function| function()))
+            .finish()
+    }
 }
 
 impl ParseCellError {
@@ -64,6 +78,7 @@ impl ParseCellError {
             kind: ParseCellErrorKind::IncorrectDataType,
             position,
             value: Some(value),
+            context: None,
         }
     }
 
@@ -72,6 +87,7 @@ impl ParseCellError {
             kind: ParseCellErrorKind::CellMissing,
             position,
             value: None,
+            context: None,
         }
     }
 
@@ -80,6 +96,7 @@ impl ParseCellError {
             kind: ParseCellErrorKind::SheetMissing,
             position,
             value: None,
+            context: None,
         }
     }
 
@@ -88,10 +105,11 @@ impl ParseCellError {
             kind: ParseCellErrorKind::Calamine(error),
             position,
             value: None,
+            context: None,
         }
     }
 
-    pub fn from_std_error<E: std::error::Error + Send + Sync + 'static>(
+    pub fn from_str_error<E: std::error::Error + Send + Sync + 'static>(
         position: SheetCellPosition,
         value: DataType,
         error: E,
@@ -100,6 +118,27 @@ impl ParseCellError {
             kind: ParseCellErrorKind::FromStr(Box::new(error)),
             position,
             value: Some(value),
+            context: None,
+        }
+    }
+}
+
+pub trait ParseCellWithContext {
+    fn with_context(self, context: Box<dyn Fn() -> String>) -> Self;
+}
+
+impl ParseCellWithContext for ParseCellError {
+    fn with_context(mut self, context: Box<dyn Fn() -> String>) -> Self {
+        self.context = Some(context.into());
+        self
+    }
+}
+
+impl<T> ParseCellWithContext for std::result::Result<T, ParseCellError> {
+    fn with_context(self, context: Box<dyn Fn() -> String>) -> Self {
+        match self {
+            Ok(_) => self,
+            Err(error) => Err(error.with_context(context)),
         }
     }
 }
@@ -120,6 +159,7 @@ impl Display for ParseCellError {
             "Error while parsing cell at position {0} with value {1:?}: ",
             self.position, self.value
         )?;
+
         match &self.kind {
             ParseCellErrorKind::IncorrectDataType => write!(f, "Incorrect data type"),
             ParseCellErrorKind::CellMissing => write!(
@@ -132,7 +172,13 @@ impl Display for ParseCellError {
             }
             ParseCellErrorKind::Calamine(error) => write!(f, "{error}"),
             ParseCellErrorKind::FromStr(error) => write!(f, "{error}"),
+        }?;
+
+        if let Some(context) = &self.context {
+            write!(f, "{}", context())?;
         }
+
+        Ok(())
     }
 }
 
@@ -183,11 +229,100 @@ impl FromStr for Version {
     }
 }
 
+#[derive(Serialize)]
+pub struct ElevationRange {
+    pub upper: Option<i64>,
+    pub lower: Option<i64>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[repr(transparent)]
+#[serde(transparent)]
+pub struct AreaId(String);
+
+impl Deref for AreaId {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[repr(transparent)]
+#[serde(transparent)]
+pub struct ElevationBandId(String);
+
+impl Deref for ElevationBandId {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[serde(untagged)]
+pub enum HazardRatingKind {
+    ElevationSpecific(ElevationBandId),
+    Overall,
+}
+
+impl Display for HazardRatingKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            HazardRatingKind::ElevationSpecific(band_id) => f.write_str(&*band_id),
+            HazardRatingKind::Overall => f.write_str("overall"),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, Deserialize, Serialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "kebab-case")]
+pub enum HazardRatingValue {
+    Low = 1,
+    Moderate = 2,
+    Considerable = 3,
+    High = 4,
+    Extreme = 5,
+}
+
+impl FromStr for HazardRatingValue {
+    type Err = serde_json::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        serde_json::from_str(s)
+    }
+}
+
+#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Trend {
+    Improving,
+    NoChange,
+    Deteriorating,
+}
+
+#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Confidence {
+    Low,
+    Moderate,
+    High,
+}
+
+#[derive(Debug, Serialize)]
+pub struct HazardRating {
+    value: Option<HazardRatingValue>,
+    trend: Option<Trend>,
+    confidence: Option<Confidence>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct Forecast {
     template_version: Version,
     language: unic_langid::LanguageIdentifier,
-    area: String,
+    area: AreaId,
     forecaster: Forecaster,
     time: PrimitiveDateTime,
     recent_observations: Option<String>,
@@ -195,6 +330,7 @@ pub struct Forecast {
     weather_forecast: Option<String>,
     valid_for: time::Duration,
     description: Option<String>,
+    hazard_ratings: IndexMap<HazardRatingKind, HazardRating>,
 }
 
 #[derive(Debug, Serialize)]
@@ -241,7 +377,7 @@ where
     value_str
         .parse()
         .map(Some)
-        .map_err(|error| ParseCellError::from_std_error(position.clone(), value, error))
+        .map_err(|error| ParseCellError::from_str_error(position.clone(), value, error))
 }
 
 fn decimal_day_to_time(time_day: f64) -> std::result::Result<Time, time::error::ComponentRange> {
@@ -268,7 +404,7 @@ where
         DataType::Float(f) | DataType::DateTime(f) => {
             let time_day = f - f.floor();
             decimal_day_to_time(time_day).map_err(|error| {
-                ParseCellError::from_std_error(position.clone(), value.clone(), error)
+                ParseCellError::from_str_error(position.clone(), value.clone(), error)
             })
         }
         _ => Err(ParseCellError::incorrect_data_type(position.clone(), value)),
@@ -289,10 +425,10 @@ where
             let julian_day = EXCEL_EPOCH.to_julian_day() + (f.floor() as i32);
             let time_day = f - f.floor();
             let time = decimal_day_to_time(time_day).map_err(|error| {
-                ParseCellError::from_std_error(position.clone(), value.clone(), error)
+                ParseCellError::from_str_error(position.clone(), value.clone(), error)
             })?;
             let date = Date::from_julian_day(julian_day).map_err(|error| {
-                ParseCellError::from_std_error(position.clone(), value.clone(), error)
+                ParseCellError::from_str_error(position.clone(), value.clone(), error)
             })?;
 
             Ok(PrimitiveDateTime::new(date, time))
@@ -409,6 +545,81 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
     )?
     .flatten();
 
+    let hazard_ratings = options
+        .hazard_ratings
+        .inputs
+        .iter()
+        .map(|(kind, input)| {
+            let value_cell = input.root.clone() + input.value;
+            let value: Option<HazardRatingValue> = Option::transpose(
+                get_cell_value_string(&mut sheets, &value_cell)?.map(|value| {
+                    options
+                        .terms
+                        .hazard_rating
+                        .get(&value)
+                        .cloned()
+                        .ok_or_else(|| Error::UnableToMapValue {
+                            map_name: "terms.hazard_rating".to_string(),
+                            value,
+                        })
+                }),
+            )?;
+
+            let trend: Option<Trend> = Option::transpose(input.trend.map(|relative| {
+                let cell = input.root.clone() + relative;
+                let kind_e = kind.clone();
+
+                Option::transpose(
+                    get_cell_value_string(&mut sheets, &cell)
+                        .with_context(Box::new(move || format!("{kind_e} hazard rating trend")))?
+                        .map(|value| {
+                            dbg!(&options.terms.trend);
+                            options.terms.trend.get(&value).cloned().ok_or_else(|| {
+                                Error::UnableToMapValue {
+                                    map_name: "terms.trend".to_string(),
+                                    value,
+                                }
+                            })
+                        }),
+                )
+            }))?
+            .flatten();
+
+            let confidence: Option<Confidence> =
+                Option::transpose(input.confidence.map(|relative| {
+                    let cell = input.root.clone() + relative;
+                    let kind_e = kind.clone();
+
+                    Option::transpose(
+                        get_cell_value_string(&mut sheets, &cell)
+                            .with_context(Box::new(move || {
+                                format!("{kind_e} hazard rating confidence")
+                            }))?
+                            .map(|value| {
+                                options
+                                    .terms
+                                    .confidence
+                                    .get(&value)
+                                    .cloned()
+                                    .ok_or_else(|| Error::UnableToMapValue {
+                                        map_name: "terms.confidence".to_string(),
+                                        value,
+                                    })
+                            }),
+                    )
+                }))?
+                .flatten();
+
+            let rating = HazardRating {
+                value,
+                trend,
+                confidence,
+            };
+
+            Ok((kind.clone(), rating))
+        })
+        .collect::<Result<_>>()?;
+
     Ok(Forecast {
         language,
         template_version,
@@ -420,6 +631,7 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         weather_forecast,
         valid_for,
         description,
+        hazard_ratings,
     })
 }
 

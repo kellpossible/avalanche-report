@@ -1,11 +1,43 @@
-use std::{fmt::Display, str::FromStr};
+use std::{
+    fmt::{Debug, Display},
+    ops::{Add, Sub},
+    str::FromStr,
+};
 
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct CellPosition {
     pub column: u32,
     pub row: u32,
+}
+
+impl Debug for CellPosition {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
+impl Add for CellPosition {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self {
+            column: self.column + rhs.column,
+            row: self.row + rhs.row,
+        }
+    }
+}
+
+impl Sub for CellPosition {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self {
+            column: self.column - rhs.column,
+            row: self.row - rhs.row,
+        }
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -115,10 +147,32 @@ impl Serialize for CellPosition {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct SheetCellPosition {
     pub sheet: String,
     pub position: CellPosition,
+}
+
+impl Add<CellPosition> for SheetCellPosition {
+    type Output = Self;
+
+    fn add(self, rhs: CellPosition) -> Self::Output {
+        Self {
+            sheet: self.sheet,
+            position: self.position + rhs,
+        }
+    }
+}
+
+impl Sub<CellPosition> for SheetCellPosition {
+    type Output = Self;
+
+    fn sub(self, rhs: CellPosition) -> Self::Output {
+        Self {
+            sheet: self.sheet,
+            position: self.position - rhs,
+        }
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -165,6 +219,12 @@ impl<'de> Deserialize<'de> for SheetCellPosition {
 impl Display for SheetCellPosition {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}!{}", self.sheet, self.position)
+    }
+}
+
+impl Debug for SheetCellPosition {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
     }
 }
 

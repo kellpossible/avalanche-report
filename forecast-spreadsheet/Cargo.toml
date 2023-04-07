@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 calamine = "0.19.1"
+indexmap = { version = "1.9.3", features = ["serde"] }
 thiserror = "1.0.38"
 time = { version = "0.3.19", features = ["alloc", "parsing", "serde"] }
 unic-langid = { version = "0.9.1", features = ["serde"] }
