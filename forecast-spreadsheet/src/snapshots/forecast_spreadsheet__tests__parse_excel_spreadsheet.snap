@@ -1,0 +1,28 @@
+---
+source: forecast-spreadsheet/src/lib.rs
+expression: "&forecast"
+---
+{
+  "template_version": {
+    "major": 0,
+    "minor": 3,
+    "patch": 3
+  },
+  "language": "en-UK",
+  "area": "gudauri",
+  "forecaster": {
+    "name": "Levi Seiferheld",
+    "organisation": "Vagabond Gudauri"
+  },
+  "time": [
+    2023,
+    38,
+    19,
+    0,
+    0,
+    0
+  ],
+  "recent_observations": "80 cm of snowfall recorded over the last 2 days with moderate transport from SE quarter, unreactive to ski tests today. No new avalanches observed, but visibility has been limited. Widespread 'whumphing' and cracking observed around the ski resort over the last week, 2200 - 3000m, most aspects (anywhere snow existed before Jan 31st). The snowpack has a 15 - 30cm weak layer (facets) at the ground. Average snow depth is 120 cm at 2700 m.",
+  "forecast_changes": "Significant new snow with moderate winds.",
+  "weather_forecast": "Mostly cloudy tomorrow with some snow showers in the afternoon, light winds, cool temperatures."
+}
