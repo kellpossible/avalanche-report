@@ -22,5 +22,7 @@
     "date": "Form!D3",
     "time": "Form!G3"
   },
-  "recent_observations": "Form!A8"
+  "recent_observations": "Form!A8",
+  "forecast_changes": "Form!A10",
+  "weather_forecast": "Form!A12"
 }

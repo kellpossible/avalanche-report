@@ -191,6 +191,8 @@ pub struct Forecast {
     forecaster: Forecaster,
     time: PrimitiveDateTime,
     recent_observations: Option<String>,
+    forecast_changes: Option<String>,
+    weather_forecast: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -350,8 +352,29 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         }
     };
 
-    let recent_observations: Option<String> =
-        get_cell_value_from_str(&mut sheets, &options.recent_observations)?;
+    let recent_observations: Option<String> = Option::transpose(
+        options
+            .recent_observations
+            .as_ref()
+            .map(|recent_observations| get_cell_value_from_str(&mut sheets, recent_observations)),
+    )?
+    .flatten();
+    
+    let forecast_changes: Option<String> = Option::transpose(
+        options
+            .forecast_changes
+            .as_ref()
+            .map(|forecast_changes| get_cell_value_from_str(&mut sheets, forecast_changes)),
+    )?
+    .flatten();
+    
+    let weather_forecast: Option<String> = Option::transpose(
+        options
+            .weather_forecast
+            .as_ref()
+            .map(|weather_forecast| get_cell_value_from_str(&mut sheets, weather_forecast)),
+    )?
+    .flatten();
 
     Ok(Forecast {
         language,
@@ -360,6 +383,8 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         forecaster,
         time,
         recent_observations,
+        forecast_changes,
+        weather_forecast,
     })
 }
 
@@ -404,7 +429,9 @@ mod tests {
             0,
             0
           ],
-          "recent_observations": "80 cm of snowfall recorded over the last 2 days with moderate transport from SE quarter, unreactive to ski tests today. No new avalanches observed, but visibility has been limited. Widespread 'whumphing' and cracking observed around the ski resort over the last week, 2200 - 3000m, most aspects (anywhere snow existed before Jan 31st). The snowpack has a 15 - 30cm weak layer (facets) at the ground. Average snow depth is 120 cm at 2700 m."
+          "recent_observations": "80 cm of snowfall recorded over the last 2 days with moderate transport from SE quarter, unreactive to ski tests today. No new avalanches observed, but visibility has been limited. Widespread 'whumphing' and cracking observed around the ski resort over the last week, 2200 - 3000m, most aspects (anywhere snow existed before Jan 31st). The snowpack has a 15 - 30cm weak layer (facets) at the ground. Average snow depth is 120 cm at 2700 m.",
+          "forecast_changes": "Significant new snow with moderate winds.",
+          "weather_forecast": "Mostly cloudy tomorrow with some snow showers in the afternoon, light winds, cool temperatures."
         }
         "###);
     }

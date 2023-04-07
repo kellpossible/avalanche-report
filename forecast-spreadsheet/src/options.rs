@@ -14,7 +14,9 @@ pub struct Options {
     pub area: Area,
     pub forecaster: Forecaster,
     pub time: Time,
-    pub recent_observations: SheetCellPosition,
+    pub recent_observations: Option<SheetCellPosition>,
+    pub forecast_changes: Option<SheetCellPosition>,
+    pub weather_forecast: Option<SheetCellPosition>,
 }
 
 #[derive(Deserialize)]
