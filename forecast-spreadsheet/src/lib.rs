@@ -261,11 +261,35 @@ impl Deref for ElevationBandId {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
-#[serde(untagged)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum HazardRatingKind {
-    ElevationSpecific(ElevationBandId),
     Overall,
+    ElevationSpecific(ElevationBandId),
+}
+
+impl<'de> Deserialize<'de> for HazardRatingKind {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+        Ok(match value.as_str() {
+            "overall" => Self::Overall,
+            _ => Self::ElevationSpecific(ElevationBandId(value)),
+        })
+    }
+}
+
+impl Serialize for HazardRatingKind {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: ::serde::Serializer,
+    {
+        match self {
+            HazardRatingKind::Overall => serializer.serialize_str("overall"),
+            HazardRatingKind::ElevationSpecific(e) => serializer.serialize_str(&*e),
+        }
+    }
 }
 
 impl Display for HazardRatingKind {
@@ -550,6 +574,14 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         .inputs
         .iter()
         .map(|(kind, input)| {
+            if let HazardRatingKind::ElevationSpecific(elevation_band) = kind {
+                if !options.elevation_bands.contains(elevation_band) {
+                    return Err(Error::UnableToMapValue {
+                        map_name: "elevation_bands".into(),
+                        value: (**elevation_band).clone(),
+                    });
+                }
+            }
             let value_cell = input.root.clone() + input.value;
             let value: Option<HazardRatingValue> = Option::transpose(
                 get_cell_value_string(&mut sheets, &value_cell)?.map(|value| {

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, ops::Deref};
+use std::collections::HashMap;
 
 use indexmap::{IndexMap, IndexSet};
 use serde::Deserialize;
