@@ -2,11 +2,19 @@ use std::{fmt::Display, io::Cursor, num::ParseIntError, str::FromStr};
 
 use ::serde::Deserialize;
 use calamine::{open_workbook_auto_from_rs, DataType, Reader, Sheets};
+use once_cell::sync::Lazy;
 use options::Options;
-use time::OffsetDateTime;
+use time::{Date, Month, OffsetDateTime, PrimitiveDateTime, Time};
 
 pub mod options;
 mod serde;
+
+static EXCEL_EPOCH: Lazy<PrimitiveDateTime> = Lazy::new(|| {
+    Date::from_calendar_date(1899, Month::December, 30)
+        .unwrap()
+        .with_hms(0, 0, 0)
+        .unwrap()
+});
 
 #[derive(Debug, Clone, Copy, Deserialize)]
 pub struct CellPosition {
@@ -112,7 +120,7 @@ impl ParseCellError {
         }
     }
 
-    pub fn from_str_error<E: std::error::Error + Send + Sync + 'static>(
+    pub fn from_std_error<E: std::error::Error + Send + Sync + 'static>(
         position: SheetCellPosition,
         value: DataType,
         error: E,
@@ -209,7 +217,14 @@ pub struct Forecast {
     template_version: Version,
     language: unic_langid::LanguageIdentifier,
     area: String,
-    // time: time::OffsetDateTime,
+    forecaster: Forecaster,
+    time: PrimitiveDateTime,
+}
+
+#[derive(Debug)]
+struct Forecaster {
+    name: String,
+    organisation: String,
 }
 
 fn get_cell_value<RS>(
@@ -246,17 +261,64 @@ where
 
     value_str
         .parse()
-        .map_err(|error| ParseCellError::from_str_error(position.clone(), value, error))
+        .map_err(|error| ParseCellError::from_std_error(position.clone(), value, error))
+}
+
+fn decimal_day_to_time(time_day: f64) -> std::result::Result<Time, time::error::ComponentRange> {
+    let hour = (time_day * 24.0).floor() as u64;
+    let minute = (time_day * 24.0 * 60.0).floor() as u64 - (hour * 60);
+    let second = (time_day * 24.0 * 60.0 * 60.0).floor() as u64 - (hour * 60 * 60) - (minute * 60);
+    let millisecond = (time_day * 24.0 * 60.0 * 60.0 * 1000.0).round() as u64
+        - (hour * 60 * 60 * 1000)
+        - (minute * 60 * 1000)
+        - (second * 1000);
+    Time::from_hms_milli(hour as u8, minute as u8, second as u8, millisecond as u16)
 }
 
 fn get_cell_value_time<RS>(
-    sheets: &Sheets<RS>,
+    sheets: &mut Sheets<RS>,
     position: &SheetCellPosition,
-) -> std::result::Result<OffsetDateTime, ParseCellError>
+) -> std::result::Result<Time, ParseCellError>
 where
     RS: std::io::Read + std::io::Seek,
 {
-    todo!();
+    let value = get_cell_value(sheets, position)?;
+
+    match value {
+        DataType::Float(f) | DataType::DateTime(f) => {
+            let time_day = f - f.floor();
+            decimal_day_to_time(time_day).map_err(|error| {
+                ParseCellError::from_std_error(position.clone(), value.clone(), error)
+            })
+        }
+        _ => Err(ParseCellError::incorrect_data_type(position.clone(), value)),
+    }
+}
+
+fn get_cell_value_datetime<RS>(
+    sheets: &mut Sheets<RS>,
+    position: &SheetCellPosition,
+) -> std::result::Result<PrimitiveDateTime, ParseCellError>
+where
+    RS: std::io::Read + std::io::Seek,
+{
+    let value = get_cell_value(sheets, position)?;
+
+    match value {
+        DataType::Float(f) | DataType::DateTime(f) => {
+            let julian_day = EXCEL_EPOCH.to_julian_day() + (f.floor() as i32);
+            let time_day = f - f.floor();
+            let time = decimal_day_to_time(time_day).map_err(|error| {
+                ParseCellError::from_std_error(position.clone(), value.clone(), error)
+            })?;
+            let date = Date::from_julian_day(julian_day).map_err(|error| {
+                ParseCellError::from_std_error(position.clone(), value.clone(), error)
+            })?;
+
+            Ok(PrimitiveDateTime::new(date, time))
+        }
+        _ => Err(ParseCellError::incorrect_data_type(position.clone(), value)),
+    }
 }
 
 pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> Result<Forecast> {
@@ -283,10 +345,31 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         .ok_or_else(|| Error::UnknownArea(area_name))?
         .to_owned();
 
+    let forecaster = {
+        let name = get_cell_value_from_str(&mut sheets, &options.forecaster.name)?;
+        let organisation = get_cell_value_from_str(&mut sheets, &options.forecaster.organisation)?;
+        Forecaster { name, organisation }
+    };
+
+    let time = {
+        match &options.time {
+            options::Time::DateAndTime {
+                date: date_position,
+                time: time_position,
+            } => {
+                let date = get_cell_value_datetime(&mut sheets, &date_position)?;
+                let time = get_cell_value_time(&mut sheets, &time_position)?;
+                PrimitiveDateTime::new(date.date(), time)
+            }
+        }
+    };
+
     Ok(Forecast {
         language,
         template_version,
         area,
+        forecaster,
+        time,
     })
 }
 

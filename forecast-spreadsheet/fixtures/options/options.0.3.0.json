@@ -33,5 +33,37 @@
         "map": {
             "Gudauri": "gudauri"
         }
+    },
+    "forecaster": {
+        "name": {
+            "sheet": "Form",
+            "position": {
+                "column": 1,
+                "row": 3
+            }
+        },
+        "organisation": {
+            "sheet": "Form",
+            "position": {
+                "column": 5,
+                "row": 3
+            }
+        }
+    },
+    "time": {
+        "date": {
+            "sheet": "Form",
+            "position": {
+                "column": 3,
+                "row": 2
+            }
+        },
+        "time": {
+            "sheet": "Form",
+            "position": {
+                "column": 6,
+                "row": 2
+            }
+        }
     }
 }
