@@ -1,11 +1,11 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use indexmap::{IndexMap, IndexSet};
 use serde::Deserialize;
 
 use crate::{
     position::CellPosition, serde::string, AreaId, Confidence, ElevationBandId, HazardRatingKind,
-    HazardRatingValue, SheetCellPosition, Trend, Version,
+    HazardRatingValue, ProblemKind, SheetCellPosition, Trend, Version,
 };
 
 #[derive(Deserialize)]
@@ -24,7 +24,8 @@ pub struct Options {
     pub valid_for: SheetCellPosition,
     pub description: Option<SheetCellPosition>,
     pub hazard_ratings: HazardRatings,
-    /// Set of elevation band ids, that needs to match the order of
+    pub avalanche_problems: Vec<AvalancheProblem>,
+    /// Set of elevation band ids, that needs to match the order and number of
     /// elevation boundaries in [`Area::elevation_band_boundaries`].
     pub elevation_bands: IndexSet<ElevationBandId>,
     pub terms: Terms,
@@ -35,6 +36,24 @@ pub struct Terms {
     pub confidence: HashMap<String, Confidence>,
     pub hazard_rating: HashMap<String, HazardRatingValue>,
     pub trend: HashMap<String, Trend>,
+    pub avalanche_problem_kind: HashMap<String, ProblemKind>,
+}
+
+/// The affected aspects for a given elevation for an [`AvalancheProblem`]
+#[derive(Deserialize)]
+pub struct AspectElevation {
+    /// Whether this particular element is enabled.
+    pub enabled: CellPosition,
+    pub aspects: CellPosition,
+}
+
+#[derive(Deserialize)]
+pub struct AvalancheProblem {
+    pub root: SheetCellPosition,
+    /// Whether this avalanche problem is specified/enabled.
+    pub enabled: CellPosition,
+    pub kind: CellPosition,
+    pub aspect_elevation: IndexMap<ElevationBandId, AspectElevation>,
 }
 
 #[derive(Deserialize)]

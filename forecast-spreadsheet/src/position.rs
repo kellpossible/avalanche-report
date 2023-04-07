@@ -6,7 +6,7 @@ use std::{
 
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct CellPosition {
     pub column: u32,
     pub row: u32,

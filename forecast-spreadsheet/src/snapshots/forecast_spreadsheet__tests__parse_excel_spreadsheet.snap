@@ -51,5 +51,86 @@ expression: "&forecast"
       "trend": "no-change",
       "confidence": "moderate"
     }
-  }
+  },
+  "avalanche_problems": [
+    {
+      "kind": "storm-slab",
+      "aspect_elevation": {
+        "high-alpine": {
+          "aspects": [
+            "N",
+            "NE",
+            "E",
+            "SE",
+            "S",
+            "SW",
+            "W",
+            "NW"
+          ]
+        },
+        "alpine": {
+          "aspects": [
+            "N",
+            "NE",
+            "E",
+            "SE",
+            "S",
+            "SW",
+            "W",
+            "NW"
+          ]
+        },
+        "sub-alpine": {
+          "aspects": [
+            "N",
+            "NE",
+            "E",
+            "SE",
+            "S",
+            "SW",
+            "W",
+            "NW"
+          ]
+        }
+      }
+    },
+    {
+      "kind": "deep-slab",
+      "aspect_elevation": {
+        "high-alpine": {
+          "aspects": [
+            "SW",
+            "W",
+            "NW",
+            "N",
+            "NE",
+            "E",
+            "SE"
+          ]
+        },
+        "alpine": {
+          "aspects": [
+            "W",
+            "NW",
+            "N",
+            "NE",
+            "E"
+          ]
+        }
+      }
+    },
+    {
+      "kind": "wind-slab",
+      "aspect_elevation": {
+        "high-alpine": {
+          "aspects": [
+            "N",
+            "NW",
+            "NE",
+            "W"
+          ]
+        }
+      }
+    }
+  ]
 }

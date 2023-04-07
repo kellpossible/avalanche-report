@@ -1,4 +1,12 @@
-use std::{fmt::Display, io::Cursor, num::ParseIntError, ops::Deref, str::FromStr};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Display,
+    io::Cursor,
+    iter::repeat,
+    num::ParseIntError,
+    ops::Deref,
+    str::FromStr,
+};
 
 pub mod options;
 pub mod position;
@@ -6,7 +14,7 @@ mod serde;
 
 use ::serde::{Deserialize, Serialize};
 use calamine::{open_workbook_auto_from_rs, DataType, Reader, Sheets};
-use indexmap::IndexMap;
+use indexmap::{IndexMap, IndexSet};
 use once_cell::sync::Lazy;
 use options::Options;
 use position::SheetCellPosition;
@@ -319,6 +327,86 @@ impl FromStr for HazardRatingValue {
     }
 }
 
+#[derive(Copy, Clone, Debug, Deserialize, Serialize, PartialEq, Eq, Hash)]
+pub enum Aspect {
+    N,
+    NE,
+    E,
+    SE,
+    S,
+    SW,
+    W,
+    NW,
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum ParseAspectError {
+    #[error("Invalid value {0}")]
+    InvalidValue(String),
+}
+
+impl FromStr for Aspect {
+    type Err = ParseAspectError;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        match s.to_uppercase().as_str() {
+            "N" => Ok(Aspect::N),
+            "NE" => Ok(Aspect::NE),
+            "E" => Ok(Aspect::E),
+            "SE" => Ok(Aspect::SE),
+            "S" => Ok(Aspect::S),
+            "SW" => Ok(Aspect::SW),
+            "W" => Ok(Aspect::W),
+            "NW" => Ok(Aspect::NW),
+            _ => Err(ParseAspectError::InvalidValue(s.to_string())),
+        }
+    }
+}
+
+fn parse_aspects(input: &str) -> std::result::Result<IndexSet<Aspect>, ParseAspectError> {
+    if input.is_empty() {
+        return Ok(IndexSet::with_capacity(0));
+    }
+    input
+        .split(',')
+        .map(|s| s.trim())
+        .map(Aspect::from_str)
+        .collect()
+}
+
+#[derive(Debug, Serialize)]
+pub struct AspectElevation {
+    pub aspects: IndexSet<Aspect>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AvalancheProblem {
+    pub kind: ProblemKind,
+    pub aspect_elevation: IndexMap<ElevationBandId, AspectElevation>,
+}
+
+#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ProblemKind {
+    LooseDry,
+    LooseWet,
+    StormSlab,
+    WindSlab,
+    WetSlab,
+    PersistentSlab,
+    DeepSlab,
+    Cornice,
+    Glide,
+}
+
+impl FromStr for ProblemKind {
+    type Err = serde_json::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        serde_json::from_str(s)
+    }
+}
+
 #[derive(Copy, Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Trend {
@@ -355,6 +443,7 @@ pub struct Forecast {
     valid_for: time::Duration,
     description: Option<String>,
     hazard_ratings: IndexMap<HazardRatingKind, HazardRating>,
+    avalanche_problems: Vec<AvalancheProblem>,
 }
 
 #[derive(Debug, Serialize)]
@@ -379,6 +468,19 @@ where
         .get_value(position.position.into())
         .ok_or_else(|| ParseCellError::cell_missing(position.clone()))?
         .clone())
+}
+
+fn get_cell_value_bool<RS>(
+    sheets: &mut Sheets<RS>,
+    position: &SheetCellPosition,
+) -> std::result::Result<bool, ParseCellError>
+where
+    RS: std::io::Read + std::io::Seek,
+{
+    let value = get_cell_value(sheets, position)?;
+    value
+        .get_bool()
+        .ok_or_else(|| ParseCellError::incorrect_data_type(position.clone(), value))
 }
 
 fn get_cell_value_string<T, RS>(
@@ -605,7 +707,6 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
                     get_cell_value_string(&mut sheets, &cell)
                         .with_context(Box::new(move || format!("{kind_e} hazard rating trend")))?
                         .map(|value| {
-                            dbg!(&options.terms.trend);
                             options.terms.trend.get(&value).cloned().ok_or_else(|| {
                                 Error::UnableToMapValue {
                                     map_name: "terms.trend".to_string(),
@@ -652,6 +753,85 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         })
         .collect::<Result<_>>()?;
 
+    let avalanche_problems: Vec<AvalancheProblem> = options
+        .avalanche_problems
+        .iter()
+        .enumerate()
+        .map(|(i, problem)| {
+            let enabled_cell = problem.root.clone() + problem.enabled;
+            let enabled = match get_cell_value_bool(&mut sheets, &enabled_cell)
+                .with_context(Box::new(move || format!("Avalanche problem {i}")))
+            {
+                Ok(enabled) => enabled,
+                Err(error) => return Err(error.into()),
+            };
+
+            if !enabled {
+                return Ok(None);
+            }
+
+            let kind_cell = problem.root.clone() + problem.kind;
+            let value: String = get_cell_value_string(&mut sheets, &kind_cell)
+                .with_context(Box::new(move || format!("Avalanche problem {i}")))?
+                .ok_or_else(|| {
+                    Error::required_value_missing("avalanche_problem.kind", kind_cell.clone())
+                })?;
+            let kind = options
+                .terms
+                .avalanche_problem_kind
+                .get(&value)
+                .cloned()
+                .ok_or_else(|| Error::UnableToMapValue {
+                    map_name: "terms.avalanche_problem_kind".to_string(),
+                    value,
+                })?;
+
+            let aspect_elevation = problem
+                .aspect_elevation
+                .iter()
+                .zip(repeat(problem))
+                .map(|((elevation_band, aspect_elevation), problem)| {
+                    let enabled_cell = problem.root.clone() + problem.enabled;
+                    let enabled = match get_cell_value_bool(&mut sheets, &enabled_cell)
+                        .with_context(Box::new(move || format!("Avalanche problem {i}")))
+                    {
+                        Ok(enabled) => enabled,
+                        Err(error) => return Err(error.into()),
+                    };
+
+                    if !enabled {
+                        return Ok(None);
+                    }
+
+                    let aspects_cell = problem.root.clone() + aspect_elevation.aspects;
+                    let value: String = get_cell_value_string(&mut sheets, &aspects_cell)
+                        .with_context(Box::new(move || format!("Avalanche problem {i}")))?
+                        .unwrap_or_else(|| "".to_string());
+                    let aspects = parse_aspects(&value).map_err(|error| {
+                        ParseCellError::from_str_error(
+                            aspects_cell.clone(),
+                            DataType::String(value),
+                            error,
+                        )
+                    })?;
+
+                    if aspects.is_empty() {
+                        return Ok(None);
+                    }
+
+                    Ok(Some((elevation_band.clone(), AspectElevation { aspects })))
+                })
+                .filter_map(std::result::Result::transpose)
+                .collect::<Result<_>>()?;
+
+            Result::Ok(Some(AvalancheProblem {
+                kind,
+                aspect_elevation,
+            }))
+        })
+        .filter_map(std::result::Result::transpose)
+        .collect::<Result<_>>()?;
+
     Ok(Forecast {
         language,
         template_version,
@@ -664,6 +844,7 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         valid_for,
         description,
         hazard_ratings,
+        avalanche_problems,
     })
 }
 

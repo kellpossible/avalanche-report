@@ -55,6 +55,84 @@
       }
     }
   },
+  "avalanche_problems": [
+    {
+      "root": "Form!A16",
+      "enabled": "A1",
+      "kind": "C2",
+      "aspect_elevation": {
+        "high-alpine": {
+          "enabled": "F2",
+          "aspects": "G2"
+        },
+        "alpine": {
+          "enabled": "F3",
+          "aspects": "G3"
+        },
+        "sub-alpine": {
+          "enabled": "F4",
+          "aspects": "G4"
+        }
+      }
+    },
+    {
+      "root": "Form!A24",
+      "enabled": "A1",
+      "kind": "C2",
+      "aspect_elevation": {
+        "high-alpine": {
+          "enabled": "F2",
+          "aspects": "G2"
+        },
+        "alpine": {
+          "enabled": "F3",
+          "aspects": "G3"
+        },
+        "sub-alpine": {
+          "enabled": "F4",
+          "aspects": "G4"
+        }
+      }
+    },
+    {
+      "root": "Form!A32",
+      "enabled": "A1",
+      "kind": "C2",
+      "aspect_elevation": {
+        "high-alpine": {
+          "enabled": "F2",
+          "aspects": "G2"
+        },
+        "alpine": {
+          "enabled": "F3",
+          "aspects": "G3"
+        },
+        "sub-alpine": {
+          "enabled": "F4",
+          "aspects": "G4"
+        }
+      }
+    },
+    {
+      "root": "Form!A40",
+      "enabled": "A1",
+      "kind": "C2",
+      "aspect_elevation": {
+        "high-alpine": {
+          "enabled": "F2",
+          "aspects": "G2"
+        },
+        "alpine": {
+          "enabled": "F3",
+          "aspects": "G3"
+        },
+        "sub-alpine": {
+          "enabled": "F4",
+          "aspects": "G4"
+        }
+      }
+    }
+  ],
   "elevation_bands": ["sub-alpine", "alpine", "high-alpine"],
   "description": "Form!A63",
   "terms": {
@@ -74,6 +152,17 @@
       "Improving": "improving",
       "No change": "no-change",
       "Deteriorating": "deteriorating"
+    },
+    "avalanche_problem_kind": {
+      "Loose Dry": "loose-dry",
+      "Loose Wet": "loose-wet",
+      "Storm Slab": "storm-slab",
+      "Wind Slab": "wind-slab",
+      "Wet Slab": "wet-slab",
+      "Persistent Slab": "persistent-slab",
+      "Deep Slab": "deep-slab",
+      "Cornice": "cornice",
+      "Glide": "glide"
     }
   }
 }
