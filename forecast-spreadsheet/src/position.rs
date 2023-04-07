@@ -1,8 +1,8 @@
 use std::{fmt::Display, str::FromStr};
 
-use serde::{de, Deserialize, Deserializer};
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CellPosition {
     pub column: u32,
     pub row: u32,
@@ -84,13 +84,38 @@ impl From<(u32, u32)> for CellPosition {
     }
 }
 
-impl std::fmt::Display for CellPosition {
+fn number_to_excel_column(column: u32) -> String {
+    let mut result = String::new();
+    let mut col = column;
+
+    while col >= 26 {
+        let remainder = col % 26;
+        col = col / 26 - 1;
+        result.push((remainder as u8 + b'A') as char);
+    }
+
+    result.push((col as u8 + b'A') as char);
+    result.chars().rev().collect::<String>()
+}
+
+impl Display for CellPosition {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({0}, {1})", self.row, self.column)
+        let col_label = number_to_excel_column(self.column);
+        write!(f, "{}{}", col_label, self.row + 1)
     }
 }
 
-#[derive(Debug, Clone)]
+impl Serialize for CellPosition {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let s = self.to_string();
+        serializer.serialize_str(&s)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SheetCellPosition {
     pub sheet: String,
     pub position: CellPosition,
@@ -139,7 +164,17 @@ impl<'de> Deserialize<'de> for SheetCellPosition {
 
 impl Display for SheetCellPosition {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{0}!{1}", self.sheet, self.position)
+        write!(f, "{}!{}", self.sheet, self.position)
+    }
+}
+
+impl Serialize for SheetCellPosition {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let s = self.to_string();
+        serializer.serialize_str(&s)
     }
 }
 
@@ -209,6 +244,64 @@ mod tests {
         for input in cases {
             let result = input.parse::<SheetCellPosition>();
             assert!(result.is_err());
+        }
+    }
+
+    #[test]
+    fn test_cell_position_round_trip() {
+        let cases = vec![
+            CellPosition { column: 0, row: 0 },
+            CellPosition { column: 1, row: 1 },
+            CellPosition {
+                column: 26,
+                row: 19,
+            },
+            CellPosition {
+                column: 52,
+                row: 25,
+            },
+        ];
+
+        for position in cases {
+            let serialized = serde_json::to_string(&position).unwrap();
+            let deserialized: CellPosition = serde_json::from_str(&serialized).unwrap();
+
+            assert_eq!(position, deserialized);
+        }
+    }
+
+    #[test]
+    fn test_sheet_cell_position_round_trip() {
+        let cases = vec![
+            SheetCellPosition {
+                sheet: "Sheet1".to_string(),
+                position: CellPosition { column: 0, row: 0 },
+            },
+            SheetCellPosition {
+                sheet: "Sheet2".to_string(),
+                position: CellPosition { column: 1, row: 1 },
+            },
+            SheetCellPosition {
+                sheet: "Data".to_string(),
+                position: CellPosition {
+                    column: 26,
+                    row: 19,
+                },
+            },
+            SheetCellPosition {
+                sheet: "Data".to_string(),
+                position: CellPosition {
+                    column: 52,
+                    row: 25,
+                },
+            },
+        ];
+
+        for position in cases {
+            let serialized = serde_json::to_string(&position).unwrap();
+            let deserialized: SheetCellPosition = serde_json::from_str(&serialized).unwrap();
+
+            assert_eq!(position, deserialized);
         }
     }
 }
