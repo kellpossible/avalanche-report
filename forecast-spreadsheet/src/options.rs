@@ -6,7 +6,7 @@ use crate::{serde::string, SheetCellPosition, Version};
 
 #[derive(Deserialize)]
 pub struct Options {
-    /// What version of the spreadsheet these options are for.
+    /// What version of the spreadsheet this schema applies to.
     #[serde(with = "string")]
     pub schema_version: Version,
     pub template_version: SheetCellPosition,
@@ -18,6 +18,7 @@ pub struct Options {
     pub forecast_changes: Option<SheetCellPosition>,
     pub weather_forecast: Option<SheetCellPosition>,
     pub valid_for: SheetCellPosition,
+    pub description: Option<SheetCellPosition>,
 }
 
 #[derive(Deserialize)]

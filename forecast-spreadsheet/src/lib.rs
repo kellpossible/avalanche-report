@@ -194,6 +194,7 @@ pub struct Forecast {
     forecast_changes: Option<String>,
     weather_forecast: Option<String>,
     valid_for: time::Duration,
+    description: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -365,7 +366,7 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         options
             .forecast_changes
             .as_ref()
-            .map(|forecast_changes| get_cell_value_string(&mut sheets, forecast_changes)),
+            .map(|position| get_cell_value_string(&mut sheets, position)),
     )?
     .flatten();
 
@@ -373,7 +374,7 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         options
             .weather_forecast
             .as_ref()
-            .map(|weather_forecast| get_cell_value_string(&mut sheets, weather_forecast)),
+            .map(|position| get_cell_value_string(&mut sheets, position)),
     )?
     .flatten();
 
@@ -400,6 +401,14 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         time::Duration::milliseconds(ms as i64)
     };
 
+    let description: Option<String> = Option::transpose(
+        options
+            .description
+            .as_ref()
+            .map(|position| get_cell_value_string(&mut sheets, position)),
+    )?
+    .flatten();
+
     Ok(Forecast {
         language,
         template_version,
@@ -410,6 +419,7 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         forecast_changes,
         weather_forecast,
         valid_for,
+        description,
     })
 }
 
