@@ -2,18 +2,19 @@ use std::collections::HashMap;
 
 use serde::Deserialize;
 
-use crate::{serde::string, SheetCellPosition};
+use crate::{serde::string, SheetCellPosition, Version};
 
 #[derive(Deserialize)]
 pub struct Options {
     /// What version of the spreadsheet these options are for.
     #[serde(with = "string")]
-    pub schema_version: crate::Version,
-    pub template_version: Version,
+    pub schema_version: Version,
+    pub template_version: SheetCellPosition,
     pub language: Language,
     pub area: Area,
     pub forecaster: Forecaster,
     pub time: Time,
+    pub recent_observations: SheetCellPosition,
 }
 
 #[derive(Deserialize)]
@@ -23,11 +24,6 @@ pub enum Time {
         date: SheetCellPosition,
         time: SheetCellPosition,
     },
-}
-
-#[derive(Deserialize)]
-pub struct Version {
-    pub position: SheetCellPosition,
 }
 
 #[derive(Deserialize)]

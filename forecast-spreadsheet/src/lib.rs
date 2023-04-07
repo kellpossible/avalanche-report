@@ -1,13 +1,15 @@
 use std::{fmt::Display, io::Cursor, num::ParseIntError, str::FromStr};
 
-use ::serde::{Deserialize, Serialize};
+pub mod options;
+pub mod position;
+mod serde;
+
+use ::serde::Serialize;
 use calamine::{open_workbook_auto_from_rs, DataType, Reader, Sheets};
 use once_cell::sync::Lazy;
 use options::Options;
+use position::SheetCellPosition;
 use time::{Date, Month, PrimitiveDateTime, Time};
-
-pub mod options;
-mod serde;
 
 static EXCEL_EPOCH: Lazy<PrimitiveDateTime> = Lazy::new(|| {
     Date::from_calendar_date(1899, Month::December, 30)
@@ -15,45 +17,6 @@ static EXCEL_EPOCH: Lazy<PrimitiveDateTime> = Lazy::new(|| {
         .with_hms(0, 0, 0)
         .unwrap()
 });
-
-#[derive(Debug, Clone, Copy, Deserialize)]
-pub struct CellPosition {
-    pub column: u32,
-    pub row: u32,
-}
-
-impl Into<(u32, u32)> for CellPosition {
-    fn into(self) -> (u32, u32) {
-        (self.row, self.column)
-    }
-}
-
-impl From<(u32, u32)> for CellPosition {
-    fn from(value: (u32, u32)) -> Self {
-        Self {
-            column: value.1,
-            row: value.0,
-        }
-    }
-}
-
-impl std::fmt::Display for CellPosition {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({0}, {1})", self.row, self.column)
-    }
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct SheetCellPosition {
-    pub sheet: String,
-    pub position: CellPosition,
-}
-
-impl Display for SheetCellPosition {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{0}!{1}", self.sheet, self.position)
-    }
-}
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -69,6 +32,14 @@ pub enum Error {
     UnknownArea(String),
     #[error("Invalid language identifier")]
     InvalidLanguageIdentifier(#[from] unic_langid::LanguageIdentifierError),
+    #[error("Required value {0} is missing at position {1}")]
+    RequiredValueMissing(String, SheetCellPosition),
+}
+
+impl Error {
+    pub fn required_value_missing<S: Into<String>>(value: S, position: SheetCellPosition) -> Self {
+        Self::RequiredValueMissing(value.into(), position)
+    }
 }
 
 #[derive(Debug)]
@@ -219,12 +190,13 @@ pub struct Forecast {
     area: String,
     forecaster: Forecaster,
     time: PrimitiveDateTime,
+    recent_observations: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
 struct Forecaster {
     name: String,
-    organisation: String,
+    organisation: Option<String>,
 }
 
 fn get_cell_value<RS>(
@@ -248,19 +220,23 @@ where
 fn get_cell_value_from_str<T, RS>(
     sheets: &mut Sheets<RS>,
     position: &SheetCellPosition,
-) -> std::result::Result<T, ParseCellError>
+) -> std::result::Result<Option<T>, ParseCellError>
 where
     RS: std::io::Read + std::io::Seek,
     T: FromStr,
     <T as FromStr>::Err: std::error::Error + Send + Sync + 'static,
 {
     let value = get_cell_value(sheets, position)?;
+    if value.is_empty() {
+        return Ok(None);
+    }
     let value_str = value
         .get_string()
         .ok_or_else(|| ParseCellError::incorrect_data_type(position.clone(), value.clone()))?;
 
     value_str
         .parse()
+        .map(Some)
         .map_err(|error| ParseCellError::from_std_error(position.clone(), value, error))
 }
 
@@ -327,9 +303,15 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
     let mut sheets: Sheets<_> = open_workbook_auto_from_rs(cursor)?;
 
     let template_version: Version =
-        get_cell_value_from_str(&mut sheets, &options.template_version.position)?;
+        get_cell_value_from_str(&mut sheets, &options.template_version)?.ok_or_else(|| {
+            Error::required_value_missing("template_version", options.template_version.clone())
+        })?;
 
-    let language_name: String = get_cell_value_from_str(&mut sheets, &options.language.position)?;
+    let language_name: String = get_cell_value_from_str(&mut sheets, &options.language.position)?
+        .ok_or_else(|| {
+        Error::required_value_missing("language", options.language.position.clone())
+    })?;
+
     let language: unic_langid::LanguageIdentifier = options
         .language
         .map
@@ -337,7 +319,8 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         .ok_or_else(|| Error::UnknownLanguage(language_name))?
         .clone();
 
-    let area_name: String = get_cell_value_from_str(&mut sheets, &options.area.position)?;
+    let area_name: String = get_cell_value_from_str(&mut sheets, &options.area.position)?
+        .ok_or_else(|| Error::required_value_missing("area", options.area.position.clone()))?;
     let area = options
         .area
         .map
@@ -346,7 +329,10 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         .to_owned();
 
     let forecaster = {
-        let name = get_cell_value_from_str(&mut sheets, &options.forecaster.name)?;
+        let name =
+            get_cell_value_from_str(&mut sheets, &options.forecaster.name)?.ok_or_else(|| {
+                Error::required_value_missing("forecaster.name", options.forecaster.name.clone())
+            })?;
         let organisation = get_cell_value_from_str(&mut sheets, &options.forecaster.organisation)?;
         Forecaster { name, organisation }
     };
@@ -364,12 +350,16 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         }
     };
 
+    let recent_observations: Option<String> =
+        get_cell_value_from_str(&mut sheets, &options.recent_observations)?;
+
     Ok(Forecast {
         language,
         template_version,
         area,
         forecaster,
         time,
+        recent_observations,
     })
 }
 
@@ -413,7 +403,8 @@ mod tests {
             0,
             0,
             0
-          ]
+          ],
+          "recent_observations": "80 cm of snowfall recorded over the last 2 days with moderate transport from SE quarter, unreactive to ski tests today. No new avalanches observed, but visibility has been limited. Widespread 'whumphing' and cracking observed around the ski resort over the last week, 2200 - 3000m, most aspects (anywhere snow existed before Jan 31st). The snowpack has a 15 - 30cm weak layer (facets) at the ground. Average snow depth is 120 cm at 2700 m."
         }
         "###);
     }

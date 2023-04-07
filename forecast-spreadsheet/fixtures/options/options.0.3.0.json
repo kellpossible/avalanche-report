@@ -1,69 +1,26 @@
 {
-    "schema_version": "0.3.0",
-    "template_version": {
-        "position": {
-            "sheet": "Form",
-            "position": {
-                "column": 6,
-                "row": 1
-            }
-        }
-    },
-    "language": {
-        "position": {
-            "sheet": "Form",
-            "position": {
-                "column": 1,
-                "row": 1
-            }
-        },
-        "map": {
-            "English": "en-UK",
-            "Georgian": "ka-GE"
-        }
-    },
-    "area": {
-        "position": {
-            "sheet": "Form",
-            "position": {
-                "column": 1,
-                "row": 2 
-            }
-        },
-        "map": {
-            "Gudauri": "gudauri"
-        }
-    },
-    "forecaster": {
-        "name": {
-            "sheet": "Form",
-            "position": {
-                "column": 1,
-                "row": 3
-            }
-        },
-        "organisation": {
-            "sheet": "Form",
-            "position": {
-                "column": 5,
-                "row": 3
-            }
-        }
-    },
-    "time": {
-        "date": {
-            "sheet": "Form",
-            "position": {
-                "column": 3,
-                "row": 2
-            }
-        },
-        "time": {
-            "sheet": "Form",
-            "position": {
-                "column": 6,
-                "row": 2
-            }
-        }
+  "schema_version": "0.3.0",
+  "template_version": "Form!G2",
+  "language": {
+    "position": "Form!B2",
+    "map": {
+      "English": "en-UK",
+      "Georgian": "ka-GE"
     }
+  },
+  "area": {
+    "position": "Form!B3",
+    "map": {
+      "Gudauri": "gudauri"
+    }
+  },
+  "forecaster": {
+    "name": "Form!B4",
+    "organisation": "Form!F4"
+  },
+  "time": {
+    "date": "Form!D3",
+    "time": "Form!G3"
+  },
+  "recent_observations": "Form!A8"
 }
