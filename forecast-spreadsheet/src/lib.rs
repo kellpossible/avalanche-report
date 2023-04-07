@@ -1,10 +1,10 @@
 use std::{fmt::Display, io::Cursor, num::ParseIntError, str::FromStr};
 
-use ::serde::Deserialize;
+use ::serde::{Deserialize, Serialize};
 use calamine::{open_workbook_auto_from_rs, DataType, Reader, Sheets};
 use once_cell::sync::Lazy;
 use options::Options;
-use time::{Date, Month, OffsetDateTime, PrimitiveDateTime, Time};
+use time::{Date, Month, PrimitiveDateTime, Time};
 
 pub mod options;
 mod serde;
@@ -167,7 +167,7 @@ impl Display for ParseCellError {
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Version {
     pub major: u8,
     pub minor: u8,
@@ -212,7 +212,7 @@ impl FromStr for Version {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Forecast {
     template_version: Version,
     language: unic_langid::LanguageIdentifier,
@@ -221,7 +221,7 @@ pub struct Forecast {
     time: PrimitiveDateTime,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 struct Forecaster {
     name: String,
     organisation: String,
@@ -384,7 +384,6 @@ mod tests {
     use super::parse_excel_spreadsheet;
     #[test]
     fn test_parse_excel_spreadsheet() {
-        dbg!(CRATE_DIR);
         let fixtures = Path::new(CRATE_DIR).join("fixtures");
         let spreadsheet_bytes =
             std::fs::read(fixtures.join("forecasts/Gudauri_2023_02_07T19 00_LS.xlsx")).unwrap();
@@ -392,6 +391,30 @@ mod tests {
             &std::fs::read_to_string(fixtures.join("options/options.0.3.0.json")).unwrap(),
         )
         .unwrap();
-        dbg!(parse_excel_spreadsheet(&spreadsheet_bytes, &options).unwrap());
+        let forecast = parse_excel_spreadsheet(&spreadsheet_bytes, &options).unwrap();
+
+        insta::assert_json_snapshot!(&forecast, @r###"
+        {
+          "template_version": {
+            "major": 0,
+            "minor": 3,
+            "patch": 3
+          },
+          "language": "en-UK",
+          "area": "gudauri",
+          "forecaster": {
+            "name": "Levi Seiferheld",
+            "organisation": "Vagabond Gudauri"
+          },
+          "time": [
+            2023,
+            38,
+            19,
+            0,
+            0,
+            0
+          ]
+        }
+        "###);
     }
 }
