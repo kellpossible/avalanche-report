@@ -1,0 +1,154 @@
+---
+source: forecast-spreadsheet/src/lib.rs
+expression: "&forecast"
+---
+{
+  "template_version": {
+    "major": 0,
+    "minor": 3,
+    "patch": 3
+  },
+  "language": "en-UK",
+  "area": "gudauri",
+  "forecaster": {
+    "name": "Levi Seiferheld",
+    "organisation": "Vagabond Gudauri"
+  },
+  "time": [
+    2023,
+    38,
+    19,
+    0,
+    0,
+    0
+  ],
+  "recent_observations": "80 cm of snowfall recorded over the last 2 days with moderate transport from SE quarter, unreactive to ski tests today. No new avalanches observed, but visibility has been limited. Widespread 'whumphing' and cracking observed around the ski resort over the last week, 2200 - 3000m, most aspects (anywhere snow existed before Jan 31st). The snowpack has a 15 - 30cm weak layer (facets) at the ground. Average snow depth is 120 cm at 2700 m.",
+  "forecast_changes": "Significant new snow with moderate winds.",
+  "weather_forecast": "Mostly cloudy tomorrow with some snow showers in the afternoon, light winds, cool temperatures.",
+  "valid_for": [
+    172800,
+    0
+  ],
+  "description": "Large amounts of new snow in the last 48 hours with moderate winds will make human triggered avalanches likely, especially at higher elevations. A weak layer at the bottom of the snowpack could produce large avalanches if it is triggered.",
+  "hazard_ratings": {
+    "high-alpine": {
+      "value": "considerable",
+      "trend": "improving",
+      "confidence": "moderate"
+    },
+    "alpine": {
+      "value": "considerable",
+      "trend": "improving",
+      "confidence": "moderate"
+    },
+    "sub-alpine": {
+      "value": "moderate",
+      "trend": "improving",
+      "confidence": "moderate"
+    },
+    "overall": {
+      "value": "considerable",
+      "trend": "no-change",
+      "confidence": "moderate"
+    }
+  },
+  "avalanche_problems": [
+    {
+      "kind": "storm-slab",
+      "aspect_elevation": {
+        "high-alpine": {
+          "aspects": [
+            "N",
+            "NE",
+            "E",
+            "SE",
+            "S",
+            "SW",
+            "W",
+            "NW"
+          ]
+        },
+        "alpine": {
+          "aspects": [
+            "N",
+            "NE",
+            "E",
+            "SE",
+            "S",
+            "SW",
+            "W",
+            "NW"
+          ]
+        },
+        "sub-alpine": {
+          "aspects": [
+            "N",
+            "NE",
+            "E",
+            "SE",
+            "S",
+            "SW",
+            "W",
+            "NW"
+          ]
+        }
+      },
+      "confidence": "moderate",
+      "trend": "improving",
+      "size": 2,
+      "distribution": "widespread",
+      "time_of_day": "all-day",
+      "sensitivity": "reactive"
+    },
+    {
+      "kind": "deep-slab",
+      "aspect_elevation": {
+        "high-alpine": {
+          "aspects": [
+            "SW",
+            "W",
+            "NW",
+            "N",
+            "NE",
+            "E",
+            "SE"
+          ]
+        },
+        "alpine": {
+          "aspects": [
+            "W",
+            "NW",
+            "N",
+            "NE",
+            "E"
+          ]
+        }
+      },
+      "confidence": null,
+      "trend": null,
+      "size": 3,
+      "distribution": "isolated",
+      "time_of_day": null,
+      "sensitivity": "reactive"
+    },
+    {
+      "kind": "wind-slab",
+      "aspect_elevation": {
+        "high-alpine": {
+          "aspects": [
+            "N",
+            "NW",
+            "NE",
+            "W"
+          ]
+        }
+      },
+      "confidence": "moderate",
+      "trend": "improving",
+      "size": 2,
+      "distribution": "specific",
+      "time_of_day": "all-day",
+      "sensitivity": "reactive"
+    }
+  ]
+}

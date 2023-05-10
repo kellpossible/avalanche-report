@@ -4,3 +4,6 @@
 /data
 .env.toml
 .env
+
+# Spreadsheet Lock Files
+*.~lock*
