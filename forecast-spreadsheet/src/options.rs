@@ -59,6 +59,10 @@ pub struct AvalancheProblem {
     pub kind: CellPosition,
     pub aspect_elevation: IndexMap<ElevationBandId, AspectElevation>,
     pub confidence: Option<CellPosition>,
+    pub sensitivity: Option<CellPosition>,
+    pub size: Option<CellPosition>,
+    pub distribution: Option<CellPosition>,
+    pub time_of_day: Option<CellPosition>,
     pub trend: Option<CellPosition>,
 }
 

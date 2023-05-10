@@ -94,7 +94,11 @@ expression: "&forecast"
         }
       },
       "confidence": "moderate",
-      "trend": "improving"
+      "trend": "improving",
+      "size": 2,
+      "distribution": "widespread",
+      "time_of_day": "all-day",
+      "sensitivity": "reactive"
     },
     {
       "kind": "deep-slab",
@@ -121,7 +125,11 @@ expression: "&forecast"
         }
       },
       "confidence": null,
-      "trend": null
+      "trend": null,
+      "size": 3,
+      "distribution": "isolated",
+      "time_of_day": null,
+      "sensitivity": "reactive"
     },
     {
       "kind": "wind-slab",
@@ -136,7 +144,11 @@ expression: "&forecast"
         }
       },
       "confidence": "moderate",
-      "trend": "improving"
+      "trend": "improving",
+      "size": 2,
+      "distribution": "specific",
+      "time_of_day": "all-day",
+      "sensitivity": "reactive"
     }
   ]
 }

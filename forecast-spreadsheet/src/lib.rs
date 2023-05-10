@@ -353,6 +353,10 @@ pub struct AvalancheProblem {
     pub aspect_elevation: IndexMap<ElevationBandId, AspectElevation>,
     pub confidence: Option<Confidence>,
     pub trend: Option<Trend>,
+    pub size: Option<Size>,
+    pub distribution: Option<Distribution>,
+    pub time_of_day: Option<TimeOfDay>,
+    pub sensitivity: Option<Sensitivity>,
 }
 
 #[derive(Copy, Clone, Debug, Deserialize, Serialize)]
@@ -460,6 +464,8 @@ impl FromStr for TimeOfDay {
 
 // Scope of `serde` module conflicts with serde_repr
 mod size {
+    use std::str::FromStr;
+
     use serde_repr::{Deserialize_repr, Serialize_repr};
     #[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug)]
     #[repr(u8)]
@@ -469,6 +475,29 @@ mod size {
         Three = 3,
         Four = 4,
         Five = 5,
+    }
+
+    impl FromStr for Size {
+        type Err = serde_json::Error;
+
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            serde_json::from_str(s)
+        }
+    }
+
+    impl TryFrom<u8> for Size {
+        type Error = eyre::Error;
+
+        fn try_from(value: u8) -> Result<Self, Self::Error> {
+            Ok(match value {
+                1 => Self::One,
+                2 => Self::Two,
+                3 => Self::Three,
+                4 => Self::Four,
+                5 => Self::Five,
+                _ => return Err(eyre::eyre!("cannot parse size from value {value}")),
+            })
+        }
     }
 }
 pub use size::Size;
@@ -755,106 +784,9 @@ pub fn parse_excel_spreadsheet(
         .avalanche_problems
         .iter()
         .enumerate()
-        .map(|(_i, problem)| {
-            let enabled_cell = problem.root.clone() + problem.enabled;
-            let enabled = get_cell_value_bool(&mut sheets, &enabled_cell)?;
-
-            // Skip this problem if it is disabled.
-            if !enabled {
-                return Ok(None);
-            }
-
-            let kind_cell = problem.root.clone() + problem.kind;
-            let value: String = get_cell_value_string(&mut sheets, &kind_cell)
-                .with_context(Box::new(move || format!("kind")))?
-                .ok_or_else(|| {
-                    required_value_missing("avalanche_problem.kind", kind_cell.clone())
-                })?;
-
-            let kind = options
-                .terms
-                .avalanche_problem_kind
-                .get(&value)
-                .cloned()
-                .ok_or_else(|| unable_to_map_value("terms.avalanche_problem_kind", value))?;
-
-            let aspect_elevation = problem
-                .aspect_elevation
-                .iter()
-                .zip(repeat(problem))
-                .map(|((elevation_band, aspect_elevation), problem)| {
-                    let enabled_cell = problem.root.clone() + aspect_elevation.enabled;
-                    let enabled = get_cell_value_bool(&mut sheets, &enabled_cell)?;
-
-                    if !enabled {
-                        return Ok(None);
-                    }
-
-                    let aspects_cell = problem.root.clone() + aspect_elevation.aspects;
-                    let value: String = match get_cell_value_string(&mut sheets, &aspects_cell)? {
-                        Some(value) => value,
-                        None => String::new(),
-                    };
-                    let aspects = parse_aspects(&value).map_err(|error| {
-                        ParseCellError::from_str_error(
-                            aspects_cell.clone(),
-                            DataType::String(value),
-                            error,
-                        )
-                    })?;
-
-                    if aspects.is_empty() {
-                        return Ok(None);
-                    }
-
-                    Ok(Some((elevation_band.clone(), AspectElevation { aspects })))
-                })
-                .filter_map(std::result::Result::transpose)
-                .collect::<eyre::Result<_>>()?;
-
-            let trend: Option<Trend> = Option::transpose(problem.trend.map(|relative| {
-                let cell = problem.root.clone() + relative;
-
-                Option::transpose(
-                    get_cell_value_string(&mut sheets, &cell)
-                        .context("trend")?
-                        .map(|value: String| {
-                            options
-                                .terms
-                                .trend
-                                .get(&value)
-                                .cloned()
-                                .ok_or_else(|| unable_to_map_value("terms.trend", value))
-                        }),
-                )
-            }))?
-            .flatten();
-
-            let confidence: Option<Confidence> =
-                Option::transpose(problem.confidence.map(|relative| {
-                    let cell = problem.root.clone() + relative;
-
-                    Option::transpose(
-                        get_cell_value_string(&mut sheets, &cell)
-                            .context("confidence")?
-                            .map(|value: String| {
-                                options
-                                    .terms
-                                    .confidence
-                                    .get(&value)
-                                    .cloned()
-                                    .ok_or_else(|| unable_to_map_value("terms.confidence", value))
-                            }),
-                    )
-                }))?
-                .flatten();
-
-            Result::Ok(Some(AvalancheProblem {
-                kind,
-                aspect_elevation,
-                trend,
-                confidence,
-            }))
+        .map(|(i, problem)| {
+            extract_avalanch_problem(problem, options, &mut sheets)
+                .with_context(|| format!("Avalanche problem {i}"))
         })
         .filter_map(std::result::Result::transpose)
         .collect::<eyre::Result<_>>()?;
@@ -873,6 +805,179 @@ pub fn parse_excel_spreadsheet(
         hazard_ratings,
         avalanche_problems,
     })
+}
+
+fn extract_avalanch_problem<RS>(
+    problem: &options::AvalancheProblem,
+    options: &Options,
+    sheets: &mut Sheets<RS>,
+) -> eyre::Result<Option<AvalancheProblem>>
+where
+    RS: std::io::Read + std::io::Seek,
+{
+    let enabled_cell = problem.root.clone() + problem.enabled;
+    let enabled = get_cell_value_bool(sheets, &enabled_cell)?;
+
+    // Skip this problem if it is disabled.
+    if !enabled {
+        return Ok(None);
+    }
+
+    let kind_cell = problem.root.clone() + problem.kind;
+    let value: String = get_cell_value_string(sheets, &kind_cell)
+        .with_context(Box::new(move || format!("kind")))?
+        .ok_or_else(|| required_value_missing("avalanche_problem.kind", kind_cell.clone()))?;
+
+    let kind = options
+        .terms
+        .avalanche_problem_kind
+        .get(&value)
+        .cloned()
+        .ok_or_else(|| unable_to_map_value("terms.avalanche_problem_kind", value))?;
+
+    let aspect_elevation = problem
+        .aspect_elevation
+        .iter()
+        .zip(repeat(problem))
+        .map(|((elevation_band, aspect_elevation), problem)| {
+            let enabled_cell = problem.root.clone() + aspect_elevation.enabled;
+            let enabled = get_cell_value_bool(sheets, &enabled_cell)?;
+
+            if !enabled {
+                return Ok(None);
+            }
+
+            let aspects_cell = problem.root.clone() + aspect_elevation.aspects;
+            let value: String = match get_cell_value_string(sheets, &aspects_cell)? {
+                Some(value) => value,
+                None => String::new(),
+            };
+            let aspects = parse_aspects(&value).map_err(|error| {
+                ParseCellError::from_str_error(aspects_cell.clone(), DataType::String(value), error)
+            })?;
+
+            if aspects.is_empty() {
+                return Ok(None);
+            }
+
+            Ok(Some((elevation_band.clone(), AspectElevation { aspects })))
+        })
+        .filter_map(std::result::Result::transpose)
+        .collect::<eyre::Result<_>>()?;
+
+    let trend: Option<Trend> = Option::transpose(problem.trend.map(|relative| {
+        let cell = problem.root.clone() + relative;
+
+        Option::transpose(get_cell_value_string(sheets, &cell).context("trend")?.map(
+            |value: String| {
+                options
+                    .terms
+                    .trend
+                    .get(&value)
+                    .cloned()
+                    .ok_or_else(|| unable_to_map_value("terms.trend", value))
+            },
+        ))
+    }))?
+    .flatten();
+
+    let confidence: Option<Confidence> = Option::transpose(problem.confidence.map(|relative| {
+        let cell = problem.root.clone() + relative;
+
+        Option::transpose(
+            get_cell_value_string(sheets, &cell)
+                .context("confidence")?
+                .map(|value: String| {
+                    options
+                        .terms
+                        .confidence
+                        .get(&value)
+                        .cloned()
+                        .ok_or_else(|| unable_to_map_value("terms.confidence", value))
+                }),
+        )
+    }))?
+    .flatten();
+
+    let sensitivity: Option<Sensitivity> =
+        Option::transpose(problem.sensitivity.map(|relative| {
+            let cell = problem.root.clone() + relative;
+
+            Option::transpose(
+                get_cell_value_string(sheets, &cell)
+                    .context("sensitivity")?
+                    .map(|value: String| {
+                        options
+                            .terms
+                            .sensitivity
+                            .get(&value)
+                            .cloned()
+                            .ok_or_else(|| unable_to_map_value("terms.sensitivity", value))
+                    }),
+            )
+        }))?
+        .flatten();
+
+    let time_of_day: Option<TimeOfDay> = Option::transpose(problem.time_of_day.map(|relative| {
+        let cell = problem.root.clone() + relative;
+
+        Option::transpose(
+            get_cell_value_string(sheets, &cell)
+                .context("time_of_day")?
+                .map(|value: String| {
+                    options
+                        .terms
+                        .time_of_day
+                        .get(&value)
+                        .cloned()
+                        .ok_or_else(|| unable_to_map_value("terms.time_of_day", value))
+                }),
+        )
+    }))?
+    .flatten();
+
+    let distribution: Option<Distribution> =
+        Option::transpose(problem.distribution.map(|relative| {
+            let cell = problem.root.clone() + relative;
+
+            Option::transpose(
+                get_cell_value_string(sheets, &cell)
+                    .context("distribution")?
+                    .map(|value: String| {
+                        options
+                            .terms
+                            .distribution
+                            .get(&value)
+                            .cloned()
+                            .ok_or_else(|| unable_to_map_value("terms.distribution", value))
+                    }),
+            )
+        }))?
+        .flatten();
+
+    let size: Option<Size> = Option::transpose(problem.size.map(|relative| {
+        let cell = problem.root.clone() + relative;
+
+        Ok(Some(match get_cell_value(sheets, &cell)? {
+            DataType::Int(n) => Size::try_from(u8::try_from(n)?)?,
+            DataType::Float(f) => Size::try_from(u8::try_from(f as i64)?)?,
+            DataType::Empty => return Ok(None),
+            unexpected => return Err(eyre::eyre!("unexpected data type {unexpected:?}")),
+        }))
+    }))
+    .context("size")?
+    .flatten();
+
+    Result::Ok(Some(AvalancheProblem {
+        kind,
+        aspect_elevation,
+        trend,
+        confidence,
+        size,
+        distribution,
+        sensitivity,
+        time_of_day,
+    }))
 }
 
 fn extract_hazard_rating<RS>(
