@@ -369,7 +369,7 @@ mod test {
 
     #[test]
     fn test_parse_forecast_name() {
-        let forecast_details = parse_forecast_name("Gudauri_2023-01-24T17:00_LF.pdf").unwrap();
+        let forecast_details = parse_forecast_name("Gudauri_2023-01-24T17:00_LF.en.pdf").unwrap();
         insta::assert_json_snapshot!(forecast_details, @r###"
         {
           "forecast": {
@@ -387,7 +387,7 @@ mod test {
             ],
             "forecaster": "LF"
           },
-          "language": "pdf"
+          "language": "en"
         }
         "###);
     }
