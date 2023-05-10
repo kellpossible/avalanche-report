@@ -1,12 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fmt::Display,
-    io::Cursor,
-    iter::repeat,
-    num::ParseIntError,
-    ops::Deref,
-    str::FromStr,
-};
+use std::{fmt::Display, io::Cursor, iter::repeat, num::ParseIntError, ops::Deref, str::FromStr};
 
 pub mod options;
 pub mod position;
@@ -14,9 +6,10 @@ mod serde;
 
 use ::serde::{Deserialize, Serialize};
 use calamine::{open_workbook_auto_from_rs, DataType, Reader, Sheets};
+use eyre::Context;
 use indexmap::{IndexMap, IndexSet};
 use once_cell::sync::Lazy;
-use options::Options;
+use options::{HazardRatingInput, Options};
 use position::SheetCellPosition;
 use time::{Date, Month, PrimitiveDateTime, Time};
 
@@ -26,32 +19,6 @@ static EXCEL_EPOCH: Lazy<PrimitiveDateTime> = Lazy::new(|| {
         .with_hms(0, 0, 0)
         .unwrap()
 });
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error(transparent)]
-    Calamine(#[from] calamine::Error),
-    #[error("Unable to parse version")]
-    UnableToParseVersion(#[from] ParseVersionError),
-    #[error("Unable to parse a cell")]
-    UnableToParseCell(#[from] ParseCellError),
-    #[error("Unknown language {0}")]
-    UnknownLanguage(String),
-    #[error("Unknown area {0}")]
-    UnknownArea(String),
-    #[error("Invalid language identifier")]
-    InvalidLanguageIdentifier(#[from] unic_langid::LanguageIdentifierError),
-    #[error("Required value {0} is missing at position {1}")]
-    RequiredValueMissing(String, SheetCellPosition),
-    #[error("Unable to use map {map_name} to find a valid variant equivalent to value {value}")]
-    UnableToMapValue { map_name: String, value: String },
-}
-
-impl Error {
-    pub fn required_value_missing<S: Into<String>>(value: S, position: SheetCellPosition) -> Self {
-        Self::RequiredValueMissing(value.into(), position)
-    }
-}
 
 #[derive(Debug)]
 pub enum ParseCellErrorKind {
@@ -66,7 +33,7 @@ pub struct ParseCellError {
     kind: ParseCellErrorKind,
     position: SheetCellPosition,
     value: Option<DataType>,
-    context: Option<Box<dyn Fn() -> String>>,
+    context: Option<Box<dyn Fn() -> String + Send + Sync + 'static>>,
 }
 
 impl std::fmt::Debug for ParseCellError {
@@ -132,21 +99,24 @@ impl ParseCellError {
 }
 
 pub trait ParseCellWithContext {
-    fn with_context(self, context: Box<dyn Fn() -> String>) -> Self;
+    fn cell_with_context(self, context: Box<dyn Fn() -> String + Send + Sync + 'static>) -> Self;
 }
 
 impl ParseCellWithContext for ParseCellError {
-    fn with_context(mut self, context: Box<dyn Fn() -> String>) -> Self {
+    fn cell_with_context(
+        mut self,
+        context: Box<dyn Fn() -> String + Send + Sync + 'static>,
+    ) -> Self {
         self.context = Some(context.into());
         self
     }
 }
 
 impl<T> ParseCellWithContext for std::result::Result<T, ParseCellError> {
-    fn with_context(self, context: Box<dyn Fn() -> String>) -> Self {
+    fn cell_with_context(self, context: Box<dyn Fn() -> String + Send + Sync + 'static>) -> Self {
         match self {
             Ok(_) => self,
-            Err(error) => Err(error.with_context(context)),
+            Err(error) => Err(error.cell_with_context(context)),
         }
     }
 }
@@ -189,8 +159,6 @@ impl Display for ParseCellError {
         Ok(())
     }
 }
-
-pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Serialize)]
 pub struct Version {
@@ -411,10 +379,34 @@ impl FromStr for ProblemKind {
 
 #[derive(Copy, Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
+pub enum Distribution {
+    Isolated,
+    Specific,
+    Widespread,
+}
+
+impl FromStr for Distribution {
+    type Err = serde_json::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        serde_json::from_str(s)
+    }
+}
+
+#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum Trend {
     Improving,
     NoChange,
     Deteriorating,
+}
+
+impl FromStr for Trend {
+    type Err = serde_json::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        serde_json::from_str(s)
+    }
 }
 
 #[derive(Copy, Clone, Debug, Deserialize, Serialize)]
@@ -424,6 +416,62 @@ pub enum Confidence {
     Moderate,
     High,
 }
+
+impl FromStr for Confidence {
+    type Err = serde_json::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        serde_json::from_str(s)
+    }
+}
+
+#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Sensitivity {
+    Unreactive,
+    Stubborn,
+    Reactive,
+    Touchy,
+}
+
+impl FromStr for Sensitivity {
+    type Err = serde_json::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        serde_json::from_str(s)
+    }
+}
+
+#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TimeOfDay {
+    AllDay,
+    Morning,
+    Afternoon,
+}
+
+impl FromStr for TimeOfDay {
+    type Err = serde_json::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        serde_json::from_str(s)
+    }
+}
+
+// Scope of `serde` module conflicts with serde_repr
+mod size {
+    use serde_repr::{Deserialize_repr, Serialize_repr};
+    #[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug)]
+    #[repr(u8)]
+    pub enum Size {
+        One = 1,
+        Two = 2,
+        Three = 3,
+        Four = 4,
+        Five = 5,
+    }
+}
+pub use size::Size;
 
 #[derive(Debug, Serialize)]
 pub struct HazardRating {
@@ -488,7 +536,7 @@ where
 fn get_cell_value_string<T, RS>(
     sheets: &mut Sheets<RS>,
     position: &SheetCellPosition,
-) -> std::result::Result<Option<T>, ParseCellError>
+) -> Result<Option<T>, ParseCellError>
 where
     RS: std::io::Read + std::io::Seek,
     T: FromStr,
@@ -508,6 +556,7 @@ where
         .map_err(|error| ParseCellError::from_str_error(position.clone(), value, error))
 }
 
+/// Convert an Excel decimal day into a [`Time`].
 fn decimal_day_to_time(time_day: f64) -> std::result::Result<Time, time::error::ComponentRange> {
     let hour = (time_day * 24.0).floor() as u64;
     let minute = (time_day * 24.0 * 60.0).floor() as u64 - (hour * 60);
@@ -565,41 +614,56 @@ where
     }
 }
 
-pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> Result<Forecast> {
+fn required_value_missing<V: std::fmt::Display>(
+    value: V,
+    position: SheetCellPosition,
+) -> eyre::Error {
+    eyre::eyre!("Required value {value} missing from position {position}")
+}
+
+fn unable_to_map_value<V: std::fmt::Display, M: std::fmt::Display>(
+    map: M,
+    value: V,
+) -> eyre::Error {
+    eyre::eyre!("Unable to use map {map} to find a valid variant equal to value {value}")
+}
+
+pub fn parse_excel_spreadsheet(
+    spreadsheet_bytes: &[u8],
+    options: &Options,
+) -> eyre::Result<Forecast> {
     let cursor = Cursor::new(spreadsheet_bytes);
     // open_workbook_auto_from_rs(data)
     let mut sheets: Sheets<_> = open_workbook_auto_from_rs(cursor)?;
 
     let template_version: Version = get_cell_value_string(&mut sheets, &options.template_version)?
         .ok_or_else(|| {
-            Error::required_value_missing("template_version", options.template_version.clone())
+            required_value_missing("template_version", options.template_version.clone())
         })?;
 
     let language_name: String = get_cell_value_string(&mut sheets, &options.language.position)?
-        .ok_or_else(|| {
-            Error::required_value_missing("language", options.language.position.clone())
-        })?;
+        .ok_or_else(|| required_value_missing("language", options.language.position.clone()))?;
 
     let language: unic_langid::LanguageIdentifier = options
         .language
         .map
         .get(&language_name)
-        .ok_or_else(|| Error::UnknownLanguage(language_name))?
+        .ok_or_else(|| eyre::eyre!("unknown language {language_name}"))?
         .clone();
 
     let area_name: String = get_cell_value_string(&mut sheets, &options.area.position)?
-        .ok_or_else(|| Error::required_value_missing("area", options.area.position.clone()))?;
+        .ok_or_else(|| required_value_missing("area", options.area.position.clone()))?;
     let area = options
         .area
         .map
         .get(&area_name)
-        .ok_or_else(|| Error::UnknownArea(area_name))?
+        .ok_or_else(|| eyre::eyre!("unknown area {area_name}"))?
         .to_owned();
 
     let forecaster = {
         let name =
             get_cell_value_string(&mut sheets, &options.forecaster.name)?.ok_or_else(|| {
-                Error::required_value_missing("forecaster.name", options.forecaster.name.clone())
+                required_value_missing("forecaster.name", options.forecaster.name.clone())
             })?;
         let organisation = get_cell_value_string(&mut sheets, &options.forecaster.organisation)?;
         Forecaster { name, organisation }
@@ -648,15 +712,15 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
             DataType::Int(i) => i as f64,
             DataType::Float(f) => f,
             DataType::Empty => {
-                return Err(Error::required_value_missing(
+                return Err(required_value_missing(
                     "valid_for",
                     options.valid_for.clone(),
                 ))
             }
             _ => {
-                return Err(Error::UnableToParseCell(
-                    ParseCellError::incorrect_data_type(options.valid_for.clone(), value),
-                ))
+                return Err(
+                    ParseCellError::incorrect_data_type(options.valid_for.clone(), value).into(),
+                )
             }
         };
 
@@ -678,137 +742,59 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         .inputs
         .iter()
         .map(|(kind, input)| {
-            if let HazardRatingKind::ElevationSpecific(elevation_band) = kind {
-                if !options.elevation_bands.contains(elevation_band) {
-                    return Err(Error::UnableToMapValue {
-                        map_name: "elevation_bands".into(),
-                        value: (**elevation_band).clone(),
-                    });
-                }
+            let kind = kind.clone();
+            match extract_hazard_rating(&kind, input, &mut sheets, options) {
+                Ok(hazard_rating) => Ok((kind, hazard_rating)),
+                Err(error) => Err(error)
+                    .with_context(|| format!("error extracting hazard rating {kind}: {input:?}")),
             }
-            let value_cell = input.root.clone() + input.value;
-            let value: Option<HazardRatingValue> = Option::transpose(
-                get_cell_value_string(&mut sheets, &value_cell)?.map(|value| {
-                    options
-                        .terms
-                        .hazard_rating
-                        .get(&value)
-                        .cloned()
-                        .ok_or_else(|| Error::UnableToMapValue {
-                            map_name: "terms.hazard_rating".to_string(),
-                            value,
-                        })
-                }),
-            )?;
-
-            let trend: Option<Trend> = Option::transpose(input.trend.map(|relative| {
-                let cell = input.root.clone() + relative;
-                let kind_e = kind.clone();
-
-                Option::transpose(
-                    get_cell_value_string(&mut sheets, &cell)
-                        .with_context(Box::new(move || format!("{kind_e} hazard rating trend")))?
-                        .map(|value| {
-                            options.terms.trend.get(&value).cloned().ok_or_else(|| {
-                                Error::UnableToMapValue {
-                                    map_name: "terms.trend".to_string(),
-                                    value,
-                                }
-                            })
-                        }),
-                )
-            }))?
-            .flatten();
-
-            let confidence: Option<Confidence> =
-                Option::transpose(input.confidence.map(|relative| {
-                    let cell = input.root.clone() + relative;
-                    let kind_e = kind.clone();
-
-                    Option::transpose(
-                        get_cell_value_string(&mut sheets, &cell)
-                            .with_context(Box::new(move || {
-                                format!("{kind_e} hazard rating confidence")
-                            }))?
-                            .map(|value| {
-                                options
-                                    .terms
-                                    .confidence
-                                    .get(&value)
-                                    .cloned()
-                                    .ok_or_else(|| Error::UnableToMapValue {
-                                        map_name: "terms.confidence".to_string(),
-                                        value,
-                                    })
-                            }),
-                    )
-                }))?
-                .flatten();
-
-            let rating = HazardRating {
-                value,
-                trend,
-                confidence,
-            };
-
-            Ok((kind.clone(), rating))
         })
-        .collect::<Result<_>>()?;
+        .collect::<eyre::Result<_>>()?;
 
     let avalanche_problems: Vec<AvalancheProblem> = options
         .avalanche_problems
         .iter()
         .enumerate()
-        .map(|(i, problem)| {
+        .map(|(_i, problem)| {
             let enabled_cell = problem.root.clone() + problem.enabled;
-            let enabled = match get_cell_value_bool(&mut sheets, &enabled_cell)
-                .with_context(Box::new(move || format!("Avalanche problem {i}")))
-            {
-                Ok(enabled) => enabled,
-                Err(error) => return Err(error.into()),
-            };
+            let enabled = get_cell_value_bool(&mut sheets, &enabled_cell)?;
 
+            // Skip this problem if it is disabled.
             if !enabled {
                 return Ok(None);
             }
 
             let kind_cell = problem.root.clone() + problem.kind;
             let value: String = get_cell_value_string(&mut sheets, &kind_cell)
-                .with_context(Box::new(move || format!("Avalanche problem {i}")))?
+                .with_context(Box::new(move || format!("kind")))?
                 .ok_or_else(|| {
-                    Error::required_value_missing("avalanche_problem.kind", kind_cell.clone())
+                    required_value_missing("avalanche_problem.kind", kind_cell.clone())
                 })?;
+
             let kind = options
                 .terms
                 .avalanche_problem_kind
                 .get(&value)
                 .cloned()
-                .ok_or_else(|| Error::UnableToMapValue {
-                    map_name: "terms.avalanche_problem_kind".to_string(),
-                    value,
-                })?;
+                .ok_or_else(|| unable_to_map_value("terms.avalanche_problem_kind", value))?;
 
             let aspect_elevation = problem
                 .aspect_elevation
                 .iter()
                 .zip(repeat(problem))
                 .map(|((elevation_band, aspect_elevation), problem)| {
-                    let enabled_cell = problem.root.clone() + problem.enabled;
-                    let enabled = match get_cell_value_bool(&mut sheets, &enabled_cell)
-                        .with_context(Box::new(move || format!("Avalanche problem {i}")))
-                    {
-                        Ok(enabled) => enabled,
-                        Err(error) => return Err(error.into()),
-                    };
+                    let enabled_cell = problem.root.clone() + aspect_elevation.enabled;
+                    let enabled = get_cell_value_bool(&mut sheets, &enabled_cell)?;
 
                     if !enabled {
                         return Ok(None);
                     }
 
                     let aspects_cell = problem.root.clone() + aspect_elevation.aspects;
-                    let value: String = get_cell_value_string(&mut sheets, &aspects_cell)
-                        .with_context(Box::new(move || format!("Avalanche problem {i}")))?
-                        .unwrap_or_else(|| "".to_string());
+                    let value: String = match get_cell_value_string(&mut sheets, &aspects_cell)? {
+                        Some(value) => value,
+                        None => String::new(),
+                    };
                     let aspects = parse_aspects(&value).map_err(|error| {
                         ParseCellError::from_str_error(
                             aspects_cell.clone(),
@@ -824,22 +810,21 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
                     Ok(Some((elevation_band.clone(), AspectElevation { aspects })))
                 })
                 .filter_map(std::result::Result::transpose)
-                .collect::<Result<_>>()?;
+                .collect::<eyre::Result<_>>()?;
 
             let trend: Option<Trend> = Option::transpose(problem.trend.map(|relative| {
                 let cell = problem.root.clone() + relative;
-                let kind_e = kind.clone();
 
                 Option::transpose(
                     get_cell_value_string(&mut sheets, &cell)
-                        .with_context(Box::new(move || format!("Avalanche Problem {i} trend")))?
-                        .map(|value| {
-                            options.terms.trend.get(&value).cloned().ok_or_else(|| {
-                                Error::UnableToMapValue {
-                                    map_name: "terms.trend".to_string(),
-                                    value,
-                                }
-                            })
+                        .context("trend")?
+                        .map(|value: String| {
+                            options
+                                .terms
+                                .trend
+                                .get(&value)
+                                .cloned()
+                                .ok_or_else(|| unable_to_map_value("terms.trend", value))
                         }),
                 )
             }))?
@@ -848,23 +833,17 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
             let confidence: Option<Confidence> =
                 Option::transpose(problem.confidence.map(|relative| {
                     let cell = problem.root.clone() + relative;
-                    let kind_e = kind.clone();
 
                     Option::transpose(
                         get_cell_value_string(&mut sheets, &cell)
-                            .with_context(Box::new(move || {
-                                format!("Avalanche Problem {i} confidence")
-                            }))?
-                            .map(|value| {
+                            .context("confidence")?
+                            .map(|value: String| {
                                 options
                                     .terms
                                     .confidence
                                     .get(&value)
                                     .cloned()
-                                    .ok_or_else(|| Error::UnableToMapValue {
-                                        map_name: "terms.confidence".to_string(),
-                                        value,
-                                    })
+                                    .ok_or_else(|| unable_to_map_value("terms.confidence", value))
                             }),
                     )
                 }))?
@@ -878,7 +857,7 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
             }))
         })
         .filter_map(std::result::Result::transpose)
-        .collect::<Result<_>>()?;
+        .collect::<eyre::Result<_>>()?;
 
     Ok(Forecast {
         language,
@@ -894,6 +873,78 @@ pub fn parse_excel_spreadsheet(spreadsheet_bytes: &[u8], options: &Options) -> R
         hazard_ratings,
         avalanche_problems,
     })
+}
+
+fn extract_hazard_rating<RS>(
+    kind: &HazardRatingKind,
+    input: &HazardRatingInput,
+    sheets: &mut Sheets<RS>,
+    options: &Options,
+) -> eyre::Result<HazardRating>
+where
+    RS: std::io::Read + std::io::Seek,
+{
+    if let HazardRatingKind::ElevationSpecific(elevation_band) = kind {
+        if !options.elevation_bands.contains(elevation_band) {
+            return Err(unable_to_map_value(
+                "elevation_bands",
+                (**elevation_band).clone(),
+            ));
+        }
+    }
+    let value_cell = input.root.clone() + input.value;
+    let value: Option<HazardRatingValue> = Option::transpose(
+        get_cell_value_string(sheets, &value_cell)?.map(|value: String| {
+            options
+                .terms
+                .hazard_rating
+                .get(&value)
+                .cloned()
+                .ok_or_else(|| unable_to_map_value("terms.hazard_rating", value))
+        }),
+    )?;
+
+    let trend: Option<Trend> = Option::transpose(input.trend.map(|relative| {
+        let cell = input.root.clone() + relative;
+
+        Option::transpose(get_cell_value_string(sheets, &cell).context("trend")?.map(
+            |value: String| {
+                options
+                    .terms
+                    .trend
+                    .get(&value)
+                    .cloned()
+                    .ok_or_else(|| unable_to_map_value("terms.trend", value))
+            },
+        ))
+    }))?
+    .flatten();
+
+    let confidence: Option<Confidence> = Option::transpose(input.confidence.map(|relative| {
+        let cell = input.root.clone() + relative;
+
+        Option::transpose(
+            get_cell_value_string(sheets, &cell)
+                .context("confidence")?
+                .map(|value: String| {
+                    options
+                        .terms
+                        .confidence
+                        .get(&value)
+                        .cloned()
+                        .ok_or_else(|| unable_to_map_value("terms.confidence", value))
+                }),
+        )
+    }))?
+    .flatten();
+
+    let rating = HazardRating {
+        value,
+        trend,
+        confidence,
+    };
+
+    Ok(rating)
 }
 
 #[cfg(test)]

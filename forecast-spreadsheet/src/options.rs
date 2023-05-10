@@ -1,11 +1,12 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use indexmap::{IndexMap, IndexSet};
 use serde::Deserialize;
 
 use crate::{
-    position::CellPosition, serde::string, AreaId, Confidence, ElevationBandId, HazardRatingKind,
-    HazardRatingValue, ProblemKind, SheetCellPosition, Trend, Version,
+    position::CellPosition, serde::string, AreaId, Confidence, Distribution, ElevationBandId,
+    HazardRatingKind, HazardRatingValue, ProblemKind, Sensitivity, SheetCellPosition, TimeOfDay,
+    Trend, Version,
 };
 
 #[derive(Deserialize)]
@@ -37,6 +38,9 @@ pub struct Terms {
     pub hazard_rating: HashMap<String, HazardRatingValue>,
     pub trend: HashMap<String, Trend>,
     pub avalanche_problem_kind: HashMap<String, ProblemKind>,
+    pub distribution: HashMap<String, Distribution>,
+    pub time_of_day: HashMap<String, TimeOfDay>,
+    pub sensitivity: HashMap<String, Sensitivity>,
 }
 
 /// The affected aspects for a given elevation for an [`AvalancheProblem`]
@@ -78,7 +82,7 @@ pub struct ElevationRange {
     pub lower: Option<i64>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct HazardRatingInput {
     /// Root position of the hazard rating block.
     pub root: SheetCellPosition,

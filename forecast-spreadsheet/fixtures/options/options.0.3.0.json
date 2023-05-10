@@ -60,6 +60,10 @@
       "root": "Form!A16",
       "enabled": "A1",
       "kind": "C2",
+      "sensitivity": "H2",
+      "distribution": "I2",
+      "size": "J2",
+      "time_of_day": "K2",
       "trend": "L2",
       "confidence": "M2",
       "aspect_elevation": {
@@ -81,6 +85,10 @@
       "root": "Form!A24",
       "enabled": "A1",
       "kind": "C2",
+      "sensitivity": "H2",
+      "distribution": "I2",
+      "size": "J2",
+      "time_of_day": "K2",
       "trend": "L2",
       "confidence": "M2",
       "aspect_elevation": {
@@ -102,6 +110,10 @@
       "root": "Form!A32",
       "enabled": "A1",
       "kind": "C2",
+      "sensitivity": "H2",
+      "distribution": "I2",
+      "size": "J2",
+      "time_of_day": "K2",
       "trend": "L2",
       "confidence": "M2",
       "aspect_elevation": {
@@ -123,6 +135,10 @@
       "root": "Form!A40",
       "enabled": "A1",
       "kind": "C2",
+      "sensitivity": "H2",
+      "distribution": "I2",
+      "size": "J2",
+      "time_of_day": "K2",
       "trend": "L2",
       "confidence": "M2",
       "aspect_elevation": {
@@ -160,6 +176,22 @@
       "Improving": "improving",
       "No change": "no-change",
       "Deteriorating": "deteriorating"
+    },
+    "time_of_day": {
+      "All Day": "all-day",
+      "Afternoon": "afternoon",
+      "Morning": "morning"
+    },
+    "sensitivity": {
+      "Unreactive": "unreactive",
+      "Stubborn": "stubborn",
+      "Reactive": "reactive",
+      "Touchy": "touchy"
+    },
+    "distribution": {
+      "Isolated": "isolated",
+      "Specific": "specific",
+      "Widespread": "widespread"
     },
     "avalanche_problem_kind": {
       "Loose Dry": "loose-dry",
