@@ -1,0 +1,22 @@
+# Run with `drill`
+
+concurrency: 8
+base: 'http://localhost:3000'
+iterations: 10000
+rampup: 2
+
+plan:
+  - name: Admin Logs
+    request:
+      url: /admin/logs
+      headers:
+        Authorization: Basic YWRtaW46VGVzdGluZw==
+  - name: Admin Analytics
+    request:
+      url: /admin/analytics?duration={{ item }}
+      headers:
+        Authorization: Basic YWRtaW46VGVzdGluZw==
+    with_items:
+      - 600
+      - all-time
+

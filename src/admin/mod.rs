@@ -1,6 +1,6 @@
 use axum::Router;
 use secrecy::SecretString;
-use tower_http::auth::RequireAuthorizationLayer;
+use tower_http::auth::AsyncRequireAuthorizationLayer;
 
 use crate::{auth::MyBasicAuth, state::AppState};
 
@@ -14,7 +14,7 @@ pub fn router(
     Router::new()
         .nest("/analytics", analytics::router())
         .nest("/logs", logs::router(reporting_options))
-        .layer(RequireAuthorizationLayer::custom(MyBasicAuth {
+        .layer(AsyncRequireAuthorizationLayer::new(MyBasicAuth::new(
             admin_password_hash,
-        }))
+        )))
 }

@@ -1,4 +1,11 @@
-use std::{borrow::Cow, collections::HashMap, future, future::Future, pin::Pin, sync::Arc};
+use std::{
+    borrow::Cow,
+    collections::{BTreeMap, HashMap},
+    future,
+    future::Future,
+    pin::Pin,
+    sync::Arc,
+};
 
 use axum::{
     extract::State,
@@ -8,6 +15,10 @@ use axum::{
 };
 use fluent::{types::FluentNumber, FluentValue};
 use http::{header::CONTENT_TYPE, Request, StatusCode};
+use minijinja::{
+    value::{Value, ValueKind},
+    Error, ErrorKind,
+};
 use rust_embed::{EmbeddedFile, RustEmbed};
 use uuid::Uuid;
 
@@ -40,8 +51,8 @@ impl Templates {
             environment.set_source(minijinja::Source::with_loader(|name: &str| {
                 Option::transpose(EmbeddedTemplates::get(name).map(|file: EmbeddedFile| {
                     String::from_utf8(file.data.to_vec()).map_err(|error| {
-                        minijinja::Error::new(
-                            minijinja::ErrorKind::SyntaxError,
+                        Error::new(
+                            ErrorKind::SyntaxError,
                             format!("Template {name} is not valid UTF-8: {error}"),
                         )
                     })
@@ -63,37 +74,37 @@ impl Templates {
 }
 
 fn jinja_to_fluent_args<'source>(
-    args: minijinja::value::Value,
-) -> Result<HashMap<String, FluentValue<'source>>, minijinja::Error> {
+    args: Value,
+) -> Result<HashMap<String, FluentValue<'source>>, Error> {
     match args.kind() {
-        minijinja::value::ValueKind::Map => {
+        ValueKind::Map => {
             args.try_iter()?.map(|key| {
                 match key.kind() {
-                    minijinja::value::ValueKind::String => {},
+                    ValueKind::String => {},
                     kind => return Err(
-                        minijinja::Error::new(
-                            minijinja::ErrorKind::InvalidOperation,
+                        Error::new(
+                            ErrorKind::InvalidOperation,
                             format!("Invalid argument map key kind {kind} for {key}. Expected String.")
                         )
                     )
                 }
                 let value = args.get_item(&key)?;
                 let fluent_value = match value.kind() {
-                    minijinja::value::ValueKind::String => {
+                    ValueKind::String => {
                         FluentValue::String(Cow::Owned(value.to_string()))
                     }
-                    minijinja::value::ValueKind::Number => {
+                    ValueKind::Number => {
                         let fluent_number: FluentNumber = value.to_string().parse().map_err(|error| {
-                            minijinja::Error::new(
-                                minijinja::ErrorKind::InvalidOperation,
+                            Error::new(
+                                ErrorKind::InvalidOperation,
                                 format!("Unable to parse value number as fluent number for {value}")
                             ).with_source(error)
                         })?;
                         FluentValue::Number(fluent_number)
                     }
                     kind => return Err(
-                        minijinja::Error::new(
-                            minijinja::ErrorKind::InvalidOperation,
+                        Error::new(
+                            ErrorKind::InvalidOperation,
                             format!("Invalid argument map value kind {kind} for {value}. Expected String or Number.")
                         )
                     )
@@ -103,11 +114,117 @@ fn jinja_to_fluent_args<'source>(
             }).collect()
         },
         kind => return Err(
-            minijinja::Error::new(
-                minijinja::ErrorKind::InvalidOperation,
+            Error::new(
+                ErrorKind::InvalidOperation,
                 format!("Invalid argument type {kind} for {args}. Expected a Map.")
             )
         )
+    }
+}
+
+/// Convert a [Value] into a query string: e.g.
+/// `param=something&other_param=5` This supports a `Map<String, Value>`, and a `Seq<Seq<Value>>`
+/// (where the length of the inner `Seq` is 2, the first element is `String` and the second element
+/// is `Value`).
+fn querystring(query: Value) -> Result<minijinja::value::Value, Error> {
+    let query: Vec<String> = match query.kind() {
+        ValueKind::Seq => {
+            query.as_seq().expect("expected sequence").iter().map(|value| {
+                let tuple = value.as_seq().ok_or_else(|| Error::new(minijinja::ErrorKind::InvalidOperation, format!("Expected Seq of Seq, but found Seq of {:?}", value.kind())))?;
+                let mut iter = tuple.iter();
+                let key_value = iter.next().ok_or_else(|| Error::new(minijinja::ErrorKind::InvalidOperation, "Expected Seq of Seq, inner Seq (a tuple of key and value) cannot be empty"))?;
+                let key = key_value.as_str().ok_or_else(|| Error::new(minijinja::ErrorKind::InvalidOperation, format!("Expected Seq of Seq, inner Seq first element to be a String, instead found {key_value:?}")))?;
+                let value = iter.next().ok_or_else(|| Error::new(minijinja::ErrorKind::InvalidOperation, "Expected Seq of Seq, inner Seq (a tuple of key and value) must contain a second element (the value)"))?;
+
+                let extra_values: Vec<Value> = iter.collect();
+                if !extra_values.is_empty() {
+                    return Err(Error::new(minijinja::ErrorKind::InvalidOperation, format!("Expected Seq of Seq, inner Seq (a tuple of key and value) must be of length 2, found {extra_values:?}")));
+                }
+                Ok::<_, Error>(format!("{key}={value}"))
+            }).collect::<Result<_, Error>>()?
+        }
+        ValueKind::None | ValueKind::Undefined => Vec::new(),
+        ValueKind::Map => query
+            .try_iter()?
+            .filter_map(|key| {
+                Result::transpose(query
+                    .get_item(&key)
+                    .map(|value| {
+                        match value.kind() {
+                            ValueKind::Undefined | ValueKind::None => None,
+                            _ => Some(format!("{}={}", key.to_string(), urlencoding::encode(&value.to_string()))),
+                        }
+                    }))
+            })
+            .collect::<Result<_, Error>>()?,
+        kind => {
+            return Err(Error::new(
+                ErrorKind::InvalidOperation,
+                format!("Expected map, found {kind:?}"),
+            ));
+        }
+    };
+
+    Ok(query.join("&").into())
+}
+
+pub fn mapinsert(map: Value, key: String, value: Value) -> Result<Value, Error> {
+    match map.kind() {
+        ValueKind::Map => {
+            let mut map: BTreeMap<String, Value> = map
+                .try_iter()?
+                .map(|key| {
+                    let value = map.get_item(&key)?;
+                    let key = key
+                        .as_str()
+                        .ok_or_else(|| {
+                            Error::new(
+                                ErrorKind::InvalidOperation,
+                                format!("Key must be a string, found a {key:?}"),
+                            )
+                        })?
+                        .to_owned();
+                    Ok((key, value))
+                })
+                .collect::<Result<_, Error>>()?;
+            map.insert(key, value);
+            Ok(Value::from_serializable(&map))
+        }
+        ValueKind::None | ValueKind::Undefined => Ok(map),
+        kind => Err(Error::new(
+            ErrorKind::InvalidOperation,
+            format!("Unsupported query value type: {kind:?}"),
+        )),
+    }
+}
+
+pub fn mapremove(map: Value, key: Cow<'_, str>) -> Result<Value, Error> {
+    match map.kind() {
+        ValueKind::Map => {
+            let mut map: BTreeMap<String, Value> = map
+                .try_iter()?
+                .map(|key| {
+                    let value = map.get_item(&key)?;
+                    let key = key
+                        .as_str()
+                        .ok_or_else(|| {
+                            Error::new(
+                                ErrorKind::InvalidOperation,
+                                format!("Key must be a string, found a {key:?}"),
+                            )
+                        })?
+                        .to_owned();
+                    Ok((key, value))
+                })
+                .collect::<Result<_, Error>>()?;
+            map.remove(&*key);
+            Ok(Value::from_serializable(&map))
+        }
+        ValueKind::None | ValueKind::Undefined => Ok(map),
+        kind => Err(Error::new(
+            ErrorKind::InvalidOperation,
+            format!("Unsupported query value type: {kind:?}"),
+        )),
     }
 }
 
@@ -134,25 +251,37 @@ pub async fn middleware<B>(
     let i18n_fl = i18n.clone();
     let i18n_fla = i18n.clone();
     environment.add_function("fl", move |message_id: &str| i18n_fl.get(message_id));
-    environment.add_function(
-        "fla",
-        move |message_id: &str, args: minijinja::value::Value| {
-            Ok(i18n_fla.get_args(message_id, jinja_to_fluent_args(args)?))
-        },
-    );
+    environment.add_function("fla", move |message_id: &str, args: Value| {
+        Ok(i18n_fla.get_args(message_id, jinja_to_fluent_args(args)?))
+    });
     environment.add_function("ansi_to_html", |ansi_string: &str| {
         ansi_to_html::convert_escaped(ansi_string).map_err(|error| {
-            minijinja::Error::new(
-                minijinja::ErrorKind::InvalidOperation,
-                format!("Error while converting ANSI string to HTML"),
+            Error::new(
+                ErrorKind::InvalidOperation,
+                "Error while converting ANSI string to HTML".to_owned(),
             )
             .with_source(error)
         })
     });
+    let uri = request.uri();
+    let query_value: Value = uri
+        .query()
+        .and_then(|query| match serde_urlencoded::from_str(query) {
+            Ok(ok) => Some(ok),
+            Err(error) => {
+                tracing::error!("Error parsing uri into QUERY variable: {error}");
+                None
+            }
+        })
+        .unwrap_or(().into());
     environment.add_function("uuid", || Uuid::new_v4().to_string());
+    environment.add_filter("querystring", querystring);
+    environment.add_filter("mapinsert", mapinsert);
+    environment.add_filter("mapremove", mapremove);
     environment.add_global("LANGUAGE", language);
-    environment.add_global("URI", request.uri().to_string());
-    environment.add_global("PATH", request.uri().path().to_string());
+    environment.add_global("URI", uri.to_string());
+    environment.add_global("PATH", uri.path().to_string());
+    environment.add_global("QUERY", query_value);
     request.extensions_mut().insert(TemplatesWithContext {
         environment: Arc::new(environment),
     });
@@ -178,8 +307,8 @@ pub fn render<'env>(
     };
 
     Ok(builder
-        .body(template.render(ctx).map_err(|error| error.to_string())?)
-        .map_err(|error| error.to_string())?
+        .body(template.render(ctx).map_err(|error| format!("{error:?}"))?)
+        .map_err(|error| format!("{error:?}"))?
         .into_response())
 }
 
@@ -271,5 +400,31 @@ pub fn create_handler(
     move |Extension(templates): Extension<TemplatesWithContext>| {
         let result = render_impl(&templates, &template_key);
         Box::pin(future::ready(result))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::collections::HashMap;
+
+    use minijinja::value::Value;
+
+    use super::querystring;
+    #[test]
+    fn test_query_filter() {
+        let mut map = HashMap::new();
+        map.insert("test", 5);
+        map.insert("test2", 22);
+
+        let value = Value::from(map);
+        insta::assert_json_snapshot!(&value, @r###"
+        {
+          "test": 5,
+          "test2": 22
+        }
+        "###);
+        let result_value = querystring(value).unwrap();
+        let result_value_string = result_value.as_str().unwrap().to_owned();
+        assert_eq!("test=5&test2=22", result_value_string);
     }
 }

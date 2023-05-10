@@ -130,7 +130,7 @@ async fn main() -> eyre::Result<()> {
     // `axum::Server` is a re-export of `hyper::Server`
     let addr = &options.listen_address;
     tracing::info!("listening on http://{addr}");
-    axum::Server::bind(&addr)
+    axum::Server::bind(addr)
         .serve(app.into_make_service())
         .await?;
 

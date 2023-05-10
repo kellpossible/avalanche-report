@@ -10,44 +10,6 @@
     <h1 class="text-5xl font-bold">Analytics</h1>
     <p>Updated {{ batch_rate }} times per hour.</p>
     <br>
-    {% for summary_duration in summaries_duration %}
-        {% set summary_duration_index = loop.index0 %}
-        <h1 class="text-2xl font-bold">
-            {% if summary_duration.formatted_duration %}
-                Past {{ summary_duration.formatted_duration }}
-            {% else %}
-                All Time
-            {% endif %}
-        </h1>
-        <table>
-            <thead>
-                <tr>
-                    <th>Uri</th>
-                    <th>Visits</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for summary in summary_duration.summaries %}
-                    {% set graph_id = "graph-" ~ summary_duration_index ~ "-" ~ (summary.uri | urlencode | replace("/", "-") | replace(".", "-") | replace("%", "-")) %}
-                    <tr>
-                        <td>
-                            {% set graph_get_uri = "analytics/graph?uri=" ~ (summary.uri | urlencode) %}
-                            {% if summary_duration.to %}
-                                {% set graph_get_uri = graph_get_uri ~ "&from=" ~ (summary_duration.from | urlencode) %}
-                            {% endif %}
-                            <a class="text-blue-600 hover:text-blue-800"
-                               href="#"
-                               hx-target="#{{ graph_id }}"
-                               hx-get="{{ graph_get_uri }}"
-                               hx-swap="innerHTML">{{ summary.uri }}</a>
-                        </td>
-                        <td>{{ summary.visits }}</td>
-                    </tr>
-                    <tr id="{{ graph_id }}" hx-swap-oob="true">
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <br>
-    {% endfor %}
+    {% include "admin/analytics/summaries_duration.html" %}
+    <br>
 {% endblock body %}

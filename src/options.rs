@@ -72,8 +72,7 @@ fn default_default_language() -> unic_langid::LanguageIdentifier {
 
 impl std::fmt::Display for Options {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let options_str =
-            toml::ser::to_string_pretty(self).map_err(|error| std::fmt::Error::custom(error))?;
+        let options_str = toml::ser::to_string_pretty(self).map_err(std::fmt::Error::custom)?;
         f.write_str(&options_str)
     }
 }

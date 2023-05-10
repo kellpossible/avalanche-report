@@ -120,7 +120,7 @@ pub async fn middleware<B>(
             }
             requested_languages
         })
-        .or_else(|| accept_language);
+        .or(accept_language);
 
     let loader: I18nLoader = if let Some(requested_languages) = requested_languages {
         let loader = Arc::new(
