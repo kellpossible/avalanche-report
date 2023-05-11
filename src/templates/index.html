@@ -4,12 +4,10 @@
     {% for file in forecast.files %}
         <a class="text-blue-600 hover:text-blue-800 visited:text-purple-600 {% if emphasize %}text-xl font-bold{% endif %}"
            href="/forecasts/{{ file.file.name | urlencode }}">
-            {% if file.details.language_name %}
-                {{ file.details.language_name }} (PDF)
-            {% else %}
-                {{ file.details.language }} (PDF)
-            {% endif %}
+            {% if file.view == "Download" %}Download PDF ({{ file.details.language }}){% endif %}
+            {% if file.view == "Html" %}View Forecast{% endif %}
         </a>
+        {% if not loop.last %}|{% endif %}
     {% endfor %}
 {% endmacro %}
 {% set page_title = fl("gudauri-avalanche-forecast-heading") %}

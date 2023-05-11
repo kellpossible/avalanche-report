@@ -8,7 +8,7 @@ use unic_langid::LanguageIdentifier;
 use crate::{
     error::map_eyre_error,
     forecasts::{parse_forecast_name, ForecastDetails, ForecastFileDetails},
-    google_drive::{self, FileMetadata},
+    google_drive::{self, ListFileMetadata},
     i18n::I18nLoader,
     state::AppState,
     templates::{render, TemplatesWithContext},
@@ -23,23 +23,33 @@ fn format_language_name(language: &LanguageIdentifier) -> Option<String> {
 }
 
 #[derive(Clone, Serialize, Debug)]
+pub enum ForecastFileView {
+    /// Forecast file is viewed by being parsed and rendered as HTML (Spreadsheet).
+    Html,
+    /// Forecast file is downloaded to be viewed (PDF).
+    Download,
+}
+
+#[derive(Clone, Serialize, Debug)]
 pub struct ForecastFile {
     pub details: FormattedForecastFileDetails,
-    pub file: FileMetadata,
+    pub file: ListFileMetadata,
+    pub view: ForecastFileView,
 }
 
 #[derive(Clone, Serialize, Debug)]
 pub struct FormattedForecastFileDetails {
     pub forecast: FormattedForecastDetails,
-    pub language: String,
+    pub language: Option<String>,
 }
 
 impl FormattedForecastFileDetails {
     fn format(value: ForecastFileDetails, i18n: &I18nLoader) -> Self {
         Self {
             forecast: FormattedForecastDetails::format(value.forecast, i18n),
-            language: format_language_name(&value.language)
-                .unwrap_or_else(|| value.language.to_string()),
+            language: value.language.map(|language| {
+                format_language_name(&language).unwrap_or_else(|| language.to_string())
+            }),
         }
     }
 }
@@ -101,7 +111,6 @@ pub async fn handler(
     };
     let (mut forecasts, errors): (Vec<Forecast>, Vec<String>) = files
         .into_iter()
-        .filter(|file| file.mime_type == "application/pdf")
         .map(|file| {
             let filename = &file.name;
             let details = parse_forecast_name(filename).wrap_err_with(|| {
@@ -121,7 +130,14 @@ pub async fn handler(
                     )
             }
             let formatted_details = FormattedForecastFileDetails::format(details, &i18n);
-            Ok(ForecastFile { details: formatted_details, file })
+
+            let filename = &file.name;
+            let view = match file.mime_type.as_str() {
+                "application/pdf" => ForecastFileView::Download,
+                "application/vnd.google-apps.spreadsheet" => ForecastFileView::Html,
+                unsupported => eyre::bail!("Unsupported mime {unsupported} for file {filename}"),
+            };
+            Ok(ForecastFile { details: formatted_details, file, view })
         })
         .fold((Vec::new(), Vec::new()), |mut acc, result: eyre::Result<ForecastFile>| {
             match result {

@@ -109,9 +109,7 @@ fn graph_data(data: Vec<AnalyticsData>) -> eyre::Result<GraphData> {
     let (time_data, visits_data): (Vec<i64>, Vec<f64>) = data
         .iter()
         .enumerate()
-        .map(|(_i, analytics)| {
-            Ok::<_, eyre::Error>((analytics.time, analytics.visits))
-        })
+        .map(|(_i, analytics)| Ok::<_, eyre::Error>((analytics.time, analytics.visits)))
         .fold::<eyre::Result<(Vec<i64>, Vec<f64>)>, _>(
             Ok(Default::default()),
             |acc_result, result| match acc_result {

@@ -117,6 +117,7 @@ dependencies = [
  "erased-serde",
  "eyre",
  "fluent",
+ "forecast-spreadsheet",
  "fs_extra",
  "futures",
  "governor",

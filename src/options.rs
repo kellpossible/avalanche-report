@@ -14,10 +14,10 @@ pub struct Options {
     pub data_dir: PathBuf,
     /// Base url used for http server.
     ///
-    /// Default is `http://localhost:3000/`.
+    /// Default is `http://{listen_address}/`.
     /// Can be specified by setting the environment variable `BASE_URL`.
-    #[serde(default = "default_base_url")]
-    pub base_url: url::Url,
+    #[serde(default)]
+    base_url: Option<url::Url>,
     /// Address by the http server for listening.
     ///
     /// Default is `127.0.0.1:3000`.
@@ -34,11 +34,25 @@ pub struct Options {
     pub default_language: unic_langid::LanguageIdentifier,
 }
 
+impl Options {
+    pub fn base_url(&self) -> url::Url {
+        self.base_url.clone().unwrap_or_else(|| {
+            format!(
+                "http://{0}:{1}/",
+                self.listen_address.ip(),
+                self.listen_address.port()
+            )
+            .parse()
+            .expect("Unable to parse base url")
+        })
+    }
+}
+
 impl Default for Options {
     fn default() -> Self {
         Self {
             data_dir: default_data_dir(),
-            base_url: default_base_url(),
+            base_url: None,
             listen_address: default_listen_address(),
             analytics_batch_rate: default_analytics_batch_rate(),
             default_language: default_default_language(),
@@ -48,12 +62,6 @@ impl Default for Options {
 
 fn default_data_dir() -> PathBuf {
     "data".into()
-}
-
-fn default_base_url() -> url::Url {
-    "http://localhost:3000"
-        .parse()
-        .expect("Unable to parse url")
 }
 
 fn default_listen_address() -> SocketAddr {
