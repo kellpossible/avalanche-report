@@ -229,6 +229,18 @@ impl Deref for AreaId {
 #[serde(transparent)]
 pub struct ElevationBandId(String);
 
+impl From<String> for ElevationBandId {
+    fn from(value: String) -> Self {
+        Self(value)
+    }
+}
+
+impl From<&str> for ElevationBandId {
+    fn from(value: &str) -> Self {
+        Self(value.to_string())
+    }
+}
+
 impl Deref for ElevationBandId {
     type Target = String;
 
@@ -504,31 +516,31 @@ pub use size::Size;
 
 #[derive(Debug, Serialize)]
 pub struct HazardRating {
-    value: Option<HazardRatingValue>,
-    trend: Option<Trend>,
-    confidence: Option<Confidence>,
+    pub value: Option<HazardRatingValue>,
+    pub trend: Option<Trend>,
+    pub confidence: Option<Confidence>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct Forecast {
-    template_version: Version,
-    language: unic_langid::LanguageIdentifier,
-    area: AreaId,
-    forecaster: Forecaster,
-    time: PrimitiveDateTime,
-    recent_observations: Option<String>,
-    forecast_changes: Option<String>,
-    weather_forecast: Option<String>,
-    valid_for: time::Duration,
-    description: Option<String>,
-    hazard_ratings: IndexMap<HazardRatingKind, HazardRating>,
-    avalanche_problems: Vec<AvalancheProblem>,
+    pub template_version: Version,
+    pub language: unic_langid::LanguageIdentifier,
+    pub area: AreaId,
+    pub forecaster: Forecaster,
+    pub time: PrimitiveDateTime,
+    pub recent_observations: Option<String>,
+    pub forecast_changes: Option<String>,
+    pub weather_forecast: Option<String>,
+    pub valid_for: time::Duration,
+    pub description: Option<String>,
+    pub hazard_ratings: IndexMap<HazardRatingKind, HazardRating>,
+    pub avalanche_problems: Vec<AvalancheProblem>,
 }
 
 #[derive(Debug, Serialize)]
-struct Forecaster {
-    name: String,
-    organisation: Option<String>,
+pub struct Forecaster {
+    pub name: String,
+    pub organisation: Option<String>,
 }
 
 fn get_cell_value<RS>(

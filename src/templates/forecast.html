@@ -20,6 +20,29 @@
     <p>{{ description }}</p>
     <h2 class="text-4xl">Recent Observations</h2>
     <p>{{ recent_observations }}</p>
+    <h2 class="text-4xl">Weather Forecast</h2>
+    <p>{{ weather_forecast }}</p>
     <h2 class="text-4xl">Avalanche Problems</h2>
-    {% for problem in avalanche_problems %}<h3 class="text-3xl">Problem: {{ problem.kind }}</h3>{% endfor %}
+    {% for problem in avalanche_problems %}
+        <h3 class="text-3xl">Problem: {{ problem.kind }}</h3>
+        <img width="300px"
+             src="{{ problem.aspect_elevation_chart }}"
+             alt="Aspect Elevation Chart"/>
+        <p>
+            Size: {{ problem.size }}
+            <br>
+            Sensitivity: {{ problem.sensitivity }}
+            <br>
+            Distribution: {{ problem.distribution }}
+            <br>
+            Time of day: {{ problem.time_of_day }}
+            <br>
+            Trend: {{ problem.trend }}
+            <br>
+            {% if problem.confidence %}
+                Confidence: {{ problem.confidence }}
+                <br>
+            {% endif %}
+        </p>
+    {% endfor %}
 {% endblock body %}

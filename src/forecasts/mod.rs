@@ -1,10 +1,17 @@
+use std::collections::HashSet;
+
 use axum::{
     extract::{Path, State},
     response::{IntoResponse, Response},
     Extension,
 };
 use eyre::Context;
+use forecast_spreadsheet::{
+    AreaId, Aspect, AspectElevation, Confidence, Distribution, ElevationBandId, Forecaster,
+    HazardRating, HazardRatingKind, ProblemKind, Sensitivity, Size, TimeOfDay, Trend,
+};
 use http::{header::CONTENT_TYPE, HeaderValue, StatusCode};
+use indexmap::{IndexMap, IndexSet};
 use once_cell::sync::Lazy;
 use sea_query::{Alias, Expr, IntoColumnRef, OnConflict, SqliteQueryBuilder};
 use sea_query_rusqlite::RusqliteBinder;
@@ -16,6 +23,7 @@ use unic_langid::LanguageIdentifier;
 
 use crate::{
     database::DatabaseInstance,
+    diagrams,
     error::map_eyre_error,
     google_drive,
     index::ForecastFileView,
@@ -96,6 +104,118 @@ pub async fn handler(
     handler_impl(&file_name, api_key, &state.client, &database, &templates)
         .await
         .map_err(map_eyre_error)
+}
+
+#[derive(Debug, Serialize)]
+struct Forecast {
+    pub language: unic_langid::LanguageIdentifier,
+    pub area: AreaId,
+    pub forecaster: Forecaster,
+    pub time: PrimitiveDateTime,
+    pub recent_observations: Option<String>,
+    pub forecast_changes: Option<String>,
+    pub weather_forecast: Option<String>,
+    pub valid_for: time::Duration,
+    pub description: Option<String>,
+    pub hazard_ratings: IndexMap<HazardRatingKind, HazardRating>,
+    pub avalanche_problems: Vec<AvalancheProblem>,
+}
+
+impl TryFrom<forecast_spreadsheet::Forecast> for Forecast {
+    type Error = eyre::Error;
+    fn try_from(value: forecast_spreadsheet::Forecast) -> eyre::Result<Self> {
+        Ok(Self {
+            language: value.language,
+            area: value.area,
+            forecaster: value.forecaster,
+            time: value.time,
+            recent_observations: value.recent_observations,
+            forecast_changes: value.forecast_changes,
+            weather_forecast: value.weather_forecast,
+            valid_for: value.valid_for,
+            description: value.description,
+            hazard_ratings: value.hazard_ratings,
+            avalanche_problems: value
+                .avalanche_problems
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<eyre::Result<_>>()?,
+        })
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct AvalancheProblem {
+    pub kind: ProblemKind,
+    pub aspect_elevation: IndexMap<ElevationBandId, AspectElevation>,
+    // TODO: convert to URL with base
+    pub aspect_elevation_chart: String,
+    pub confidence: Option<Confidence>,
+    pub trend: Option<Trend>,
+    pub size: Option<Size>,
+    pub distribution: Option<Distribution>,
+    pub time_of_day: Option<TimeOfDay>,
+    pub sensitivity: Option<Sensitivity>,
+}
+
+fn into_diagram_aspect(aspect: &Aspect) -> diagrams::aspect_elevation::Aspect {
+    match aspect {
+        Aspect::N => diagrams::aspect_elevation::Aspect::N,
+        Aspect::NE => diagrams::aspect_elevation::Aspect::NE,
+        Aspect::E => diagrams::aspect_elevation::Aspect::E,
+        Aspect::SE => diagrams::aspect_elevation::Aspect::SE,
+        Aspect::S => diagrams::aspect_elevation::Aspect::S,
+        Aspect::SW => diagrams::aspect_elevation::Aspect::SW,
+        Aspect::W => diagrams::aspect_elevation::Aspect::W,
+        Aspect::NW => diagrams::aspect_elevation::Aspect::NW,
+    }
+}
+
+impl TryFrom<forecast_spreadsheet::AvalancheProblem> for AvalancheProblem {
+    type Error = eyre::Error;
+
+    fn try_from(value: forecast_spreadsheet::AvalancheProblem) -> eyre::Result<Self> {
+        let aspect_elevation = value.aspect_elevation;
+
+        fn map_aspects(
+            aspect_elevation: &IndexMap<ElevationBandId, AspectElevation>,
+            elevation_band: &ElevationBandId,
+        ) -> HashSet<diagrams::aspect_elevation::Aspect> {
+            aspect_elevation
+                .get(elevation_band)
+                .map(|aspect_elevation| {
+                    aspect_elevation
+                        .aspects
+                        .iter()
+                        .map(into_diagram_aspect)
+                        .collect::<HashSet<_>>()
+                })
+                .unwrap_or(HashSet::new())
+        }
+
+        let query = diagrams::aspect_elevation::AspectElevation {
+            high_alpine: map_aspects(&aspect_elevation, &ElevationBandId::from("high-alpine")),
+            alpine: map_aspects(&aspect_elevation, &ElevationBandId::from("alpine")),
+            sub_alpine: map_aspects(&aspect_elevation, &ElevationBandId::from("sub-alpine")),
+            ..diagrams::aspect_elevation::AspectElevation::default()
+        }
+        .into_query();
+
+        let query_string = serde_urlencoded::to_string(query)?;
+
+        let aspect_elevation_chart = format!("/diagrams/aspect_elevation.svg?{query_string}");
+        Ok(Self {
+            kind: value.kind,
+            aspect_elevation,
+            aspect_elevation_chart,
+            confidence: value.confidence,
+            trend: value.trend,
+            size: value.size,
+            distribution: value.distribution,
+            time_of_day: value.time_of_day,
+            sensitivity: value.sensitivity,
+        })
+    }
 }
 
 #[instrument(level = "error", skip_all)]
@@ -224,11 +344,13 @@ async fn handler_impl(
 
     match view {
         ForecastFileView::Html => {
-            let forecast = forecast_spreadsheet::parse_excel_spreadsheet(
+            let forecast: Forecast = forecast_spreadsheet::parse_excel_spreadsheet(
                 &forecast_file_bytes,
                 &*FORECAST_SCHEMA_0_3_0,
             )
-            .context("Error parsing forecast spreadsheet")?;
+            .context("Error parsing forecast spreadsheet")?
+            .try_into()
+            .wrap_err("Error converting forecast into template data")?;
 
             render(&templates.environment, "forecast.html", &forecast)
         }

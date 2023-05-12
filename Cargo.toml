@@ -61,6 +61,7 @@ minijinja-autoreload = { version = "0.30.2" }
 async-trait = "0.1.64"
 uuid = { version = "1.3.0", features = ["v4"] }
 sha2 = "0.10.6"
+indexmap = { version = "1.9.3", features = ["serde"] }
 forecast-spreadsheet = { path = "./forecast-spreadsheet" }
 
 [dev-dependencies]

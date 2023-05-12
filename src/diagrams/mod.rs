@@ -1,6 +1,6 @@
 use axum::{routing::get, Router};
 
-mod aspect_elevation;
+pub mod aspect_elevation;
 mod elevation_hazard;
 
 pub fn router<S>() -> Router<S>

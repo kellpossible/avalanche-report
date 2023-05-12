@@ -126,6 +126,7 @@ dependencies = [
  "humantime",
  "i18n-embed",
  "i18n-embed-fl",
+ "indexmap",
  "insta",
  "libsqlite3-sys",
  "mime",

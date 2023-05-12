@@ -1,5 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
+    fmt::Display,
     str::FromStr,
 };
 
@@ -12,7 +13,7 @@ use eyre::Context;
 use once_cell::sync::Lazy;
 use regex::{Captures, Regex};
 use resvg::{tiny_skia, usvg};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use usvg_text_layout::{fontdb, TreeTextToPath};
 
 use crate::error::{map_eyre_error, map_std_error};
@@ -31,6 +32,18 @@ pub enum Aspect {
 
 impl Aspect {
     fn id(&self) -> &'static str {
+        match self {
+            Aspect::N => "N",
+            Aspect::NE => "NE",
+            Aspect::E => "E",
+            Aspect::SE => "SE",
+            Aspect::S => "S",
+            Aspect::SW => "SW",
+            Aspect::W => "W",
+            Aspect::NW => "NW",
+        }
+    }
+    fn svg_id(&self) -> &'static str {
         match self {
             Aspect::N => "n",
             Aspect::NE => "ne",
@@ -58,11 +71,17 @@ impl Aspect {
     }
 }
 
+impl Display for Aspect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.id())
+    }
+}
+
 impl FromStr for Aspect {
     type Err = eyre::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
+        Ok(match s.to_uppercase().as_str() {
             "N" => Self::N,
             "NE" => Self::NE,
             "E" => Self::E,
@@ -78,12 +97,18 @@ impl FromStr for Aspect {
 
 #[derive(Debug, Default)]
 pub struct AspectElevation {
-    high_alpine: HashSet<Aspect>,
-    high_alpine_text: Option<String>,
-    alpine: HashSet<Aspect>,
-    alpine_text: Option<String>,
-    sub_alpine: HashSet<Aspect>,
-    sub_alpine_text: Option<String>,
+    pub high_alpine: HashSet<Aspect>,
+    pub high_alpine_text: Option<String>,
+    pub alpine: HashSet<Aspect>,
+    pub alpine_text: Option<String>,
+    pub sub_alpine: HashSet<Aspect>,
+    pub sub_alpine_text: Option<String>,
+}
+
+impl AspectElevation {
+    pub fn into_query(self) -> Query {
+        self.into()
+    }
 }
 
 fn comma_separated_to_vec(comma_separated: String) -> eyre::Result<HashSet<Aspect>> {
@@ -99,6 +124,14 @@ fn comma_separated_to_vec(comma_separated: String) -> eyre::Result<HashSet<Aspec
             }
         })
         .collect()
+}
+
+fn iter_to_comma_separated(aspects: impl IntoIterator<Item = Aspect>) -> String {
+    aspects
+        .into_iter()
+        .map(|aspect| aspect.id())
+        .collect::<Vec<_>>()
+        .join(",")
 }
 
 impl TryFrom<Query> for AspectElevation {
@@ -131,7 +164,7 @@ impl TryFrom<Query> for AspectElevation {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Query {
     high_alpine: Option<String>,
     high_alpine_text: Option<String>,
@@ -139,6 +172,19 @@ pub struct Query {
     alpine_text: Option<String>,
     sub_alpine: Option<String>,
     sub_alpine_text: Option<String>,
+}
+
+impl From<AspectElevation> for Query {
+    fn from(value: AspectElevation) -> Self {
+        Self {
+            high_alpine: Some(iter_to_comma_separated(value.high_alpine)),
+            high_alpine_text: value.high_alpine_text,
+            alpine: Some(iter_to_comma_separated(value.alpine)),
+            alpine_text: value.alpine_text,
+            sub_alpine: Some(iter_to_comma_separated(value.sub_alpine)),
+            sub_alpine_text: value.sub_alpine_text,
+        }
+    }
 }
 
 const SVG_TEMPLATE: &str = include_str!("./aspect_elevation.svg");
@@ -159,15 +205,15 @@ static TEXT_RE: Lazy<Regex> = Lazy::new(|| {
 
 fn generate_svg(aspect_elevation: AspectElevation) -> String {
     let high_alpine_ids = aspect_elevation.high_alpine.iter().map(|aspect| {
-        let id = aspect.id();
+        let id = aspect.svg_id();
         format!("high-alpine-{id}")
     });
     let alpine_ids = aspect_elevation.alpine.iter().map(|aspect| {
-        let id = aspect.id();
+        let id = aspect.svg_id();
         format!("alpine-{id}")
     });
     let sub_alpine_ids = aspect_elevation.sub_alpine.iter().map(|aspect| {
-        let id = aspect.id();
+        let id = aspect.svg_id();
         format!("sub-alpine-{id}")
     });
 
