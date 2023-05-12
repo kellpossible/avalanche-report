@@ -7,7 +7,6 @@ use eyre::Context;
 use sea_query::{Expr, SqliteQueryBuilder};
 use sea_query_rusqlite::RusqliteBinder;
 use serde::{Deserialize, Serialize};
-use time::Duration;
 
 #[derive(Clone, Copy)]
 struct AnalyticsData {

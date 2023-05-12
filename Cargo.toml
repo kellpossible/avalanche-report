@@ -42,7 +42,7 @@ thiserror = "1.0.38"
 libsqlite3-sys = { version = "0.25", features = ["bundled"] }
 sea-query = { version = "0.28", features = ["thread-safe", "backend-sqlite", "derive", "attr"]}
 sea-query-rusqlite = { version = "0.2", features = ["with-json", "with-uuid"]}
-rusqlite = "0.28.0"
+rusqlite = { version = "0.28.0", features = ["blob"]}
 axum-reporting = { git = "https://github.com/kellpossible/axum-reporting.git" }
 toml = "0.7.2"
 i18n-embed = { version = "0.13.8", features = ["fluent-system"] }

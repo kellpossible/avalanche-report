@@ -1,17 +1,27 @@
 use axum::{
-    body::StreamBody,
     extract::{Path, State},
     response::{IntoResponse, Response},
+    Extension,
 };
 use eyre::Context;
-use http::{header::CONTENT_TYPE, StatusCode};
+use http::{header::CONTENT_TYPE, HeaderValue, StatusCode};
 use once_cell::sync::Lazy;
+use sea_query::{Alias, Expr, IntoColumnRef, OnConflict, SqliteQueryBuilder};
+use sea_query_rusqlite::RusqliteBinder;
 use secrecy::SecretString;
 use serde::Serialize;
 use time::{OffsetDateTime, PrimitiveDateTime};
+use tracing::instrument;
 use unic_langid::LanguageIdentifier;
 
-use crate::{error::map_eyre_error, google_drive, index::ForecastFileView, state::AppState};
+use crate::{
+    database::DatabaseInstance, error::map_eyre_error, google_drive, index::ForecastFileView,
+    state::AppState,
+};
+
+use self::files::{ForecastFiles, ForecastFilesIden};
+
+mod files;
 
 static FORECAST_SCHEMA_0_3_0: Lazy<forecast_spreadsheet::options::Options> =
     Lazy::new(|| serde_json::from_str(include_str!("./schemas/0.3.0.json")).unwrap());
@@ -72,20 +82,23 @@ pub fn parse_forecast_name(file_name: &str) -> eyre::Result<ForecastFileDetails>
 pub async fn handler(
     Path(file_name): Path<String>,
     State(state): State<AppState>,
+    Extension(database): Extension<DatabaseInstance>,
 ) -> axum::response::Result<Response> {
     let api_key = state.secrets.google_drive_api_key.as_ref().ok_or_else(|| {
         tracing::error!("Unable to fetch file, Google Drive API Key not specified");
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
-    handler_impl(&file_name, api_key, &state.client)
+    handler_impl(&file_name, api_key, &state.client, &database)
         .await
         .map_err(map_eyre_error)
 }
 
+#[instrument(level = "error", skip_all)]
 async fn handler_impl(
     file_name: &str,
     api_key: &SecretString,
     client: &reqwest::Client,
+    database: &DatabaseInstance,
 ) -> eyre::Result<Response> {
     // Check that file exists in published folder, and not attempting to access a file outside
     // that.
@@ -105,32 +118,117 @@ async fn handler_impl(
         unexpected => eyre::bail!("Unsupported file mime type {unexpected}"),
     };
 
+    let google_drive_id = file_metadata.id.clone();
+    let cached_forecast_file: Option<Vec<u8>> = database
+        .interact(move |conn| {
+            let mut query = sea_query::Query::select();
+
+            query
+                .columns(ForecastFiles::COLUMNS)
+                .from(ForecastFiles::TABLE)
+                .and_where(Expr::col(ForecastFilesIden::GoogleDriveId).eq(&google_drive_id));
+
+            let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
+            let mut statement = conn.prepare_cached(&sql)?;
+
+            let forecast_file = Option::transpose(
+                statement
+                    .query_map(&*values.as_params(), |row| ForecastFiles::try_from(row))
+                    .wrap_err("Error performing query to obtain `ForecastFile`")?
+                    .next(),
+            )?;
+            Ok::<_, eyre::Error>(forecast_file)
+        })
+        .await??
+        .and_then(|cached_forecast_file| {
+            let cached_last_modified: OffsetDateTime = cached_forecast_file.last_modified.into();
+            let server_last_modified: &OffsetDateTime = &file_metadata.modified_time;
+            tracing::debug!("cached last modified {cached_last_modified}, server last modified {server_last_modified}");
+            if cached_last_modified == *server_last_modified {
+                Some(cached_forecast_file.file_blob)
+            } else {
+                tracing::debug!("Found cached forecast file, but it's outdated");
+                None
+            }
+        });
+
+    let forecast_file_bytes: Vec<u8> = if let Some(cached_forecast_file) = cached_forecast_file {
+        tracing::debug!("Using cached forecast file");
+        cached_forecast_file
+    } else {
+        tracing::debug!("Fetching updated/new forecast file");
+        let forecast_file_bytes: Vec<u8> = match view {
+            ForecastFileView::Html => {
+                let file = google_drive::export_file(
+                    &file_metadata.id,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    api_key,
+                    client,
+                )
+                .await?;
+                file.bytes().await?.into()
+            }
+            ForecastFileView::Download => {
+                let file = google_drive::get_file(&file_metadata.id, api_key, client).await?;
+                file.bytes().await?.into()
+            }
+        };
+        let forecast_files_db = ForecastFiles {
+            google_drive_id: file_metadata.id.clone(),
+            last_modified: file_metadata.modified_time.clone().into(),
+            file_blob: forecast_file_bytes.clone(),
+        };
+        database
+            .interact(move |conn| {
+                let mut query = sea_query::Query::insert();
+
+                let values = forecast_files_db.values();
+                query
+                    .into_table(ForecastFiles::TABLE)
+                    .columns(ForecastFiles::COLUMNS)
+                    .values(values)?;
+
+                let excluded_table: Alias = Alias::new("excluded");
+                query.on_conflict(
+                    OnConflict::column(ForecastFilesIden::GoogleDriveId)
+                        .values([
+                            (
+                                ForecastFilesIden::LastModified,
+                                (excluded_table.clone(), ForecastFilesIden::LastModified)
+                                    .into_column_ref()
+                                    .into(),
+                            ),
+                            (
+                                ForecastFilesIden::FileBlob,
+                                (excluded_table, ForecastFilesIden::FileBlob)
+                                    .into_column_ref()
+                                    .into(),
+                            ),
+                        ])
+                        .to_owned(),
+                );
+
+                let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
+                conn.execute(&sql, &*values.as_params())?;
+                Result::<_, eyre::Error>::Ok(())
+            })
+            .await??;
+        forecast_file_bytes
+    };
+
     match view {
         ForecastFileView::Html => {
-            let file = google_drive::export_file(
-                &file_metadata.id,
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                api_key,
-                client,
+            let forecast = forecast_spreadsheet::parse_excel_spreadsheet(
+                &forecast_file_bytes,
+                &*FORECAST_SCHEMA_0_3_0,
             )
-            .await?;
-            let bytes = file.bytes().await?;
-
-            let forecast =
-                forecast_spreadsheet::parse_excel_spreadsheet(&bytes, &*FORECAST_SCHEMA_0_3_0)
-                    .context("Error parsing forecast spreadsheet")?;
+            .context("Error parsing forecast spreadsheet")?;
             Ok(axum::response::Json(forecast).into_response())
         }
         ForecastFileView::Download => {
-            let file = google_drive::get_file(&file_metadata.id, api_key, client).await?;
-            let builder = Response::builder();
-            let builder = match file.content_type() {
-                Some(content_type) => builder.header(CONTENT_TYPE, content_type),
-                None => builder,
-            };
-
-            let body = StreamBody::new(file.bytes_stream());
-            let response = builder.body(body)?.into_response();
+            let mut response = forecast_file_bytes.into_response();
+            let header_value = HeaderValue::from_str(&file_metadata.mime_type)?;
+            response.headers_mut().insert(CONTENT_TYPE, header_value);
             Ok(response)
         }
     }

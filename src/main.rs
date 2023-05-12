@@ -51,7 +51,7 @@ async fn main() -> eyre::Result<()> {
 
     let reporting_options: &'static axum_reporting::Options =
         Box::leak(Box::new(axum_reporting::Options {
-            default_filter: "warn,avalanche_report=debug".to_owned(),
+            default_filter: "warn,avalanche_report=info".to_owned(),
             page_title: "avalanche-report".to_owned(),
             data_dir: options.data_dir.clone(),
             log_rotation: Rotation::DAILY,

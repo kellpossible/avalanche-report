@@ -69,6 +69,11 @@ fn list_migrations() -> Vec<Migration> {
             name: "analytics_uri_parameters",
             kind: MigrationKind::Rust(v3_analytics_uri_parameters::run),
         },
+        Migration {
+            version: 4,
+            name: "forecast_files",
+            kind: MigrationKind::Sql(include_str!("v4_forecast_files.sql")),
+        },
     ]
 }
 

@@ -1,8 +1,8 @@
 use bytes::Bytes;
-use http::HeaderValue;
-use reqwest::{header::CONTENT_TYPE, Url};
+use reqwest::Url;
 use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Serialize};
+use tracing::instrument;
 
 /// Truncated version of <https://developers.google.com/drive/api/reference/rest/v3/files#File>
 /// that appears to be returned while listing files with [list_files].
@@ -23,6 +23,9 @@ pub struct ListFileMetadata {
     /// immutable items such as the top level folders of shared drives, My Drive root folder, and
     /// Application Data folder the name is constant.
     pub name: String,
+    /// The last time the file was modified by anyone.
+    #[serde(with = "time::serde::rfc3339")]
+    pub modified_time: time::OffsetDateTime,
 }
 
 #[derive(Deserialize)]
@@ -36,11 +39,13 @@ struct ListFilesResult {
 struct ListFilesQuery<'a> {
     q: &'a str,
     key: &'a str,
+    fields: &'a str,
 }
 
 /// As per
 /// [stackoverflow](https://stackoverflow.com/questions/18116152/how-do-i-get-a-file-list-for-a-google-drive-public-hosted-folder),
 /// obtain a list of files on a google drive.
+#[instrument(skip_all, fields(folder_id))]
 pub async fn list_files(
     folder_id: &str,
     api_key: &SecretString,
@@ -50,6 +55,7 @@ pub async fn list_files(
     let query = ListFilesQuery {
         q: &q,
         key: api_key.expose_secret(),
+        fields: "files(mimeType, id, name, modifiedTime)",
     };
     let query_string = serde_urlencoded::to_string(query)?;
     let url: Url = format!("https://www.googleapis.com/drive/v3/files?{query_string}").parse()?;
@@ -63,25 +69,21 @@ pub struct File {
 }
 
 impl File {
-    pub fn content_type(&self) -> Option<HeaderValue> {
-        self.response.headers().get(CONTENT_TYPE).cloned()
-    }
-    pub fn bytes_stream(self) -> impl futures::stream::Stream<Item = reqwest::Result<Bytes>> {
-        self.response.bytes_stream()
-    }
-
     pub async fn bytes(self) -> reqwest::Result<Bytes> {
         self.response.bytes().await
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Default)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 struct GetFileQuery<'a> {
     alt: Option<&'a str>,
-    key: &'a str,
+    fields: Option<&'a str>,
+    key: Option<&'a str>,
 }
 
+#[instrument(skip_all, fields(file_id))]
 pub async fn get_file(
     file_id: &str,
     api_key: &SecretString,
@@ -89,7 +91,8 @@ pub async fn get_file(
 ) -> eyre::Result<File> {
     let query = GetFileQuery {
         alt: Some("media"),
-        key: api_key.expose_secret(),
+        key: Some(api_key.expose_secret()),
+        ..GetFileQuery::default()
     };
     let query_string = serde_urlencoded::to_string(query)?;
     let url: Url =
@@ -121,16 +124,19 @@ pub struct FileMetadata {
     pub modified_time: time::OffsetDateTime,
 }
 
+#[instrument(skip_all, fields(file_id))]
 pub async fn get_file_metadata(
     file_id: &str,
     api_key: &SecretString,
     client: &reqwest::Client,
 ) -> eyre::Result<FileMetadata> {
     let query = GetFileQuery {
-        alt: None,
-        key: api_key.expose_secret(),
+        key: Some(api_key.expose_secret()),
+        fields: Some("*"),
+        ..GetFileQuery::default()
     };
     let query_string = serde_urlencoded::to_string(query)?;
+    dbg!(&query_string);
     let url: Url =
         format!("https://www.googleapis.com/drive/v3/files/{file_id}?{query_string}").parse()?;
     let response = client.get(url).send().await?;
@@ -146,6 +152,7 @@ struct ExportFileQuery<'a> {
 }
 
 /// Mime type from <https://developers.google.com/drive/api/guides/ref-export-formats>
+#[instrument(skip_all, fields(file_id))]
 pub async fn export_file(
     file_id: &str,
     mime_type: &str,
