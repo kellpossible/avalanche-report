@@ -246,7 +246,7 @@ pub async fn handler(
         .and_then(|value| value.to_str().ok())
         .unwrap_or("admin/analytics.html");
 
-    render(&templates.environment, template, &page)
+    render(&templates.environment, template, &page).map_err(map_eyre_error)
 }
 
 async fn get_analytics(

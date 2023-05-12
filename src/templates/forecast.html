@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block body %}
+    <p>Work in progress!</p>
+    <h1 class="text-5xl">Forecast {{ area }}</h1>
+    <h2 class="text-4xl">Hazard Rating: {{ hazard_ratings["overall"].value }}</h2>
+    <table class="border-2 table-auto">
+        <tr>
+            <td class="border-2 p-2">High Alpine</td>
+            <td class="border-2 p-2">{{ hazard_ratings["high-alpine"].value }}</td>
+        </tr>
+        <tr>
+            <td class="border-2 p-2">Alpine</td>
+            <td class="border-2 p-2">{{ hazard_ratings["alpine"].value }}</td>
+        </tr>
+        <tr>
+            <td class="border-2 p-2">Sub Alpine</td>
+            <td class="border-2 p-2">{{ hazard_ratings["sub-alpine"].value }}</td>
+        </tr>
+    </table>
+    <p>{{ description }}</p>
+    <h2 class="text-4xl">Recent Observations</h2>
+    <p>{{ recent_observations }}</p>
+    <h2 class="text-4xl">Avalanche Problems</h2>
+    {% for problem in avalanche_problems %}<h3 class="text-3xl">Problem: {{ problem.kind }}</h3>{% endfor %}
+{% endblock body %}

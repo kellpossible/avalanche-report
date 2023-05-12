@@ -156,5 +156,5 @@ pub async fn handler(
     forecasts.sort_by(|a, b| b.details.time.cmp(&a.details.time));
 
     let index = Index { forecasts, errors };
-    render(&templates.environment, "index.html", &index)
+    render(&templates.environment, "index.html", &index).map_err(map_eyre_error)
 }

@@ -15,8 +15,12 @@ use tracing::instrument;
 use unic_langid::LanguageIdentifier;
 
 use crate::{
-    database::DatabaseInstance, error::map_eyre_error, google_drive, index::ForecastFileView,
+    database::DatabaseInstance,
+    error::map_eyre_error,
+    google_drive,
+    index::ForecastFileView,
     state::AppState,
+    templates::{render, TemplatesWithContext},
 };
 
 use self::files::{ForecastFiles, ForecastFilesIden};
@@ -83,12 +87,13 @@ pub async fn handler(
     Path(file_name): Path<String>,
     State(state): State<AppState>,
     Extension(database): Extension<DatabaseInstance>,
+    Extension(templates): Extension<TemplatesWithContext>,
 ) -> axum::response::Result<Response> {
     let api_key = state.secrets.google_drive_api_key.as_ref().ok_or_else(|| {
         tracing::error!("Unable to fetch file, Google Drive API Key not specified");
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
-    handler_impl(&file_name, api_key, &state.client, &database)
+    handler_impl(&file_name, api_key, &state.client, &database, &templates)
         .await
         .map_err(map_eyre_error)
 }
@@ -99,6 +104,7 @@ async fn handler_impl(
     api_key: &SecretString,
     client: &reqwest::Client,
     database: &DatabaseInstance,
+    templates: &TemplatesWithContext,
 ) -> eyre::Result<Response> {
     // Check that file exists in published folder, and not attempting to access a file outside
     // that.
@@ -134,7 +140,7 @@ async fn handler_impl(
             let forecast_file = Option::transpose(
                 statement
                     .query_map(&*values.as_params(), |row| ForecastFiles::try_from(row))
-                    .wrap_err("Error performing query to obtain `ForecastFile`")?
+                    .wrap_err("Error performing query to obtain `ForecastFiles`")?
                     .next(),
             )?;
             Ok::<_, eyre::Error>(forecast_file)
@@ -223,7 +229,8 @@ async fn handler_impl(
                 &*FORECAST_SCHEMA_0_3_0,
             )
             .context("Error parsing forecast spreadsheet")?;
-            Ok(axum::response::Json(forecast).into_response())
+
+            render(&templates.environment, "forecast.html", &forecast)
         }
         ForecastFileView::Download => {
             let mut response = forecast_file_bytes.into_response();

@@ -22,11 +22,7 @@ use minijinja::{
 use rust_embed::{EmbeddedFile, RustEmbed};
 use uuid::Uuid;
 
-use crate::{
-    error::{map_eyre_error, map_std_error},
-    i18n::I18nLoader,
-    AppState,
-};
+use crate::{error::map_eyre_error, i18n::I18nLoader, AppState};
 
 #[derive(RustEmbed)]
 #[folder = "src/templates"]
@@ -289,14 +285,14 @@ pub async fn middleware<B>(
     Ok(next.run(request).await)
 }
 
-/// Render a template into a response, `Content-Type` header is guessed using the file extension of
+/// Render a template into a response. `Content-Type` header is guessed using the file extension of
 /// the template name.
 pub fn render<'env>(
     environment: &minijinja::Environment<'env>,
     name: &str,
     ctx: &dyn erased_serde::Serialize,
-) -> axum::response::Result<Response> {
-    let template = environment.get_template(name).map_err(map_std_error)?;
+) -> eyre::Result<Response> {
+    let template = environment.get_template(name)?;
     let mime = mime_guess::from_path(template.name()).first();
 
     let builder = Response::builder();
@@ -306,10 +302,7 @@ pub fn render<'env>(
         builder
     };
 
-    Ok(builder
-        .body(template.render(ctx).map_err(|error| format!("{error:?}"))?)
-        .map_err(|error| format!("{error:?}"))?
-        .into_response())
+    Ok(builder.body(template.render(ctx)?)?.into_response())
 }
 
 // TODO: this code might be useful in the future for /** routes we can have a handler selects the
@@ -394,7 +387,7 @@ pub fn create_handler(
         templates: &TemplatesWithContext,
         template_key: &str,
     ) -> axum::response::Result<Response> {
-        render(&templates.environment, template_key, &())
+        render(&templates.environment, template_key, &()).map_err(map_eyre_error)
     }
     let template_key: String = template_key.to_owned();
     move |Extension(templates): Extension<TemplatesWithContext>| {
