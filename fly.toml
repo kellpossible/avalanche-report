@@ -1,6 +1,12 @@
-# fly.toml file generated for georgia-avalanche-report on 2023-01-14T14:22:41+11:00
+# fly.toml app configuration file generated for georgia-avalanche-report on 2023-05-14T17:23:40+10:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
 app = "georgia-avalanche-report"
+primary_region = "otp"
+kill_signal = "SIGINT"
+kill_timeout = "5s"
 
 [env]
   OPTIONS = """
@@ -10,26 +16,31 @@ app = "georgia-avalanche-report"
     default_language="ka-GE"
   """
 
-[mounts]
+[[mounts]]
+  source = "georgia_avalanche_report_data_machines"
   destination = "/data-volume"
-  source = "georgia_avalanche_report_data"
+  processes = ["app"]
 
 [[services]]
-  internal_port = 8080
   protocol = "tcp"
+  internal_port = 8080
+  min_machines_running = 0
 
   [[services.ports]]
+    port = 80
     handlers = ["http"]
-    port = "80"
     force_https = true
 
   [[services.ports]]
+    port = 443
     handlers = ["tls", "http"]
-    port = "443"
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 25
+    soft_limit = 20
 
   [[services.tcp_checks]]
-    grace_period = "1s"
     interval = "15s"
-    port = "8080"
-    restart_limit = 0
     timeout = "2s"
+    grace_period = "1s"
+    restart_limit = 0
