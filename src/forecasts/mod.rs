@@ -11,7 +11,7 @@ use forecast_spreadsheet::{
     HazardRating, HazardRatingKind, ProblemKind, Sensitivity, Size, TimeOfDay, Trend,
 };
 use http::{header::CONTENT_TYPE, HeaderValue, StatusCode};
-use indexmap::{IndexMap, IndexSet};
+use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use sea_query::{Alias, Expr, IntoColumnRef, OnConflict, SqliteQueryBuilder};
 use sea_query_rusqlite::RusqliteBinder;

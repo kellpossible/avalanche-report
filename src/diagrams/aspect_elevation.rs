@@ -2,21 +2,28 @@ use std::{
     collections::{HashMap, HashSet},
     fmt::Display,
     str::FromStr,
+    sync::Arc,
 };
 
 use axum::{
     extract,
     http::{header, HeaderMap},
     response::IntoResponse,
+    Extension,
 };
 use eyre::Context;
+use i18n_embed::fluent::FluentLanguageLoader;
+use i18n_embed_fl::fl;
 use once_cell::sync::Lazy;
 use regex::{Captures, Regex};
 use resvg::{tiny_skia, usvg};
 use serde::{Deserialize, Serialize};
 use usvg_text_layout::{fontdb, TreeTextToPath};
 
-use crate::error::{map_eyre_error, map_std_error};
+use crate::{
+    error::{map_eyre_error, map_std_error},
+    i18n::I18nLoader,
+};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Aspect {
@@ -203,7 +210,7 @@ static TEXT_RE: Lazy<Regex> = Lazy::new(|| {
     .expect("Unable to compile svg text regex")
 });
 
-fn generate_svg(aspect_elevation: AspectElevation) -> String {
+fn generate_svg(aspect_elevation: AspectElevation, i18n: Arc<FluentLanguageLoader>) -> String {
     let high_alpine_ids = aspect_elevation.high_alpine.iter().map(|aspect| {
         let id = aspect.svg_id();
         format!("high-alpine-{id}")
@@ -242,25 +249,25 @@ fn generate_svg(aspect_elevation: AspectElevation) -> String {
 
             match id {
                 "high-alpine-text" => {
-                    if let Some(high_alpine_text) = &aspect_elevation.high_alpine_text {
-                        captured_string.replace(original_text, high_alpine_text)
-                    } else {
-                        captured_string.to_string()
-                    }
+                    let high_alpine_text = aspect_elevation
+                        .high_alpine_text
+                        .to_owned()
+                        .unwrap_or_else(|| fl!(&*i18n, "elevation-band-high-alpine").to_string());
+                    captured_string.replace(original_text, &high_alpine_text)
                 }
                 "alpine-text" => {
-                    if let Some(alpine_text) = &aspect_elevation.alpine_text {
-                        captured_string.replace(original_text, alpine_text)
-                    } else {
-                        captured_string.to_string()
-                    }
+                    let alpine_text = aspect_elevation
+                        .alpine_text
+                        .to_owned()
+                        .unwrap_or_else(|| fl!(&*i18n, "elevation-band-alpine").to_string());
+                    captured_string.replace(original_text, &alpine_text)
                 }
                 "sub-alpine-text" => {
-                    if let Some(sub_alpine_text) = &aspect_elevation.sub_alpine_text {
-                        captured_string.replace(original_text, sub_alpine_text)
-                    } else {
-                        captured_string.to_string()
-                    }
+                    let sub_alpine_text = aspect_elevation
+                        .sub_alpine_text
+                        .to_owned()
+                        .unwrap_or_else(|| fl!(&*i18n, "elevation-band-sub-alpine").to_string());
+                    captured_string.replace(original_text, &sub_alpine_text)
                 }
                 _ => captured_string.to_string(),
             }
@@ -270,12 +277,13 @@ fn generate_svg(aspect_elevation: AspectElevation) -> String {
 
 pub async fn svg_handler(
     extract::Query(query): extract::Query<Query>,
+    Extension(i18n): Extension<I18nLoader>,
 ) -> axum::response::Result<impl IntoResponse> {
     let mut headers = HeaderMap::new();
     // headers.insert(header::CONTENT_TYPE, "image/svg+xml".parse().unwrap());
     headers.insert(header::CONTENT_TYPE, "image/svg+xml".parse().unwrap());
     let aspect_elevation = AspectElevation::try_from(query).map_err(map_eyre_error)?;
-    Ok((headers, generate_svg(aspect_elevation)))
+    Ok((headers, generate_svg(aspect_elevation, i18n)))
 }
 
 const FONT_DATA: &[u8] = include_bytes!("./fonts/noto/NotoSans-RegularWithGeorgian.ttf");
@@ -286,8 +294,11 @@ static FONT_DB: Lazy<fontdb::Database> = Lazy::new(|| {
     db
 });
 
-fn generate_png(aspect_elevation: AspectElevation) -> eyre::Result<Vec<u8>> {
-    let svg = generate_svg(aspect_elevation);
+fn generate_png(
+    aspect_elevation: AspectElevation,
+    i18n: Arc<FluentLanguageLoader>,
+) -> eyre::Result<Vec<u8>> {
+    let svg = generate_svg(aspect_elevation, i18n);
     let options = usvg::Options::default();
     let mut tree = usvg::Tree::from_str(&svg, &options)?;
     tree.convert_text(&FONT_DB);
@@ -306,13 +317,14 @@ fn generate_png(aspect_elevation: AspectElevation) -> eyre::Result<Vec<u8>> {
 
 pub async fn png_handler(
     extract::Query(aspect_elevation_query): extract::Query<Query>,
+    Extension(i18n): Extension<I18nLoader>,
 ) -> axum::response::Result<impl IntoResponse> {
     let mut headers = HeaderMap::new();
     headers.insert(header::CONTENT_TYPE, "image/png".parse().unwrap());
     let aspect_elevation =
         AspectElevation::try_from(aspect_elevation_query).map_err(map_eyre_error)?;
     let png_data = tokio::task::spawn_blocking(move || {
-        generate_png(aspect_elevation).wrap_err("Error generating png")
+        generate_png(aspect_elevation, i18n).wrap_err("Error generating png")
     })
     .await
     .map_err(map_std_error)?
@@ -322,47 +334,67 @@ pub async fn png_handler(
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashSet;
+    use std::{collections::HashSet, sync::Arc};
+
+    use crate::i18n::{self, load_languages, I18nLoader};
 
     use super::{generate_svg, Aspect, AspectElevation};
 
+    use once_cell::sync::Lazy;
+    use unic_langid::LanguageIdentifier;
+
+    static LOADER: Lazy<I18nLoader> = Lazy::new(|| {
+        let loader = i18n::initialize();
+        load_languages(&loader).unwrap();
+        Arc::new(loader.select_languages(&["en-UK".parse::<LanguageIdentifier>().unwrap()]))
+    });
+
     #[test]
     fn test_generate_svg_empty() {
-        let svg = generate_svg(AspectElevation::default());
+        let svg = generate_svg(AspectElevation::default(), LOADER.clone());
         insta::assert_snapshot!(svg);
     }
 
     #[test]
     fn test_generate_svg_all_aspects() {
         let all_aspects: HashSet<Aspect> = Aspect::enumerate().into_iter().cloned().collect();
-        let svg = generate_svg(AspectElevation {
-            high_alpine: all_aspects.clone(),
-            alpine: all_aspects.clone(),
-            sub_alpine: all_aspects.clone(),
-            ..AspectElevation::default()
-        });
+        let svg = generate_svg(
+            AspectElevation {
+                high_alpine: all_aspects.clone(),
+                alpine: all_aspects.clone(),
+                sub_alpine: all_aspects.clone(),
+                ..AspectElevation::default()
+            },
+            LOADER.clone(),
+        );
         insta::assert_snapshot!(svg);
     }
 
     #[test]
     fn test_generate_svg_alpine_n_w() {
-        let svg = generate_svg(AspectElevation {
-            high_alpine: HashSet::default(),
-            alpine: vec![Aspect::N, Aspect::NW].into_iter().collect(),
-            sub_alpine: HashSet::default(),
-            ..AspectElevation::default()
-        });
+        let svg = generate_svg(
+            AspectElevation {
+                high_alpine: HashSet::default(),
+                alpine: vec![Aspect::N, Aspect::NW].into_iter().collect(),
+                sub_alpine: HashSet::default(),
+                ..AspectElevation::default()
+            },
+            LOADER.clone(),
+        );
         insta::assert_snapshot!(svg);
     }
 
     #[test]
     fn test_generate_svg_text() {
-        let svg = generate_svg(AspectElevation {
-            high_alpine_text: Some("Test High Alpine".to_owned()),
-            alpine_text: Some("Test Alpine".to_owned()),
-            sub_alpine_text: Some("Test Sub Alpine".to_owned()),
-            ..AspectElevation::default()
-        });
+        let svg = generate_svg(
+            AspectElevation {
+                high_alpine_text: Some("Test High Alpine".to_owned()),
+                alpine_text: Some("Test Alpine".to_owned()),
+                sub_alpine_text: Some("Test Sub Alpine".to_owned()),
+                ..AspectElevation::default()
+            },
+            LOADER.clone(),
+        );
         insta::assert_snapshot!(svg);
     }
 }

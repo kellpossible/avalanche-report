@@ -2,12 +2,19 @@ use axum::{
     extract,
     http::{header, HeaderMap},
     response::IntoResponse,
+    Extension,
 };
 use eyre::Context;
+use i18n_embed::fluent::FluentLanguageLoader;
 use resvg::{tiny_skia, usvg};
 use serde::Deserialize;
 
-use crate::error::{map_eyre_error, map_std_error};
+use crate::{
+    error::{map_eyre_error, map_std_error},
+    i18n::I18nLoader,
+};
+
+use std::sync::Arc;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -50,7 +57,7 @@ pub struct Query {
     hazard_level: HazardLevel,
 }
 
-pub fn generate_svg(query: Query) -> String {
+pub fn generate_svg(query: Query, _i18n: Arc<FluentLanguageLoader>) -> String {
     let high_alpine_colour = match query.elevation_band {
         ElevationBand::HighAlpine => query.hazard_level.colour_hex(),
         _ => WHITE,
@@ -110,14 +117,17 @@ pub fn generate_svg(query: Query) -> String {
     )
 }
 
-pub async fn svg_handler(extract::Query(query): extract::Query<Query>) -> impl IntoResponse {
+pub async fn svg_handler(
+    extract::Query(query): extract::Query<Query>,
+    Extension(i18n): Extension<I18nLoader>,
+) -> impl IntoResponse {
     let mut headers = HeaderMap::new();
     headers.insert(header::CONTENT_TYPE, "image/svg+xml".parse().unwrap());
-    (headers, generate_svg(query))
+    (headers, generate_svg(query, i18n))
 }
 
-fn generate_png(elevation_hazard: Query) -> eyre::Result<Vec<u8>> {
-    let svg = generate_svg(elevation_hazard);
+fn generate_png(elevation_hazard: Query, i18n: Arc<FluentLanguageLoader>) -> eyre::Result<Vec<u8>> {
+    let svg = generate_svg(elevation_hazard, i18n);
     let options = usvg::Options::default();
     let tree = usvg::Tree::from_str(&svg, &options)?;
     let pixmap_size = tree.size.to_screen_size();
@@ -135,11 +145,12 @@ fn generate_png(elevation_hazard: Query) -> eyre::Result<Vec<u8>> {
 
 pub async fn png_handler(
     extract::Query(elevation_hazard): extract::Query<Query>,
+    Extension(i18n): Extension<I18nLoader>,
 ) -> axum::response::Result<impl IntoResponse> {
     let mut headers = HeaderMap::new();
     headers.insert(header::CONTENT_TYPE, "image/png".parse().unwrap());
     let png_data = tokio::task::spawn_blocking(move || {
-        generate_png(elevation_hazard).wrap_err("Error generating png")
+        generate_png(elevation_hazard, i18n).wrap_err("Error generating png")
     })
     .await
     .map_err(map_std_error)?

@@ -1,46 +1,43 @@
 {% extends "base.html" %}
+{% set overall_hazard = hazard_ratings["overall"].value %}
 {% block body %}
     <p>Work in progress!</p>
-    <h1 class="text-5xl">Forecast {{ area }}</h1>
-    <h2 class="text-4xl">Hazard Rating: {{ hazard_ratings["overall"].value }}</h2>
+    <h1 class="text-5xl">{{ fl("forecast-area-heading") }}: {{ fl("forecast-area-" ~ area) }}</h1>
+    <h2 class="text-4xl">{{ fl("avalanche-hazard-heading") }}: {{ fl("avalanche-hazard-" ~ overall_hazard) }}</h2>
+    <p>{{ fl("avalanche-hazard-" ~ overall_hazard ~ "-likelihood") }}</p>
+    <p>{{ fl("avalanche-hazard-" ~ overall_hazard ~ "-size-distribution") }}</p>
     <table class="border-2 table-auto">
-        <tr>
-            <td class="border-2 p-2">High Alpine</td>
-            <td class="border-2 p-2">{{ hazard_ratings["high-alpine"].value }}</td>
-        </tr>
-        <tr>
-            <td class="border-2 p-2">Alpine</td>
-            <td class="border-2 p-2">{{ hazard_ratings["alpine"].value }}</td>
-        </tr>
-        <tr>
-            <td class="border-2 p-2">Sub Alpine</td>
-            <td class="border-2 p-2">{{ hazard_ratings["sub-alpine"].value }}</td>
-        </tr>
+        {% for elevation_band_id in ["high-alpine", "alpine", "sub-alpine"] %}
+            <tr>
+                <td class="border-2 p-2">{{ fl("elevation-band-" ~ elevation_band_id) }}</td>
+                <td class="border-2 p-2">{{ fl("avalanche-hazard-" ~ hazard_ratings[elevation_band_id].value) }}</td>
+            </tr>
+        {% endfor %}
     </table>
     <p>{{ description }}</p>
-    <h2 class="text-4xl">Recent Observations</h2>
+    <h2 class="text-4xl">{{ fl("recent-relevant-observations-heading") }}</h2>
     <p>{{ recent_observations }}</p>
-    <h2 class="text-4xl">Weather Forecast</h2>
+    <h2 class="text-4xl">{{ fl("weather-forecast-heading") }}</h2>
     <p>{{ weather_forecast }}</p>
-    <h2 class="text-4xl">Avalanche Problems</h2>
+    <h2 class="text-4xl">{{ fl("avalanche-problems-heading") }}</h2>
     {% for problem in avalanche_problems %}
-        <h3 class="text-3xl">Problem: {{ problem.kind }}</h3>
+        <h3 class="text-3xl">{{ fl("avalanche-problem-heading") }}: {{ fl("problem-type-" ~ problem.kind)}}</h3>
         <img width="300px"
              src="{{ problem.aspect_elevation_chart }}"
              alt="Aspect Elevation Chart"/>
         <p>
-            Size: {{ problem.size }}
+            {{ fl("avalanche-size-heading") }}: {{ problem.size }}
             <br>
-            Sensitivity: {{ problem.sensitivity }}
+            {{ fl("sensitivity-heading") }}: {{ fl("sensitivity-" ~ problem.sensitivity) }}
             <br>
-            Distribution: {{ problem.distribution }}
+            {{ fl("distribution-heading") }}: {{ fl("distribution-" ~ problem.distribution) }}
             <br>
-            Time of day: {{ problem.time_of_day }}
+            {{ fl("problem-time-of-day-heading") }}: {{ fl("time-of-day-" ~ problem.time_of_day) }}
             <br>
-            Trend: {{ problem.trend }}
+            {{ fl("trend-heading") }}: {{ fl("trend-" ~ problem.trend) }}
             <br>
             {% if problem.confidence %}
-                Confidence: {{ problem.confidence }}
+                {{ fl("confidence-heading") }}: {{ fl("confidence-" ~ problem.confidence) }}
                 <br>
             {% endif %}
         </p>

@@ -1,20 +1,201 @@
 avalanche-forecast-heading = Avalanche Forecast
+# Heading for the area that the forecast is about
+forecast-area-heading = Forecast Area
+# The Gudauri forecast area name
 forecast-area-gudauri = Gudauri
 gudauri-avalanche-forecast-heading = Gudauri Avalanche Forecast
 latest-forecast-heading = Latest Forecast
-elevation-zones-heading = Elevation Zones
 avalanche-hazard-level-heading = Avalanche Hazard Level
 forecast-archive-heading = Forecast Archive
 no-forecasts-available-message = No Forecasts Available
+# Month of the year
 month-1 = January
+# Month of the year
 month-2 = February
+# Month of the year
 month-3 = March
+# Month of the year
 month-4 = April
+# Month of the year
 month-5 = May
+# Month of the year
 month-6 = June
+# Month of the year
 month-7 = July
+# Month of the year
 month-8 = August
+# Month of the year
 month-9 = September
+# Month of the year
 month-10 = October
+# Month of the year
 month-11 = November
+# Month of the year
 month-12 = December
+# Avalanche problem type. A type of loose snow avalanche composed of dry snow.
+problem-type-loose-dry = Loose Dry
+# Avalanche problem type. A type of loose snow avalanche composed of wet or moist snow.
+problem-type-loose-wet = Loose Wet
+# Avalanche problem type. One or more layers of recent storm snow that has consolidated into a slab above a weak layer.
+problem-type-storm-slab = Storm Slab
+# Avalanche problem type. Release of a cohesive layer of snow (a slab) formed by the wind drifted snow. 
+problem-type-wind-slab = Wind Slab
+# Avalanche problem type. A thick cohesive slab of snow losing its bond to a weaker layer after becoming damp, moist, or saturated with water
+problem-type-wet-slab = Wet Slab
+# Avalanche problem type. A slab formed over a persistent weak layer.
+problem-type-persistent-slab = Persistent Slab
+# Avalanche problem type. A weak layer, usually at or near the base of the snowpack, that resists bonding to an overlying slab over an extended time period.
+problem-type-deep-slab = Deep Slab
+# Avalanche problem type. An overhanging ledge or shelf of snow that usually forms over the lee side of ridges.
+problem-stype-cornice = Cornice
+# Avalanche problem type. The process of the entire snowpack sliding as a unit on the ground.
+problem-type-glide = Glide
+# Field heading for avalanche problem type
+problem-type-heading = Type
+# Helpful information about the "Loose Dry" avalanche problem type
+problem-type-loose-dry-about = A type of loose snow avalanche composed of dry snow.
+# Helpful information about the "Loose Wet" avalanche problem type
+problem-type-loose-wet-about = A type of loose snow avalanche composed of wet or moist snow.
+# Helpful information about the "Storm Slab" avalanche problem type
+problem-type-storm-slab-about = One or more layers of recent storm snow that have consolidated into a slab above a weak layer.
+# Helpful information about the "Wind Slab" avalanche problem type
+problem-type-wind-slab-about = A cohesive layer of snow (a slab) formed by the wind drifted snow. 
+# Helpful information about the "Wet Slab" avalanche problem type
+problem-type-wet-slab-about = A thick cohesive slab of snow losing its bond to a weaker layer after becoming damp, moist, or saturated with water.
+# Helpful information about the "Persistent Slab" avalanche problem type
+problem-type-persistent-slab-about = A slab formed over a persistent weak layer.
+# Helpful information about the "Deep Slab" avalanche problem type
+problem-type-deep-slab-about = A weak layer, usually at or near the base of the snowpack, that resists bonding to an overlying slab over an extended time period.
+# Helpful information about the "Cornice" avalanche problem type
+problem-stype-cornice-about = An overhanging ledge or shelf of snow that usually forms over the lee side of ridges.
+# Helpful information about the "Glide" avalanche problem type
+problem-type-glide-about = The process of the entire snowpack sliding as a unit on the ground.
+# Field heading for the size of an avalanche if it were to occur
+avalanche-size-heading = Avalanche Size
+# Helpful description about size 1 avalanche
+avalanche-size-1-about = Relatively harmless to people.
+# Helpful description about size 2 avalanche
+avalanche-size-2-about = Could bury, injure or kill a person.
+# Helpful description about size 3 avalanche
+avalanche-size-3-about = Could bury and destroy a car, damage a truck, destroy a wood frame house, or break a few trees.
+# Helpful description about size 4 avalanche
+avalanche-size-4-about = Could destroy a railway car, large truck, several buildings or a forest area up to 4 hectares.
+# Helpful description about size 5 avalanche
+avalanche-size-5-about = Largest snow avalanche known. Could destroy a vilage or a forest of 40 hectares.
+# A heading for the the trend of the forecast/conditions, will it improve or get worse?
+trend-heading = Trend
+# Heading for "Trend" column
+trend-about = The trend of conditions from the current moment to the worst expected conditions during the forecast period.
+# The avalanche conditions are improving
+trend-improving = Improving
+# The avalanche conditions are remaining the same
+trend-no-change = No change
+# The avalanche conditions are deteriorating
+trend-deteriorating = Deteriorating
+# Heading for avalanche hazard fields
+avalanche-hazard-heading = Avalanche Hazard
+# No avalanche hazard rating
+avalanche-hazard-no-rating = No Rating
+# Low (level 1) avalanche hazard rating
+avalanche-hazard-low = Low
+# Moderate (level 2) avalanche hazard rating
+avalanche-hazard-moderate = Moderate
+# Considerable (level 3) avalanche hazard rating
+avalanche-hazard-considerable = Considerable
+# High (level 4) avalanche hazard rating
+avalanche-hazard-high = High
+# Extreme (level 5) avalanche hazard rating
+avalanche-hazard-extreme = Extreme
+# Helpful description about "No Rating" avalanche hazard rating
+avalanche-hazard-no-rating-about = There is no avalanche hazard rating available at this time due to limited information or forecasting capacity.
+# Helpful description about "Low" avalanche hazard rating
+avalanche-hazard-low-about = Generally safe avalanche conditions. Watch for unstable snow on isolated terrain features.
+# Helpful description about "Moderate" avalanche hazard rating
+avalanche-hazard-moderate-about = Heightened avalanche conditions on specific terrain features. Evaluate snow and terrain carefully; identify features of concern.
+# Helpful description about "Considerable" avalanche hazard rating
+avalanche-hazard-considerable-about = Dangerous avalanche conditions. Careful snowpack evaluation, cautious route-finding and conservative decision-making essential.
+# Helpful description about "High" avalanche hazard rating
+avalanche-hazard-high-about = Very dangerous avalanche conditions. Travel in avalanche terrain not recommended.
+# Helpful description about "Extreme" avalanche hazard rating
+avalanche-hazard-extreme-about = Avoid all avalanche terrain.
+# Description of the size and distributions of avalanches to occur with "Low" avalanche danger
+avalanche-hazard-low-size-distribution = Small avalanches in isolated areas or extreme terrain.
+# Description of the size and distributions of avalanches to occur with "Moderate" avalanche danger
+avalanche-hazard-moderate-size-distribution = Small avalanches in specific areas, or large avalanches in isolated areas.
+# Description of the size and distributions of avalanches to occur with "Considerable" avalanche danger
+avalanche-hazard-considerable-size-distribution = Small avalanches in many areas, or large avalanches in specific areas, or very large avalanches in isolated areas.
+# Description of the size and distributions of avalanches to occur with "High" avalanche danger
+avalanche-hazard-high-size-distribution = Large avalanches in many areas, or large avalanches in specific areas.
+# Description of the size and distributions of avalanches to occur with "Extreme" avalanche danger
+avalanche-hazard-extreme-size-distribution = Large to very lage avalanches in many areas.
+elevation-bands-heading = Elevation Zones
+# Table heading for elevation bands
+elevation-band-heading = Elevation Zone
+# Elevation band below the tree level
+elevation-band-sub-alpine = Sub Alpine
+# Elevation band above the tree level
+elevation-band-alpine = Alpine
+# Elevation band far above the tree level (above Alpine)
+elevation-band-high-alpine = High Alpine
+# Heading for recent observations
+recent-relevant-observations-heading = Recent Avalanches and Snowpack
+# Heading for weather forecast
+weather-forecast-heading = Weather Forecast
+# A heading for an individual avalanche problem type
+avalanche-problem-heading = Avalanche Problem
+# A heading for all the different avalanche problem types
+avalanche-problems-heading = Avalanche Problems
+# Heading for an avalanche type's sensitivity to human trigger
+sensitivity-heading = Sensitivity
+# The specific avalanche problem type is unreactive to human rider triggers.
+sensitivity-unreactive = Unreactive
+# The specific avalanche problem type is difficult to trigger with a human rider.
+sensitivity-stubborn = Stubborn
+# The specific avalanche problem type is reactive to human rider triggers.
+sensitivity-reactive = Reactive
+# The specific avalanche problem type is highly reactive to human triggers.
+sensitivity-touchy = Touchy
+# Description about "Unreactive" avalanche trigger sensitivity
+sensitivity-unreactive-about = The specific avalanche problem type is unreactive to human rider triggers.  Generally only possible with high additional load.
+# Description about "Stubborn" avalanche trigger sensitivity
+sensitivity-stubborn-about = The specific avalanche problem type is difficult to trigger with a human rider.
+# Description about "Reactive" avalanche trigger sensitivity
+sensitivity-reactive-about = The specific avalanche problem type is reactive to human rider triggers. Easy to trigger with ski cut.
+# Description about "Touchy" avalanche trigger sensitivity
+sensitivity-touchy-about = The specific avalanche problem type is highly reactive to human rider triggers.
+# Heading for an avalanche type's spatial distribution
+distribution-heading = Distribution
+# A term for when an avalanche problem type is distributed in a few, isolated locations.
+distribution-isolated = Isolated
+# A term for when an avalanche problem type is  distributed in specific areas, with common characteristics.
+distribution-specific = Specific
+# A term for when an avalanche problem type is distributed in many locations
+distribution-widespread = Widespread
+# Description about "Isoloated" avalanche problem type distribution
+distribution-isolated-about = A few, isolated locations; evidence for instabilities is rare and hard to find. 
+# Description about "Specific" avalanche problem type distribution
+distribution-specific-about = Specific areas, with common characteristics. Evidence for instabilities exists, but it is not obvious and finding it requires careful observations.
+# Description about "Widespread" avalanche problem type distribution
+distribution-widespread-about = Many locations. Evidence for instabilities is frequently found, in many locations.
+# Field heading for the time of day that an avalanche problem occurs
+problem-time-of-day-heading = Time of Day
+# Period of time that the forecast hazard is relevant for
+time-of-day-all-day = All day
+# Period of time that the forecast hazard is relevant for
+time-of-day-morning = Morning
+# Period of time that the forecast hazard is relevant for
+time-of-day-afternoon = Afternoon
+# The forecaster's confidence level about this part of the forecast is low
+confidence-low = Low
+# A heading for the confidence about the conditions and forecast
+confidence-heading = Confidence
+# The forecaster's confidence level about this part of the forecast is moderate
+confidence-moderate = Moderate
+# The forecaster's confidence level about this part of the forecast is high
+confidence-high = High
+# Description for the confidence value, when the convidence is "Low"
+confidence-low-about = The forecaster's confidence level is Low about this part of the forecast
+# Description for the confidence value, when the convidence is "Medium"
+confidence-moderate-about = The forecaster's confidence level is Moderate about this part of the forecast
+# Description for the confidence value, when the convidence is "High"
+confidence-high-about = The forecaster's confidence level is High about this part of the forecast
