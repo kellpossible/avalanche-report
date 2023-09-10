@@ -17,6 +17,7 @@ pub struct Options {
     pub template_version: SheetCellPosition,
     pub language: Language,
     pub area: Area,
+    pub area_definitions: IndexMap<AreaId, AreaDefinition>,
     pub forecaster: Forecaster,
     pub time: Time,
     pub recent_observations: Option<SheetCellPosition>,
@@ -30,6 +31,43 @@ pub struct Options {
     /// elevation boundaries in [`Area::elevation_band_boundaries`].
     pub elevation_bands: IndexSet<ElevationBandId>,
     pub terms: Terms,
+}
+
+mod timezone_from_string {
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<&'static time_tz::Tz, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct Visitor;
+
+        impl<'de> serde::de::Visitor<'de> for Visitor {
+            type Value = &'static time_tz::Tz;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str(
+                    "Expecting a valid IANA timezone name string e.g. \"Africa/Abidjan\"",
+                )
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                time_tz::timezones::get_by_name(v)
+                    .ok_or_else(|| {
+                        E::custom(format!("Unable to find timezone {v} in IANA database"))
+                    })
+            }
+        }
+
+        deserializer.deserialize_str(Visitor)
+    }
+}
+
+#[derive(Deserialize)]
+pub struct AreaDefinition {
+    #[serde(with = "timezone_from_string")]
+    pub time_zone: &'static time_tz::Tz,
 }
 
 #[derive(Deserialize)]

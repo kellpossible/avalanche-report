@@ -14,21 +14,11 @@ expression: "&forecast"
     "name": "Levi Seiferheld",
     "organisation": "Vagabond Gudauri"
   },
-  "time": [
-    2023,
-    38,
-    19,
-    0,
-    0,
-    0
-  ],
+  "time": "2023-02-07T19:00:00+04:00",
   "recent_observations": "80 cm of snowfall recorded over the last 2 days with moderate transport from SE quarter, unreactive to ski tests today. No new avalanches observed, but visibility has been limited. Widespread 'whumphing' and cracking observed around the ski resort over the last week, 2200 - 3000m, most aspects (anywhere snow existed before Jan 31st). The snowpack has a 15 - 30cm weak layer (facets) at the ground. Average snow depth is 120 cm at 2700 m.",
   "forecast_changes": "Significant new snow with moderate winds.",
   "weather_forecast": "Mostly cloudy tomorrow with some snow showers in the afternoon, light winds, cool temperatures.",
-  "valid_for": [
-    172800,
-    0
-  ],
+  "valid_for": 172800,
   "description": "Large amounts of new snow in the last 48 hours with moderate winds will make human triggered avalanches likely, especially at higher elevations. A weak layer at the bottom of the snowpack could produce large avalanches if it is triggered.",
   "hazard_ratings": {
     "high-alpine": {

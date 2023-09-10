@@ -1,6 +1,6 @@
 use axum::{extract::State, response::IntoResponse, Extension};
 use color_eyre::Help;
-use eyre::{bail, Context, ContextCompat};
+use eyre::{eyre, bail, Context, ContextCompat};
 use http::StatusCode;
 use i18n_embed::LanguageLoader;
 use serde::Serialize;
@@ -15,18 +15,11 @@ use crate::{
     templates::{render, TemplatesWithContext},
 };
 
-fn format_language_name(language: &LanguageIdentifier) -> Option<String> {
-    match language.language.as_str() {
-        "en" => Some("English".to_owned()),
-        "ka" => Some("ქართული".to_owned()),
-        _ => None,
-    }
-}
-
 #[derive(Clone, Serialize, Debug)]
 pub enum ForecastFileView {
-    /// Forecast file is viewed by being parsed and rendered as HTML (Spreadsheet).
+    /// Forecast file is viewed by being parsed and rendered as HTML.
     Html,
+    /// Forecast file is viewed by being parsed, and serialized to JSON.
     Json,
     /// Forecast file is downloaded to be viewed (PDF).
     Download,
@@ -108,18 +101,18 @@ pub async fn handler(
             return Ok(StatusCode::INTERNAL_SERVER_ERROR.into_response());
         }
     };
-    let (forecasts, mut errors): (Vec<ForecastAccumulator>, Vec<String>) = files
+    let (forecasts, errors): (Vec<ForecastAccumulator>, Vec<String>) = files
         .into_iter()
         .map(|file| {
             let filename = &file.name;
             let details: ForecastFileDetails = parse_forecast_name(filename).wrap_err_with(|| {
-                    eyre::eyre!("Error parsing forecast details from file {filename:?}")
+                    eyre!("Error parsing forecast details from file {filename:?}")
                 })
                 .suggestion("Name file according to the standard format.\n e.g. \"Gudauri_2023-01-24T17:00_LF.en.pdf\"")?;
             match details.forecast.area.as_str() {
                 "Gudauri" => (),
                 unknown => return Err(
-                    eyre::eyre!(
+                    eyre!(
                         "Unknown forecast area {unknown:?} in filename \
                         {filename:?}"
                     ))
@@ -134,7 +127,7 @@ pub async fn handler(
             let view = match file.mime_type.as_str() {
                 "application/pdf" => ForecastFileView::Download,
                 "application/vnd.google-apps.spreadsheet" => ForecastFileView::Html,
-                unsupported => eyre::bail!("Unsupported mime {unsupported} for file {filename}"),
+                unsupported => bail!("Unsupported mime {unsupported} for file {filename}"),
             };
             Ok(ForecastFile { details: formatted_details, file, view })
         })

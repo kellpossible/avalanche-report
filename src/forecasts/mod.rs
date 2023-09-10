@@ -18,7 +18,8 @@ use sea_query::{Alias, Expr, IntoColumnRef, OnConflict, SqliteQueryBuilder};
 use sea_query_rusqlite::RusqliteBinder;
 use secrecy::SecretString;
 use serde::Serialize;
-use time::{OffsetDateTime, PrimitiveDateTime, UtcOffset};
+use time::{OffsetDateTime, PrimitiveDateTime};
+use time_tz::{TimeZone, Offset};
 use tracing::instrument;
 use unic_langid::LanguageIdentifier;
 
@@ -37,7 +38,7 @@ use self::files::{ForecastFiles, ForecastFilesIden};
 
 mod files;
 
-static FORECAST_SCHEMA_0_3_0: Lazy<forecast_spreadsheet::options::Options> =
+static FORECAST_SCHEMA: Lazy<forecast_spreadsheet::options::Options> =
     Lazy::new(|| serde_json::from_str(include_str!("./schemas/0.3.0.json")).unwrap());
 
 #[derive(Serialize, PartialEq, Eq, Clone)]
@@ -63,13 +64,27 @@ pub fn parse_forecast_name(file_name: &str) -> eyre::Result<ForecastFileDetails>
         .next()
         .ok_or_else(|| eyre::eyre!("No area specified"))?
         .to_owned();
+
+    let area_id = FORECAST_SCHEMA
+        .area
+        .map
+        .get(&area)
+        .wrap_err_with(|| format!("Cannot find area id for {area}"))?;
+    let tz = &FORECAST_SCHEMA
+        .area_definitions
+        .get(area_id)
+        .wrap_err_with(|| format!("Cannot find area definition for {area_id}"))?.time_zone;
+
+    let primary_offset = tz.get_offset_primary().to_utc();
     let time_string = details_split
         .next()
         .ok_or_else(|| eyre::eyre!("No time specified"))?;
     let format = time::macros::format_description!("[year]-[month]-[day]T[hour]:[minute]");
-    let time = PrimitiveDateTime::parse(time_string, &format)
+    let guess_time = PrimitiveDateTime::parse(time_string, &format)
         .wrap_err_with(|| format!("Error parsing time {time_string:?}"))?
-        .assume_offset(time::macros::offset!(+4));
+        .assume_offset(primary_offset);
+    let real_offset = tz.get_offset_utc(&guess_time).to_utc();
+    let time = guess_time.replace_offset(real_offset);
     let forecaster = details_split
         .next()
         .ok_or_else(|| eyre::eyre!("No forecaster specified"))?
@@ -121,7 +136,7 @@ struct Forecast {
     pub language: unic_langid::LanguageIdentifier,
     pub area: AreaId,
     pub forecaster: Forecaster,
-    pub time: PrimitiveDateTime,
+    pub time: OffsetDateTime,
     pub recent_observations: Option<String>,
     pub forecast_changes: Option<String>,
     pub weather_forecast: Option<String>,
@@ -185,12 +200,9 @@ struct FormattedForecast {
 
 impl FormattedForecast {
     fn format(forecast: Forecast, i18n: &I18nLoader) -> Self {
-        // TODO: fetch forecast area timezone.
-        let utc_offset = UtcOffset::from_hms(0, 0, 0).expect("valid offset");
-        let formatted_time = i18n::format_time(forecast.time.assume_offset(utc_offset), i18n);
+        let formatted_time = i18n::format_time(forecast.time, i18n);
         let valid_until_time = forecast.time + forecast.valid_for;
-        let formatted_valid_until =
-            i18n::format_time(valid_until_time.assume_offset(utc_offset), i18n);
+        let formatted_valid_until = i18n::format_time(valid_until_time, i18n);
         let formatted_valid_until =
             fl!(&i18n, "until-time", time = formatted_valid_until).to_owned();
 
@@ -428,7 +440,7 @@ async fn handler_impl(
             let forecast: forecast_spreadsheet::Forecast =
                 forecast_spreadsheet::parse_excel_spreadsheet(
                     &forecast_file_bytes,
-                    &*FORECAST_SCHEMA_0_3_0,
+                    &*FORECAST_SCHEMA,
                 )
                 .context("Error parsing forecast spreadsheet")?;
 

@@ -18,6 +18,11 @@
       "reverse": true
     }
   },
+  "area_definitions": {
+    "gudauri": {
+      "time_zone": "Asia/Tbilisi"
+    }
+  },
   "forecaster": {
     "name": "Form!B4",
     "organisation": "Form!F4"

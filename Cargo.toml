@@ -11,10 +11,10 @@ axum-extra = { version = "0.7.7", default-features = false, features = ["cookie"
 base64 = "0.21.0"
 bcrypt = "0.15.0"
 ansi-to-html = "0.1.2"
-eyre = "0.6.8"
+eyre = { workspace = true }
 bytes = "1.4.0"
 url = { version = "2.3", features = ["serde"] }
-serde = { version = "1.0", features = ["derive"] }
+serde = { workspace = true, features = ["derive"] }
 erased-serde = "0.3.24"
 serde_urlencoded = "0.7.1"
 color-eyre = "0.6"
@@ -23,7 +23,7 @@ futures = "0.3.26"
 tracing-appender = "0.2"
 tracing-subscriber = "0.3"
 http = "0.2.8"
-serde_json = "1.0.91"
+serde_json = { workspace = true }
 governor = "0.6.0"
 tracing = "0.1"
 mime_guess = "2.0.4"
@@ -34,6 +34,7 @@ tower = "0.4"
 humantime = "2.1.0"
 nonzero_ext = "0.3.0"
 http-body = "0.4"
+time-tz = { workspace = true }
 tower-http = { version = "0.4", features = ["trace", "auth"] }
 tokio = { version = "1.24.1", features = ["macros", "rt-multi-thread"] }
 tokio-stream = { version = "0.1.11" }
@@ -47,9 +48,9 @@ axum-reporting = { git = "https://github.com/kellpossible/axum-reporting.git" }
 toml = "0.7.2"
 i18n-embed = { version = "0.14.0", features = ["fluent-system"] }
 i18n-embed-fl = "0.7.0"
-once_cell = "1.17.0"
-unic-langid = { version = "0.9.1", features = ["serde"] }
-time = { version = "0.3.17", features = ["serde", "parsing", "formatting", "macros"] }
+once_cell = { workspace = true }
+unic-langid = { workspace = true, features = ["serde"] }
+time = { workspace = true, features = ["serde", "parsing", "formatting", "macros"] }
 resvg = { version = "0.29.0", default-features = false, features = ["filter", "text", "memmap-fonts"] } # required only for svg to png diagram generation
 reqwest = { version = "0.11.14", default-features = false, features = ["json", "stream", "rustls-tls"] }
 secrecy = { version = "0.8.0", features = ["serde"] }
@@ -61,7 +62,7 @@ minijinja-autoreload = { version = "1.0.7" }
 async-trait = "0.1.64"
 uuid = { version = "1.3.0", features = ["v4"] }
 sha2 = "0.10.6"
-indexmap = { version = "1.9.3", features = ["serde"] }
+indexmap = { workspace = true, features = ["serde"] }
 forecast-spreadsheet = { path = "./forecast-spreadsheet" }
 
 [dev-dependencies]
@@ -72,3 +73,13 @@ fs_extra = "1.2.0"
 
 [workspace]
 members = ["admin-password-hash", "forecast-spreadsheet"]
+
+[workspace.dependencies]
+time = "0.3.17"
+time-tz = "2.0.0"
+serde = "1.0.188"
+serde_json = "1.0.106"
+indexmap = "1.9.3"
+eyre = "0.6.8"
+once_cell = "1.18.0"
+unic-langid = "0.9.1"

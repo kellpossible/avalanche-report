@@ -11,7 +11,7 @@ use indexmap::{IndexMap, IndexSet};
 use once_cell::sync::Lazy;
 use options::{HazardRatingInput, Options};
 use position::SheetCellPosition;
-use time::{Date, Month, PrimitiveDateTime, Time};
+use time::{Date, Month, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset};
 
 static EXCEL_EPOCH: Lazy<PrimitiveDateTime> = Lazy::new(|| {
     Date::from_calendar_date(1899, Month::December, 30)
@@ -215,6 +215,12 @@ pub struct ElevationRange {
 #[repr(transparent)]
 #[serde(transparent)]
 pub struct AreaId(String);
+
+impl std::fmt::Display for AreaId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 impl Deref for AreaId {
     type Target = String;
@@ -513,6 +519,7 @@ mod size {
     }
 }
 pub use size::Size;
+use time_tz::{Offset, TimeZone};
 
 #[derive(Debug, Serialize)]
 pub struct HazardRating {
@@ -521,16 +528,29 @@ pub struct HazardRating {
     pub confidence: Option<Confidence>,
 }
 
+mod duration_seconds {
+    use serde::Serialize;
+
+    pub fn serialize<S>(duration: &time::Duration, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        duration.whole_seconds().serialize(serializer)
+    }
+}
+
 #[derive(Debug, Serialize)]
 pub struct Forecast {
     pub template_version: Version,
     pub language: unic_langid::LanguageIdentifier,
     pub area: AreaId,
     pub forecaster: Forecaster,
-    pub time: PrimitiveDateTime,
+    #[serde(with = "time::serde::rfc3339")]
+    pub time: OffsetDateTime,
     pub recent_observations: Option<String>,
     pub forecast_changes: Option<String>,
     pub weather_forecast: Option<String>,
+    #[serde(with = "duration_seconds")]
     pub valid_for: time::Duration,
     pub description: Option<String>,
     pub hazard_ratings: IndexMap<HazardRatingKind, HazardRating>,
@@ -719,7 +739,16 @@ pub fn parse_excel_spreadsheet(
             } => {
                 let date = get_cell_value_datetime(&mut sheets, &date_position)?;
                 let time = get_cell_value_time(&mut sheets, &time_position)?;
-                PrimitiveDateTime::new(date.date(), time)
+                let tz = &options
+                    .area_definitions
+                    .get(&area)
+                    .wrap_err_with(|| format!("no area definition specified for area {area}"))?
+                    .time_zone;
+                let primary_offset = tz.get_offset_primary().to_utc();
+                let guess_time =
+                    PrimitiveDateTime::new(date.date(), time).assume_offset(primary_offset);
+                let real_offset = tz.get_offset_utc(&guess_time).to_utc();
+                guess_time.replace_offset(real_offset)
             }
         }
     };
