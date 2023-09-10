@@ -297,8 +297,6 @@ async fn handler_impl(
         None => return Ok(StatusCode::NOT_FOUND.into_response()),
     };
 
-    dbg!(&file_metadata);
-
     let view = match file_metadata.mime_type.as_str() {
         "application/pdf" => ForecastFileView::Download,
         "application/vnd.google-apps.spreadsheet" => ForecastFileView::Html,
