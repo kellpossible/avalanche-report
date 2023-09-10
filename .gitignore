@@ -7,3 +7,5 @@
 
 # Spreadsheet Lock Files
 *.~lock*
+
+*.aux.xml
