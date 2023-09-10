@@ -8,7 +8,7 @@ use unic_langid::LanguageIdentifier;
 
 use crate::{
     error::map_eyre_error,
-    forecasts::{parse_forecast_name, ForecastDetails, ForecastFileDetails, FORECAST_SCHEMA},
+    forecasts::{parse_forecast_name, ForecastDetails, ForecastFileDetails},
     google_drive::{self, ListFileMetadata},
     i18n::{self, I18nLoader},
     state::AppState,
