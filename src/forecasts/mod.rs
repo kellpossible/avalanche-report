@@ -297,6 +297,8 @@ async fn handler_impl(
         None => return Ok(StatusCode::NOT_FOUND.into_response()),
     };
 
+    dbg!(&file_metadata);
+
     let view = match file_metadata.mime_type.as_str() {
         "application/pdf" => ForecastFileView::Download,
         "application/vnd.google-apps.spreadsheet" => ForecastFileView::Html,
@@ -329,6 +331,8 @@ async fn handler_impl(
             let cached_last_modified: OffsetDateTime = cached_forecast_file.last_modified.into();
             let server_last_modified: &OffsetDateTime = &file_metadata.modified_time;
             tracing::debug!("cached last modified {cached_last_modified}, server last modified {server_last_modified}");
+            // This logic is a bit buggy on google's side it seems, sometimes they change document
+            // but don't update modified time.
             if cached_last_modified == *server_last_modified {
                 Some(cached_forecast_file.file_blob)
             } else {

@@ -1,15 +1,12 @@
 {% from "macros/language_select.html" import language_select %}
 {% extends "base.html" %}
 {% macro forecast_block(forecast, emphasize=false) %}
-    <h3 class="text-xl font-bold">{{ forecast.details.formatted_time }}</h3>
-    {% for file in forecast.files %}
-        <a class="text-blue-600 hover:text-blue-800 visited:text-purple-600 {% if emphasize %}text-xl font-bold{% endif %}"
-           href="/forecasts/{{ file.file.name | urlencode }}">
-            {% if file.view == "Download" %}Download PDF ({{ file.details.language }}){% endif %}
-            {% if file.view == "Html" %}View Forecast{% endif %}
+    <p>
+        <a class="text-xl font-bold text-blue-600 hover:text-blue-800 visited:text-purple-600 {% if emphasize %}text-xl font-bold{% endif %}"
+           href="/forecasts/{{ forecast.file.file.name | urlencode }}">
+            {{ forecast.details.formatted_time }}
         </a>
-        {% if not loop.last %}|{% endif %}
-    {% endfor %}
+    </p>
 {% endmacro %}
 {% set page_title = fl("gudauri-avalanche-forecast-heading") %}
 {% block title %}

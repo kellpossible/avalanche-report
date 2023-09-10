@@ -1,7 +1,8 @@
 use axum::{extract::State, response::IntoResponse, Extension};
 use color_eyre::Help;
-use eyre::Context;
+use eyre::{bail, Context, ContextCompat};
 use http::StatusCode;
+use i18n_embed::LanguageLoader;
 use serde::Serialize;
 use unic_langid::LanguageIdentifier;
 
@@ -9,7 +10,7 @@ use crate::{
     error::map_eyre_error,
     forecasts::{parse_forecast_name, ForecastDetails, ForecastFileDetails},
     google_drive::{self, ListFileMetadata},
-    i18n::{I18nLoader, self},
+    i18n::{self, I18nLoader},
     state::AppState,
     templates::{render, TemplatesWithContext},
 };
@@ -40,16 +41,14 @@ pub struct ForecastFile {
 #[derive(Clone, Serialize, Debug)]
 pub struct FormattedForecastFileDetails {
     pub forecast: FormattedForecastDetails,
-    pub language: Option<String>,
+    pub language: Option<LanguageIdentifier>,
 }
 
 impl FormattedForecastFileDetails {
     fn format(value: ForecastFileDetails, i18n: &I18nLoader) -> Self {
         Self {
             forecast: FormattedForecastDetails::format(value.forecast, i18n),
-            language: value.language.map(|language| {
-                format_language_name(&language).unwrap_or_else(|| language.to_string())
-            }),
+            language: value.language,
         }
     }
 }
@@ -63,19 +62,24 @@ pub struct FormattedForecastDetails {
 }
 
 impl FormattedForecastDetails {
-    fn format(forecast: ForecastDetails, i18n: &I18nLoader) -> Self {
-        let formatted_time = i18n::format_time(forecast.time, i18n);
+    fn format(details: ForecastDetails, i18n: &I18nLoader) -> Self {
+        let formatted_time = i18n::format_time(details.time, i18n);
         Self {
-            area: forecast.area,
+            area: details.area,
             formatted_time,
-            time: forecast.time,
-            forecaster: forecast.forecaster,
+            time: details.time,
+            forecaster: details.forecaster,
         }
     }
 }
 
 #[derive(Serialize, Debug)]
 pub struct Forecast {
+    pub details: FormattedForecastDetails,
+    pub file: ForecastFile,
+}
+
+pub struct ForecastAccumulator {
     pub details: FormattedForecastDetails,
     pub files: Vec<ForecastFile>,
 }
@@ -103,7 +107,7 @@ pub async fn handler(
             return Ok(StatusCode::INTERNAL_SERVER_ERROR.into_response());
         }
     };
-    let (mut forecasts, errors): (Vec<Forecast>, Vec<String>) = files
+    let (forecasts, mut errors): (Vec<ForecastAccumulator>, Vec<String>) = files
         .into_iter()
         .map(|file| {
             let filename = &file.name;
@@ -137,15 +141,51 @@ pub async fn handler(
             match result {
                 Ok(forecast_file) => {
                     if let Some(i) = acc.0.iter().position(|forecast| forecast.details == forecast_file.details.forecast) {
-                        acc.0.get_mut(i).unwrap().files.push(forecast_file)
+
+                        let forecast_acc = acc.0.get_mut(i).unwrap();
+                        forecast_acc.files.push(forecast_file);
+
                     } else {
-                        acc.0.push(Forecast { details: forecast_file.details.forecast.clone(), files: vec![forecast_file] });
+                        acc.0.push(ForecastAccumulator { details: forecast_file.details.forecast.clone(), files: vec![forecast_file] });
                     }
                 }
-                Err(error) => acc.1.push(format!("{error:?}")),
+                Err(error) => acc.1.push(format!("{error:#?}")),
             }
             acc
         });
+
+    let mut forecasts: Vec<Forecast> = forecasts
+        .into_iter()
+        .map(|forecast_acc| {
+            let file: ForecastFile = if forecast_acc.files.len() > 1 {
+                forecast_acc
+                    .files
+                    .into_iter()
+                    .filter(|file| {
+                        if let Some(language) = &file.details.language {
+                            return language.language == i18n.current_language().language;
+                        }
+                        true
+                    })
+                    .next()
+            } else {
+                forecast_acc.files.into_iter().next()
+            }
+            .wrap_err_with(|| {
+                format!(
+                    "Expected there to be at least one forecast file for this forecast {:#?}",
+                    forecast_acc.details
+                )
+            })?;
+
+            Ok(Forecast {
+                details: forecast_acc.details,
+                file,
+            })
+        })
+        .collect::<eyre::Result<_>>()
+        .wrap_err("Error converting accumulated forecast")
+        .map_err(map_eyre_error)?;
 
     forecasts.sort_by(|a, b| b.details.time.cmp(&a.details.time));
 
