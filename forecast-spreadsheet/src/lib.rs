@@ -216,6 +216,12 @@ pub struct ElevationRange {
 #[serde(transparent)]
 pub struct AreaId(String);
 
+impl From<String> for AreaId {
+    fn from(value: String) -> Self {
+        Self(value)
+    }
+}
+
 impl std::fmt::Display for AreaId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.0.fmt(f)

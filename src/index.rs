@@ -1,6 +1,6 @@
 use axum::{extract::State, response::IntoResponse, Extension};
 use color_eyre::Help;
-use eyre::{eyre, bail, Context, ContextCompat};
+use eyre::{bail, eyre, Context, ContextCompat};
 use http::StatusCode;
 use i18n_embed::LanguageLoader;
 use serde::Serialize;
@@ -8,7 +8,7 @@ use unic_langid::LanguageIdentifier;
 
 use crate::{
     error::map_eyre_error,
-    forecasts::{parse_forecast_name, ForecastDetails, ForecastFileDetails},
+    forecasts::{parse_forecast_name, ForecastDetails, ForecastFileDetails, FORECAST_SCHEMA},
     google_drive::{self, ListFileMetadata},
     i18n::{self, I18nLoader},
     state::AppState,

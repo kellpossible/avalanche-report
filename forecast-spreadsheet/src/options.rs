@@ -53,10 +53,9 @@ mod timezone_from_string {
             where
                 E: serde::de::Error,
             {
-                time_tz::timezones::get_by_name(v)
-                    .ok_or_else(|| {
-                        E::custom(format!("Unable to find timezone {v} in IANA database"))
-                    })
+                time_tz::timezones::get_by_name(v).ok_or_else(|| {
+                    E::custom(format!("Unable to find timezone {v} in IANA database"))
+                })
             }
         }
 

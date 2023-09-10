@@ -1,4 +1,7 @@
-use std::{collections::HashSet, ffi::OsStr};
+use std::{
+    collections::{HashMap, HashSet},
+    ffi::OsStr,
+};
 
 use axum::{
     extract::{Path, State},
@@ -7,8 +10,9 @@ use axum::{
 };
 use eyre::{Context, ContextCompat};
 use forecast_spreadsheet::{
-    AreaId, Aspect, AspectElevation, Confidence, Distribution, ElevationBandId, Forecaster,
-    HazardRating, HazardRatingKind, ProblemKind, Sensitivity, Size, TimeOfDay, Trend,
+    options::AreaDefinition, AreaId, Aspect, AspectElevation, Confidence, Distribution,
+    ElevationBandId, Forecaster, HazardRating, HazardRatingKind, ProblemKind, Sensitivity, Size,
+    TimeOfDay, Trend,
 };
 use http::{header::CONTENT_TYPE, HeaderValue, StatusCode};
 use i18n_embed_fl::fl;
@@ -19,7 +23,7 @@ use sea_query_rusqlite::RusqliteBinder;
 use secrecy::SecretString;
 use serde::Serialize;
 use time::{OffsetDateTime, PrimitiveDateTime};
-use time_tz::{TimeZone, Offset};
+use time_tz::{Offset, TimeZone};
 use tracing::instrument;
 use unic_langid::LanguageIdentifier;
 
@@ -38,12 +42,13 @@ use self::files::{ForecastFiles, ForecastFilesIden};
 
 mod files;
 
-static FORECAST_SCHEMA: Lazy<forecast_spreadsheet::options::Options> =
+pub static FORECAST_SCHEMA: Lazy<forecast_spreadsheet::options::Options> =
     Lazy::new(|| serde_json::from_str(include_str!("./schemas/0.3.0.json")).unwrap());
 
 #[derive(Serialize, PartialEq, Eq, Clone)]
 pub struct ForecastDetails {
     pub area: String,
+    #[serde(with = "time::serde::rfc3339")]
     pub time: OffsetDateTime,
     pub forecaster: String,
 }
@@ -55,6 +60,18 @@ pub struct ForecastFileDetails {
 }
 
 pub fn parse_forecast_name(file_name: &str) -> eyre::Result<ForecastFileDetails> {
+    parse_forecast_name_impl(
+        file_name,
+        &FORECAST_SCHEMA.area.map,
+        &FORECAST_SCHEMA.area_definitions,
+    )
+}
+
+fn parse_forecast_name_impl(
+    file_name: &str,
+    area_name_map: &HashMap<String, AreaId>,
+    area_definitions: &IndexMap<AreaId, AreaDefinition>,
+) -> eyre::Result<ForecastFileDetails> {
     let mut name_parts = file_name.split('.');
     let details = name_parts
         .next()
@@ -65,15 +82,13 @@ pub fn parse_forecast_name(file_name: &str) -> eyre::Result<ForecastFileDetails>
         .ok_or_else(|| eyre::eyre!("No area specified"))?
         .to_owned();
 
-    let area_id = FORECAST_SCHEMA
-        .area
-        .map
+    let area_id = area_name_map
         .get(&area)
         .wrap_err_with(|| format!("Cannot find area id for {area}"))?;
-    let tz = &FORECAST_SCHEMA
-        .area_definitions
+    let tz = area_definitions
         .get(area_id)
-        .wrap_err_with(|| format!("Cannot find area definition for {area_id}"))?.time_zone;
+        .wrap_err_with(|| format!("Cannot find area definition for {area_id}"))?
+        .time_zone;
 
     let primary_offset = tz.get_offset_primary().to_utc();
     let time_string = details_split
@@ -467,7 +482,12 @@ async fn handler_impl(
 
 #[cfg(test)]
 mod test {
-    use super::parse_forecast_name;
+    use std::collections::HashMap;
+
+    use forecast_spreadsheet::{options::AreaDefinition, AreaId};
+    use indexmap::IndexMap;
+
+    use super::{parse_forecast_name, parse_forecast_name_impl};
 
     #[test]
     fn test_parse_forecast_name() {
@@ -476,17 +496,69 @@ mod test {
         {
           "forecast": {
             "area": "Gudauri",
-            "time": [
-              2023,
-              24,
-              17,
-              0,
-              0,
-              0,
-              4,
-              0,
-              0
-            ],
+            "time": "2023-01-24T17:00:00+04:00",
+            "forecaster": "LF"
+          },
+          "language": "en"
+        }
+        "###);
+    }
+
+    #[test]
+    fn test_parse_forecast_name_pre_dst() {
+        let mut area_name_map = HashMap::new();
+        let mut area_details = IndexMap::new();
+        let area_id: AreaId = "melbourne".to_string().into();
+
+        area_name_map.insert("Melbourne".to_string(), area_id.clone());
+        area_details.insert(
+            area_id,
+            AreaDefinition {
+                time_zone: time_tz::timezones::get_by_name("Australia/Melbourne").unwrap(),
+            },
+        );
+        let forecast_details = parse_forecast_name_impl(
+            "Melbourne_2023-10-01T01:00_LF.en.pdf",
+            &area_name_map,
+            &area_details,
+        )
+        .unwrap();
+        insta::assert_json_snapshot!(forecast_details, @r###"
+        {
+          "forecast": {
+            "area": "Melbourne",
+            "time": "2023-10-01T01:00:00+10:00",
+            "forecaster": "LF"
+          },
+          "language": "en"
+        }
+        "###);
+    }
+
+    #[test]
+    fn test_parse_forecast_name_post_dst() {
+        let mut area_name_map = HashMap::new();
+        let mut area_details = IndexMap::new();
+        let area_id: AreaId = "melbourne".to_string().into();
+
+        area_name_map.insert("Melbourne".to_string(), area_id.clone());
+        area_details.insert(
+            area_id,
+            AreaDefinition {
+                time_zone: time_tz::timezones::get_by_name("Australia/Melbourne").unwrap(),
+            },
+        );
+        let forecast_details = parse_forecast_name_impl(
+            "Melbourne_2023-10-01T02:00_LF.en.pdf",
+            &area_name_map,
+            &area_details,
+        )
+        .unwrap();
+        insta::assert_json_snapshot!(forecast_details, @r###"
+        {
+          "forecast": {
+            "area": "Melbourne",
+            "time": "2023-10-01T02:00:00+11:00",
             "forecaster": "LF"
           },
           "language": "en"
