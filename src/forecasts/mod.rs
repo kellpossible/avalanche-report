@@ -1,11 +1,11 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, ffi::OsStr};
 
 use axum::{
     extract::{Path, State},
     response::{IntoResponse, Response},
-    Extension,
+    Extension, Json,
 };
-use eyre::Context;
+use eyre::{Context, ContextCompat};
 use forecast_spreadsheet::{
     AreaId, Aspect, AspectElevation, Confidence, Distribution, ElevationBandId, Forecaster,
     HazardRating, HazardRatingKind, ProblemKind, Sensitivity, Size, TimeOfDay, Trend,
@@ -105,7 +105,7 @@ pub async fn handler(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
     handler_impl(
-        &file_name,
+        file_name,
         api_key,
         &state.client,
         &database,
@@ -278,13 +278,29 @@ impl TryFrom<forecast_spreadsheet::AvalancheProblem> for AvalancheProblem {
 
 #[instrument(level = "error", skip_all)]
 async fn handler_impl(
-    file_name: &str,
+    file_name: String,
     api_key: &SecretString,
     client: &reqwest::Client,
     database: &DatabaseInstance,
     templates: &TemplatesWithContext,
     i18n: &I18nLoader,
 ) -> eyre::Result<Response> {
+    let (requested_json, file_name) = {
+        let path = std::path::Path::new(&file_name);
+        if let Some("json") = path.extension().map(OsStr::to_str).flatten() {
+            (
+                true,
+                path.file_stem()
+                    .wrap_err("Expected file {file_name} to have a stem")?
+                    .to_str()
+                    .wrap_err("Unable to convert file path")?
+                    .to_owned(),
+            )
+        } else {
+            (false, file_name)
+        }
+    };
+
     // Check that file exists in published folder, and not attempting to access a file outside
     // that.
     let file_list =
@@ -297,10 +313,14 @@ async fn handler_impl(
         None => return Ok(StatusCode::NOT_FOUND.into_response()),
     };
 
-    let view = match file_metadata.mime_type.as_str() {
-        "application/pdf" => ForecastFileView::Download,
-        "application/vnd.google-apps.spreadsheet" => ForecastFileView::Html,
-        unexpected => eyre::bail!("Unsupported file mime type {unexpected}"),
+    let view = if requested_json {
+        ForecastFileView::Json
+    } else {
+        match file_metadata.mime_type.as_str() {
+            "application/pdf" => ForecastFileView::Download,
+            "application/vnd.google-apps.spreadsheet" => ForecastFileView::Html,
+            unexpected => eyre::bail!("Unsupported file mime type {unexpected}"),
+        }
     };
 
     let google_drive_id = file_metadata.id.clone();
@@ -345,7 +365,7 @@ async fn handler_impl(
     } else {
         tracing::debug!("Fetching updated/new forecast file");
         let forecast_file_bytes: Vec<u8> = match view {
-            ForecastFileView::Html => {
+            ForecastFileView::Html | ForecastFileView::Json => {
                 let file = google_drive::export_file(
                     &file_metadata.id,
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -404,18 +424,25 @@ async fn handler_impl(
     };
 
     match view {
-        ForecastFileView::Html => {
-            let forecast: Forecast = forecast_spreadsheet::parse_excel_spreadsheet(
-                &forecast_file_bytes,
-                &*FORECAST_SCHEMA_0_3_0,
-            )
-            .context("Error parsing forecast spreadsheet")?
-            .try_into()
-            .wrap_err("Error converting forecast into template data")?;
+        ForecastFileView::Html | ForecastFileView::Json => {
+            let forecast: forecast_spreadsheet::Forecast =
+                forecast_spreadsheet::parse_excel_spreadsheet(
+                    &forecast_file_bytes,
+                    &*FORECAST_SCHEMA_0_3_0,
+                )
+                .context("Error parsing forecast spreadsheet")?;
 
-            let formatted_forecast = FormattedForecast::format(forecast, &i18n);
-
-            render(&templates.environment, "forecast.html", &formatted_forecast)
+            match view {
+                ForecastFileView::Html => {
+                    let forecast = forecast
+                        .try_into()
+                        .wrap_err("Error converting forecast into template data")?;
+                    let formatted_forecast = FormattedForecast::format(forecast, &i18n);
+                    render(&templates.environment, "forecast.html", &formatted_forecast)
+                }
+                ForecastFileView::Json => Ok(Json(forecast).into_response()),
+                _ => unreachable!(),
+            }
         }
         ForecastFileView::Download => {
             let mut response = forecast_file_bytes.into_response();

@@ -27,6 +27,7 @@ fn format_language_name(language: &LanguageIdentifier) -> Option<String> {
 pub enum ForecastFileView {
     /// Forecast file is viewed by being parsed and rendered as HTML (Spreadsheet).
     Html,
+    Json,
     /// Forecast file is downloaded to be viewed (PDF).
     Download,
 }
