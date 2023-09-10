@@ -16,15 +16,15 @@
 {%- endmacro %}
 {% macro hazard_rating_style(hazard_value) -%}
     {% if not hazard_value -%}
-        text-white bg-[#ccccccff]
+        text-black bg-[#ccccccff]
     {%- elif hazard_value == "low" -%}
-        text-black bg-[#57bb51ff]
+        text-white bg-[#57bb51ff]
     {%- elif hazard_value == "moderate" -%}
         text-black bg-[#fee85bff]
     {%- elif hazard_value == "considerable" -%}
-        text-black bg-[#fd923aff]
+        text-white bg-[#fd923aff]
     {%- elif hazard_value == "high" -%}
-        text-black bg-[#fc3329ff]
+        text-white bg-[#fc3329ff]
     {%- elif hazard_value == "extreme" -%}
         text-white bg-black
     {%- endif -%}
