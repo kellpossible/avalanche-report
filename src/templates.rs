@@ -44,7 +44,7 @@ impl Templates {
     pub fn initialize() -> eyre::Result<Self> {
         let reloader = minijinja_autoreload::AutoReloader::new(|notifier| {
             let mut environment = minijinja::Environment::new();
-            environment.set_source(minijinja::Source::with_loader(|name: &str| {
+            environment.set_loader(|name: &str| {
                 Option::transpose(EmbeddedTemplates::get(name).map(|file: EmbeddedFile| {
                     String::from_utf8(file.data.to_vec()).map_err(|error| {
                         Error::new(
@@ -53,7 +53,7 @@ impl Templates {
                         )
                     })
                 }))
-            }));
+            });
 
             // RustEmbed only loads from files in debug mode (unless the debug embed feature is
             // enabled).

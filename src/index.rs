@@ -113,7 +113,7 @@ pub async fn handler(
         .into_iter()
         .map(|file| {
             let filename = &file.name;
-            let details = parse_forecast_name(filename).wrap_err_with(|| {
+            let details: ForecastFileDetails = parse_forecast_name(filename).wrap_err_with(|| {
                     eyre::eyre!("Error parsing forecast details from file {filename:?}")
                 })
                 .suggestion("Name file according to the standard format.\n e.g. \"Gudauri_2023-01-24T17:00_LF.en.pdf\"")?;
