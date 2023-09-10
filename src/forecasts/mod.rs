@@ -11,13 +11,14 @@ use forecast_spreadsheet::{
     HazardRating, HazardRatingKind, ProblemKind, Sensitivity, Size, TimeOfDay, Trend,
 };
 use http::{header::CONTENT_TYPE, HeaderValue, StatusCode};
+use i18n_embed_fl::fl;
 use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use sea_query::{Alias, Expr, IntoColumnRef, OnConflict, SqliteQueryBuilder};
 use sea_query_rusqlite::RusqliteBinder;
 use secrecy::SecretString;
 use serde::Serialize;
-use time::{OffsetDateTime, PrimitiveDateTime};
+use time::{OffsetDateTime, PrimitiveDateTime, UtcOffset};
 use tracing::instrument;
 use unic_langid::LanguageIdentifier;
 
@@ -26,6 +27,7 @@ use crate::{
     diagrams,
     error::map_eyre_error,
     google_drive,
+    i18n::{self, I18nLoader},
     index::ForecastFileView,
     state::AppState,
     templates::{render, TemplatesWithContext},
@@ -95,15 +97,23 @@ pub async fn handler(
     Path(file_name): Path<String>,
     State(state): State<AppState>,
     Extension(database): Extension<DatabaseInstance>,
+    Extension(i18n): Extension<I18nLoader>,
     Extension(templates): Extension<TemplatesWithContext>,
 ) -> axum::response::Result<Response> {
     let api_key = state.secrets.google_drive_api_key.as_ref().ok_or_else(|| {
         tracing::error!("Unable to fetch file, Google Drive API Key not specified");
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
-    handler_impl(&file_name, api_key, &state.client, &database, &templates)
-        .await
-        .map_err(map_eyre_error)
+    handler_impl(
+        &file_name,
+        api_key,
+        &state.client,
+        &database,
+        &templates,
+        &i18n,
+    )
+    .await
+    .map_err(map_eyre_error)
 }
 
 #[derive(Debug, Serialize)]
@@ -119,6 +129,22 @@ struct Forecast {
     pub description: Option<String>,
     pub hazard_ratings: IndexMap<HazardRatingKind, HazardRating>,
     pub avalanche_problems: Vec<AvalancheProblem>,
+    pub elevation_bands: IndexMap<ElevationBandId, ElevationRange>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ElevationRange {
+    pub upper: Option<i64>,
+    pub lower: Option<i64>,
+}
+
+impl From<forecast_spreadsheet::ElevationRange> for ElevationRange {
+    fn from(value: forecast_spreadsheet::ElevationRange) -> Self {
+        Self {
+            upper: value.upper,
+            lower: value.lower,
+        }
+    }
 }
 
 impl TryFrom<forecast_spreadsheet::Forecast> for Forecast {
@@ -140,7 +166,39 @@ impl TryFrom<forecast_spreadsheet::Forecast> for Forecast {
                 .into_iter()
                 .map(TryInto::try_into)
                 .collect::<eyre::Result<_>>()?,
+            elevation_bands: value
+                .elevation_bands
+                .into_iter()
+                .map(|(k, v)| (k, v.into()))
+                .collect(),
         })
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct FormattedForecast {
+    #[serde(flatten)]
+    forecast: Forecast,
+    formatted_time: String,
+    formatted_valid_until: String,
+}
+
+impl FormattedForecast {
+    fn format(forecast: Forecast, i18n: &I18nLoader) -> Self {
+        // TODO: fetch forecast area timezone.
+        let utc_offset = UtcOffset::from_hms(0, 0, 0).expect("valid offset");
+        let formatted_time = i18n::format_time(forecast.time.assume_offset(utc_offset), i18n);
+        let valid_until_time = forecast.time + forecast.valid_for;
+        let formatted_valid_until =
+            i18n::format_time(valid_until_time.assume_offset(utc_offset), i18n);
+        let formatted_valid_until =
+            fl!(&i18n, "until-time", time = formatted_valid_until).to_owned();
+
+        Self {
+            forecast,
+            formatted_time,
+            formatted_valid_until,
+        }
     }
 }
 
@@ -225,6 +283,7 @@ async fn handler_impl(
     client: &reqwest::Client,
     database: &DatabaseInstance,
     templates: &TemplatesWithContext,
+    i18n: &I18nLoader,
 ) -> eyre::Result<Response> {
     // Check that file exists in published folder, and not attempting to access a file outside
     // that.
@@ -352,7 +411,9 @@ async fn handler_impl(
             .try_into()
             .wrap_err("Error converting forecast into template data")?;
 
-            render(&templates.environment, "forecast.html", &forecast)
+            let formatted_forecast = FormattedForecast::format(forecast, &i18n);
+
+            render(&templates.environment, "forecast.html", &formatted_forecast)
         }
         ForecastFileView::Download => {
             let mut response = forecast_file_bytes.into_response();

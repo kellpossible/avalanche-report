@@ -13,7 +13,10 @@
     "map": {
       "Gudauri": "gudauri"
     },
-    "elevation_band_boundaries": "Terms!F89"
+    "elevation_band_boundaries": {
+      "position": "Terms!F89",
+      "reverse": true
+    }
   },
   "forecaster": {
     "name": "Form!B4",

@@ -9,7 +9,7 @@ use crate::{
     error::map_eyre_error,
     forecasts::{parse_forecast_name, ForecastDetails, ForecastFileDetails},
     google_drive::{self, ListFileMetadata},
-    i18n::I18nLoader,
+    i18n::{I18nLoader, self},
     state::AppState,
     templates::{render, TemplatesWithContext},
 };
@@ -63,19 +63,13 @@ pub struct FormattedForecastDetails {
 }
 
 impl FormattedForecastDetails {
-    fn format(value: ForecastDetails, i18n: &I18nLoader) -> Self {
-        let day = value.time.day();
-        let month = value.time.month() as u8;
-        let month_name = i18n.get(&format!("month-{month}"));
-        let year = value.time.year();
-        let hour = value.time.hour();
-        let minute = value.time.minute();
-        let formatted_time = format!("{day} {month_name} {year} {hour:0>2}:{minute:0>2}");
+    fn format(forecast: ForecastDetails, i18n: &I18nLoader) -> Self {
+        let formatted_time = i18n::format_time(forecast.time, i18n);
         Self {
-            area: value.area,
+            area: forecast.area,
             formatted_time,
-            time: value.time,
-            forecaster: value.forecaster,
+            time: forecast.time,
+            forecaster: forecast.forecaster,
         }
     }
 }

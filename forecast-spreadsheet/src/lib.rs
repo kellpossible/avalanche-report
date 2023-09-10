@@ -6,7 +6,7 @@ mod serde;
 
 use ::serde::{Deserialize, Serialize};
 use calamine::{open_workbook_auto_from_rs, DataType, Reader, Sheets};
-use eyre::Context;
+use eyre::{Context, ContextCompat};
 use indexmap::{IndexMap, IndexSet};
 use once_cell::sync::Lazy;
 use options::{HazardRatingInput, Options};
@@ -99,11 +99,11 @@ impl ParseCellError {
 }
 
 pub trait ParseCellWithContext {
-    fn cell_with_context(self, context: Box<dyn Fn() -> String + Send + Sync + 'static>) -> Self;
+    fn cell_wrap_err_with(self, context: Box<dyn Fn() -> String + Send + Sync + 'static>) -> Self;
 }
 
 impl ParseCellWithContext for ParseCellError {
-    fn cell_with_context(
+    fn cell_wrap_err_with(
         mut self,
         context: Box<dyn Fn() -> String + Send + Sync + 'static>,
     ) -> Self {
@@ -113,10 +113,10 @@ impl ParseCellWithContext for ParseCellError {
 }
 
 impl<T> ParseCellWithContext for std::result::Result<T, ParseCellError> {
-    fn cell_with_context(self, context: Box<dyn Fn() -> String + Send + Sync + 'static>) -> Self {
+    fn cell_wrap_err_with(self, context: Box<dyn Fn() -> String + Send + Sync + 'static>) -> Self {
         match self {
             Ok(_) => self,
-            Err(error) => Err(error.cell_with_context(context)),
+            Err(error) => Err(error.cell_wrap_err_with(context)),
         }
     }
 }
@@ -205,7 +205,7 @@ impl FromStr for Version {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct ElevationRange {
     pub upper: Option<i64>,
     pub lower: Option<i64>,
@@ -535,6 +535,7 @@ pub struct Forecast {
     pub description: Option<String>,
     pub hazard_ratings: IndexMap<HazardRatingKind, HazardRating>,
     pub avalanche_problems: Vec<AvalancheProblem>,
+    pub elevation_bands: IndexMap<ElevationBandId, ElevationRange>,
 }
 
 #[derive(Debug, Serialize)]
@@ -787,7 +788,7 @@ pub fn parse_excel_spreadsheet(
             match extract_hazard_rating(&kind, input, &mut sheets, options) {
                 Ok(hazard_rating) => Ok((kind, hazard_rating)),
                 Err(error) => Err(error)
-                    .with_context(|| format!("error extracting hazard rating {kind}: {input:?}")),
+                    .wrap_err_with(|| format!("error extracting hazard rating {kind}: {input:?}")),
             }
         })
         .collect::<eyre::Result<_>>()?;
@@ -798,9 +799,50 @@ pub fn parse_excel_spreadsheet(
         .enumerate()
         .map(|(i, problem)| {
             extract_avalanch_problem(problem, options, &mut sheets)
-                .with_context(|| format!("Avalanche problem {i}"))
+                .wrap_err_with(|| format!("Avalanche problem {i}"))
         })
         .filter_map(std::result::Result::transpose)
+        .collect::<eyre::Result<_>>()?;
+
+    let mut elevation_band_boundaries: Vec<i64> = get_cell_value(
+        &mut sheets,
+        &options.area.elevation_band_boundaries.position,
+    )
+    .context("Error getting elevation band boundaries value")?
+    .to_string()
+    .replace('m', "")
+    .split(",")
+    .map(|altitude| {
+        altitude
+            .trim()
+            .parse()
+            .wrap_err_with(|| format!("Error parsing elevation band boundary {altitude}"))
+    })
+    .collect::<eyre::Result<_>>()?;
+    if options.area.elevation_band_boundaries.reverse {
+        elevation_band_boundaries.reverse();
+    }
+
+    let elevation_band_windows: Vec<Option<i64>> = std::iter::once(None)
+        .chain(elevation_band_boundaries.into_iter().map(Some))
+        .chain(std::iter::once(None))
+        .collect();
+    let elevation_bands = elevation_band_windows
+        .windows(2)
+        .enumerate()
+        .map(|(i, window)| {
+            let elevation_band_id = options
+                .elevation_bands
+                .get_index(i)
+                .wrap_err_with(|| format!("Cannot get elevation band from schema for index {i}"))?;
+
+            let range = ElevationRange {
+                lower: window[0],
+                upper: window[1],
+            };
+
+            Ok((elevation_band_id.clone(), range))
+        })
         .collect::<eyre::Result<_>>()?;
 
     Ok(Forecast {
@@ -816,6 +858,7 @@ pub fn parse_excel_spreadsheet(
         description,
         hazard_ratings,
         avalanche_problems,
+        elevation_bands,
     })
 }
 
@@ -837,7 +880,7 @@ where
 
     let kind_cell = problem.root.clone() + problem.kind;
     let value: String = get_cell_value_string(sheets, &kind_cell)
-        .with_context(Box::new(move || format!("kind")))?
+        .wrap_err_with(Box::new(move || format!("kind")))?
         .ok_or_else(|| required_value_missing("avalanche_problem.kind", kind_cell.clone()))?;
 
     let kind = options

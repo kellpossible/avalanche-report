@@ -150,5 +150,19 @@ expression: "&forecast"
       "time_of_day": "all-day",
       "sensitivity": "reactive"
     }
-  ]
+  ],
+  "elevation_bands": {
+    "sub-alpine": {
+      "upper": 2000,
+      "lower": null
+    },
+    "alpine": {
+      "upper": 2600,
+      "lower": 2000
+    },
+    "high-alpine": {
+      "upper": null,
+      "lower": 2600
+    }
+  }
 }

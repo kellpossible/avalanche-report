@@ -98,13 +98,20 @@ pub struct HazardRatingInput {
     pub confidence: Option<CellPosition>,
 }
 
+/// Comma separated list of elevation band boundaries. The length of this should be
+/// `elevation_bands.len() - 1` for example "2000m,4000m"
+#[derive(Deserialize)]
+pub struct ElevationBandBoundaries {
+    pub position: SheetCellPosition,
+    pub reverse: bool,
+}
+
 #[derive(Deserialize)]
 pub struct Area {
     pub position: SheetCellPosition,
     /// A map from area name to area identifier.
     pub map: HashMap<String, AreaId>,
-    /// Comma separated list of elevation band boundaries.
-    pub elevation_band_boundaries: SheetCellPosition,
+    pub elevation_band_boundaries: ElevationBandBoundaries,
 }
 
 #[derive(Deserialize)]

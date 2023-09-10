@@ -12,6 +12,7 @@ use i18n_embed::{
 };
 use rust_embed::RustEmbed;
 use serde::Deserialize;
+use time::OffsetDateTime;
 use std::{str::FromStr, sync::Arc};
 
 use crate::{error::map_std_error, serde::string, state::AppState};
@@ -137,4 +138,14 @@ pub async fn middleware<B>(
     request.extensions_mut().insert(loader);
 
     next.run(request).await
+}
+
+pub fn format_time(time: OffsetDateTime, i18n: &I18nLoader) -> String {
+    let day = time.day();
+    let month = time.month() as u8;
+    let month_name = i18n.get(&format!("month-{month}"));
+    let year = time.year();
+    let hour = time.hour();
+    let minute = time.minute();
+    format!("{day} {month_name} {year} {hour:0>2}:{minute:0>2}")
 }

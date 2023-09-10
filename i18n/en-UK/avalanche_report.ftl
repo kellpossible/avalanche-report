@@ -128,6 +128,17 @@ avalanche-hazard-considerable-size-distribution = Small avalanches in many areas
 avalanche-hazard-high-size-distribution = Large avalanches in many areas, or large avalanches in specific areas.
 # Description of the size and distributions of avalanches to occur with "Extreme" avalanche danger
 avalanche-hazard-extreme-size-distribution = Large to very lage avalanches in many areas.
+# Description of the likelyhood for avalanches to occur with "Extreme" avalanche danger
+avalanche-hazard-extreme-likelihood = Natural and human triggered avalanches are certain.
+# Description of the likelyhood for avalanches to occur with "High" avalanche danger
+avalanche-hazard-high-likelihood = Natural avalanches are likely, human-triggered avalanches are very likely.
+# Description of the likelyhood for avalanches to occur with "Considerable" avalanche danger
+avalanche-hazard-considerable-likelihood = Natural avalanches are possible, human-triggered avalanches are likely.
+# Description of the likelyhood for avalanches to occur with "Moderate" avalanche danger
+avalanche-hazard-moderate-likelihood = Natural avalanches are unlikely, human-triggered avalanches are possible.
+# Description of the likelyhood for avalanches to occur with "Low" avalanche danger
+avalanche-hazard-low-likelihood = Natural and human-triggered avalanches are unlikely.
+# Table heading for elevation bands (plural)
 elevation-bands-heading = Elevation Zones
 # Table heading for elevation bands
 elevation-band-heading = Elevation Zone
@@ -199,3 +210,9 @@ confidence-low-about = The forecaster's confidence level is Low about this part 
 confidence-moderate-about = The forecaster's confidence level is Moderate about this part of the forecast
 # Description for the confidence value, when the convidence is "High"
 confidence-high-about = The forecaster's confidence level is High about this part of the forecast
+disclaimer-message = This is a trial avalanche forecasting service run by non-professional volunteers from Gudauri, supported remotely by experienced avalanche forecasters. The information presented here may sometimes be incomplete or inaccurate - do not only rely on this forecast in your safety decisions.
+forecast-forecaster-heading-colon = Forecaster:
+forecast-forecaster-heading = Forecaster
+forecast-issued-at-heading-colon = Forecast issued at:
+forecast-valid-until-heading-colon = Forecast valid until:
+until-time = {$time}
