@@ -3,8 +3,7 @@
 ####################################################################################################
 FROM rust:latest AS builder
 
-RUN rustup target add x86_64-unknown-linux-musl
-RUN apt update && apt install -y musl-tools musl-dev nodejs npm curl
+RUN apt update && apt install -y nodejs npm curl libgdal-dev
 RUN update-ca-certificates
 
 RUN curl --location https://github.com/casey/just/releases/download/1.13.0/just-1.13.0-x86_64-unknown-linux-musl.tar.gz \
@@ -20,17 +19,18 @@ COPY ./ .
 
 RUN npm install
 RUN just tailwind
-RUN cargo build --target x86_64-unknown-linux-musl --release
+RUN cargo build -p avalanche-report --release
 
 ####################################################################################################
 ## Final image
 ####################################################################################################
-FROM alpine AS deploy
+FROM debian:12.1-slim AS deploy
+RUN apt update && apt install -y gdal-bin
 
 WORKDIR /avalanche-report
 
 # Copy our build
-COPY --from=builder /avalanche-report/target/x86_64-unknown-linux-musl/release/avalanche-report ./
+COPY --from=builder /avalanche-report/target/release/avalanche-report ./
 
 STOPSIGNAL SIGINT
 CMD ["/avalanche-report/avalanche-report"]
