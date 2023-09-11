@@ -5,8 +5,6 @@ forecast-area-heading = პროგნოზის არეა
 forecast-area-gudauri = გუდაური
 gudauri-avalanche-forecast-heading = გუდაურის ზვავის პროგნოზი
 latest-forecast-heading = უახლესი პროგნოზი
-# Table heading for elevation bands (plural)
-elevation-bands-heading = სასიმაღლო ზონები
 avalanche-hazard-level-heading = ზვავსაშიშროების საფეხური
 forecast-archive-heading = პროგნოზის არქივი
 no-forecasts-available-message = პროგნოზები არ არის ხელმისაწვდომი
