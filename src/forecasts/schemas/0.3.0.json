@@ -87,7 +87,8 @@
           "enabled": "F4",
           "aspects": "G4"
         }
-      }
+      },
+      "description": "B7"
     },
     {
       "root": "Form!A24",
@@ -112,7 +113,8 @@
           "enabled": "F4",
           "aspects": "G4"
         }
-      }
+      },
+      "description": "B7"
     },
     {
       "root": "Form!A32",
@@ -137,7 +139,8 @@
           "enabled": "F4",
           "aspects": "G4"
         }
-      }
+      },
+      "description": "B7"
     },
     {
       "root": "Form!A40",
@@ -162,7 +165,8 @@
           "enabled": "F4",
           "aspects": "G4"
         }
-      }
+      },
+      "description": "B7"
     }
   ],
   "elevation_bands": ["sub-alpine", "alpine", "high-alpine"],
@@ -214,3 +218,4 @@
     }
   }
 }
+

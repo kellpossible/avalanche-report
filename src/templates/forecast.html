@@ -49,24 +49,30 @@
                          alt="Icon for {{ fl("avalanche-hazard-heading") }}: {{ fl("avalanche-hazard-" ~ overall_hazard) }}"/>
                 </div>
                 <div class="md:col-span-4">
-                    <p class="italic">
+                    <p class="italic hyphens-auto text-justify">
                         {{ fl("avalanche-hazard-" ~ overall_hazard ~ "-likelihood") }} {{ fl("avalanche-hazard-" ~ overall_hazard ~ "-size-distribution") }}
                     </p>
-                    <p>{{ description }}</p>
+                    <p class="text-justify">{{ description }}</p>
                 </div>
             </div>
             <div class="py-4">
                 <p class="text-center">
-                    <b>{{ fl("forecast-issued-at-heading-colon") }}</b> {{ formatted_time }}
+                    {% autoescape false %}
+                        {{ fl_md("forecast-issued-at", {'time': formatted_time}) }}
+                    {% endautoescape %}
                 </p>
                 <p class="text-center">
-                    <b>{{ fl("forecast-valid-until-heading-colon") }}</b> {{ formatted_valid_until }}
+                    {% autoescape false %}
+                        {{ fl_md("forecast-valid-until", {'time': formatted_valid_until}) }}
+                    {% endautoescape %}
                 </p>
                 <p class="text-center">
-                    <b>{{ fl("forecast-forecaster-heading-colon") }}</b> {{ forecaster.name }}
+                    {% autoescape false %}
+                        {{ fl_md("forecast-forecaster", {'name': forecaster.name}) }}
+                    {% endautoescape %}
                 </p>
             </div>
-            <p>{{ fl("disclaimer-message") }}</p>
+            <p class="text-justify">{{ fl("disclaimer-message") }}</p>
             <div class="py-8">
                 {% for elevation_band_id in ["high-alpine", "alpine", "sub-alpine"] %}
                     {% set band = elevation_bands[elevation_band_id] %}
@@ -98,39 +104,65 @@
                             <h4 class="text-2xl text-center md:text-left">
                                 <span class="px-2 {{ hazard_rating_style(band_hazard) }}">{{ hazard_rating_number(band_hazard) }}</span> {{ fl("avalanche-hazard-" ~ band_hazard) }}
                             </h4>
-                            <p>{{ fl("avalanche-hazard-" ~ band_hazard ~ "-about") }}</p>
+                            <p class="hyphens-auto text-justify md:text-left md:hyphens-none">
+                                {{ fl("avalanche-hazard-" ~ band_hazard ~ "-about") }}
+                            </p>
                         </div>
                     </div>
                     {% if not loop.last %}<div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>{% endif %}
                 {% endfor %}
             </div>
-            <h2 class="text-4xl">{{ fl("avalanche-problems-heading") }}</h2>
+            <h2 class="text-4xl text-center">{{ fl("avalanche-problems-heading") }}</h2>
             {% for problem in avalanche_problems %}
-                <h3 class="text-3xl">{{ fl("avalanche-problem-heading") }}: {{ fl("problem-type-" ~ problem.kind)}}</h3>
-                <img width="300px"
-                     src="{{ problem.aspect_elevation_chart }}"
-                     alt="Aspect Elevation Chart"/>
-                <p>
-                    {{ fl("avalanche-size-heading") }}: {{ problem.size }}
+                <h3 class="text-3xl text-center pt-2">{{ fl("problem-type-" ~ problem.kind) }}</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 p-4 md:py-0">
+                    <figure class="flex justify-center items-center"
+                            aria-labelledby="problem-type-heading-{{ loop.index0 }}">
+                        <img class="min-w-0 max-h-52"
+                             src="/static/images/icons/problem-types/{{ problem.kind }}.png"
+                             alt="{{ fl("problem-type-heading") }} {{ fl("problem-type-" ~ problem.kind)}} Icon"/>
+                    </figure>
+                    <div id="problem-type-heading-{{ loop.index0 }}"
+                         class="text-center order-none md:order-1 font-bold">
+                        {{ fl("problem-type-heading") }}
+                    </div>
+                    <figure class="flex justify-center items-center"
+                            aria-labelledby="aspect-elevation-chart-heading-{{ loop.index0 }}">
+                        <img class="min-w-0 max-h-80"
+                             src="{{ problem.aspect_elevation_chart }}"
+                             alt="{{ fl("aspect-elevation-chart-caption") }}"/>
+                    </figure>
+                    <div id="aspect-elevation-chart-heading-{{ loop.index0 }}"
+                         class="text-center order-none md:order-1 font-bold">
+                        {{ fl("aspect-elevation-chart-caption") }}
+                    </div>
+                </div>
+                <p class="hyphens-auto md:hyphens-none md:text-justify">
+                    <span class="italic">{{ fl("problem-type-" ~ problem.kind ~ "-about") }}</span>
+                    {{ problem.description }}
+                </p>
+                <p class="p-4 text-center">
+                    <b>{{ fl("avalanche-size-heading") }}</b>: {{ problem.size }}
                     <br>
-                    {{ fl("sensitivity-heading") }}: {{ fl("sensitivity-" ~ problem.sensitivity) }}
+                    <b>{{ fl("sensitivity-heading") }}</b>: {{ fl("sensitivity-" ~ problem.sensitivity) }}
                     <br>
-                    {{ fl("distribution-heading") }}: {{ fl("distribution-" ~ problem.distribution) }}
+                    <b>{{ fl("distribution-heading") }}</b>: {{ fl("distribution-" ~ problem.distribution) }}
                     <br>
-                    {{ fl("problem-time-of-day-heading") }}: {{ fl("time-of-day-" ~ problem.time_of_day) }}
+                    <b>{{ fl("problem-time-of-day-heading") }}</b>: {{ fl("time-of-day-" ~ problem.time_of_day) }}
                     <br>
-                    {{ fl("trend-heading") }}: {{ fl("trend-" ~ problem.trend) }}
+                    <b>{{ fl("trend-heading") }}</b>: {{ fl("trend-" ~ problem.trend) }}
                     <br>
                     {% if problem.confidence %}
-                        {{ fl("confidence-heading") }}: {{ fl("confidence-" ~ problem.confidence) }}
+                        <b>{{ fl("confidence-heading") }}</b>: {{ fl("confidence-" ~ problem.confidence) }}
                         <br>
                     {% endif %}
                 </p>
+                {% if not loop.last %}<div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>{% endif %}
             {% endfor %}
-            <h2 class="text-4xl">{{ fl("recent-relevant-observations-heading") }}</h2>
-            <p>{{ recent_observations }}</p>
-            <h2 class="text-4xl">{{ fl("weather-forecast-heading") }}</h2>
-            <p>{{ weather_forecast }}</p>
+            <h2 class="text-4xl text-center py-4">{{ fl("recent-relevant-observations-heading") }}</h2>
+            <p class="text-justify md:hyphens-none pb-2">{{ recent_observations }}</p>
+            <h2 class="text-4xl text-center py-2">{{ fl("weather-forecast-heading") }}</h2>
+            <p class="text-justify md:hyphens-none pb-2">{{ weather_forecast }}</p>
         </div>
     </div>
 {% endblock body %}

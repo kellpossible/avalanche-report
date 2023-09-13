@@ -381,6 +381,7 @@ pub struct AvalancheProblem {
     pub distribution: Option<Distribution>,
     pub time_of_day: Option<TimeOfDay>,
     pub sensitivity: Option<Sensitivity>,
+    pub description: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, Deserialize, Serialize)]
@@ -1058,6 +1059,15 @@ where
     .context("size")?
     .flatten();
 
+    let description: Option<String> =
+        Option::<eyre::Result<_>>::transpose(problem.description.map(|relative| {
+            let cell = problem.root.clone() + relative;
+            let value: Option<String> = get_cell_value_string(sheets, &cell)?;
+            Ok(value)
+        }))
+        .context("description")?
+        .flatten();
+
     Result::Ok(Some(AvalancheProblem {
         kind,
         aspect_elevation,
@@ -1067,6 +1077,7 @@ where
         distribution,
         sensitivity,
         time_of_day,
+        description,
     }))
 }
 

@@ -32,6 +32,10 @@ month-10 = ოქტომბერი
 month-11 = ნოემბერი
 # Month of the year
 month-12 = დეკემბერი
+# A short single-word heading for avalanche problem type.
+problem-type-heading-short = ტიპი
+# A heading for avalanche problem type.
+problem-type-heading = Problem Type
 # Avalanche problem type. A type of loose snow avalanche composed of dry snow.
 problem-type-loose-dry = მშრალი ფხვიერი
 # Avalanche problem type. A type of loose snow avalanche composed of wet or moist snow.
@@ -47,7 +51,7 @@ problem-type-persistent-slab = შენარჩუნებული  თო�
 # Avalanche problem type. A weak layer, usually at or near the base of the snowpack, that resists bonding to an overlying slab over an extended time period.
 problem-type-deep-slab = ღრმა დაფა
 # Avalanche problem type. An overhanging ledge or shelf of snow that usually forms over the lee side of ridges.
-problem-stype-cornice = კარნიზი
+problem-type-cornice = კარნიზი
 # Avalanche problem type. The process of the entire snowpack sliding as a unit on the ground.
 problem-type-glide = დაცურება
 # Field heading for avalanche problem type
@@ -67,7 +71,7 @@ problem-type-persistent-slab-about = ზვავის ტიპი. არს�
 # Helpful information about the "Deep Slab" avalanche problem type
 problem-type-deep-slab-about = ზვავის ტიპი. სუსტი შრე (ჩვეულებრივ თოვლის საფარის ძირში) რომელიც ხელს უშლის თოლის ზედა შრესთან ბმას ხანგრძლივი პერიოდის განმავლობაში
 # Helpful information about the "Cornice" avalanche problem type
-problem-stype-cornice-about = ზვავის ტიპი. თოვლის კარნიზი რომელიც წარმოიშვება ქარზურგა მხარეს.
+problem-type-cornice-about = ზვავის ტიპი. თოვლის კარნიზი რომელიც წარმოიშვება ქარზურგა მხარეს.
 # Helpful information about the "Glide" avalanche problem type
 problem-type-glide-about = ზვავის ტიპი. თოვლის მთლიანი ფენის დაცურება
 # Field heading for the size of an avalanche if it were to occur
@@ -211,9 +215,17 @@ confidence-low-about = დამკვირვებელი არ არი�
 confidence-moderate-about = დამკვირვებელი ბოლომდე დარწმუნებული არ არის პროგნოზის ამ ნაწილში
 # Description for the confidence value, when the convidence is "High"
 confidence-high-about = დამკვირვებელი დარწმუნებულია პროგნოზის ამ ნაწილის სიზუსტეში
+# Message with disclaimer and information at the start of the printed page
 disclaimer-message = ეს არის საცდელი ზვავსაშიშროების პროგნოზი რომელიც მომზადებულია გუდაურში, მოხალისეების მიერ, გამოცდილი საერთაშორისო ექსპერტის დახმარებით. აქ მოცემული ინფორმაცია შეიძლება იყოს არასრული ან უზუსტო - არ დაეყრდნოთ მხოლოდ ამ პროგნოზს თქვენს უსაფრთხოებასთან დაკავშირებული გადაწყვეტილებების მოღებისას
-forecast-forecaster-heading-colon = დამკვირვებელი
+# Field on the forecast page that specifies the person who created the forecast.
+forecast-forecaster = **დამკვირვებელი** {$name}
+# Heading for the name of the person who created this forecast
 forecast-forecaster-heading = დამკვირვებელი
-forecast-issued-at-heading-colon = პროგნოზი შედგენილია:
-forecast-valid-until-heading-colon = პროგნოზი ვალიდურია
-until-time = {$time}-მდე
+# Heading for field on the forecast page that specifies the date and time that the
+# forecast was issued at
+forecast-issued-at = **პროგნოზი შედგენილია:** {$time}
+# Field on the forecast page that specifies the date and time that the
+# forecast is valid until
+forecast-valid-until = **პროგნოზი ვალიდურია** {$time}-მდე
+# Caption for the aspect/elevation chart.
+aspect-elevation-chart-caption = Aspect/Elevation

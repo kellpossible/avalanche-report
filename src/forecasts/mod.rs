@@ -15,7 +15,6 @@ use forecast_spreadsheet::{
     TimeOfDay, Trend,
 };
 use http::{header::CONTENT_TYPE, HeaderValue, StatusCode};
-use i18n_embed_fl::fl;
 use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use sea_query::{Alias, Expr, IntoColumnRef, OnConflict, SqliteQueryBuilder};
@@ -218,8 +217,6 @@ impl FormattedForecast {
         let formatted_time = i18n::format_time(forecast.time, i18n);
         let valid_until_time = forecast.time + forecast.valid_for;
         let formatted_valid_until = i18n::format_time(valid_until_time, i18n);
-        let formatted_valid_until =
-            fl!(&i18n, "until-time", time = formatted_valid_until).to_owned();
 
         Self {
             forecast,
@@ -241,6 +238,7 @@ struct AvalancheProblem {
     pub distribution: Option<Distribution>,
     pub time_of_day: Option<TimeOfDay>,
     pub sensitivity: Option<Sensitivity>,
+    pub description: Option<String>,
 }
 
 fn into_diagram_aspect(aspect: &Aspect) -> diagrams::aspect_elevation::Aspect {
@@ -299,6 +297,7 @@ impl TryFrom<forecast_spreadsheet::AvalancheProblem> for AvalancheProblem {
             distribution: value.distribution,
             time_of_day: value.time_of_day,
             sensitivity: value.sensitivity,
+            description: value.description,
         })
     }
 }

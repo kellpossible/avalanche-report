@@ -101,6 +101,7 @@ pub struct AvalancheProblem {
     pub distribution: Option<CellPosition>,
     pub time_of_day: Option<CellPosition>,
     pub trend: Option<CellPosition>,
+    pub description: Option<CellPosition>,
 }
 
 #[derive(Deserialize)]

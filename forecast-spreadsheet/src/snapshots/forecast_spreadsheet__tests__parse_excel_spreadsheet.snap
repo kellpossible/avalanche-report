@@ -88,7 +88,8 @@ expression: "&forecast"
       "size": 2,
       "distribution": "widespread",
       "time_of_day": "all-day",
-      "sensitivity": "reactive"
+      "sensitivity": "reactive",
+      "description": "On steep slopes, especially at higher elevations where winds were stronger, new snow may be reactive to riders. The danger will decrease over the next couple of days.  Even small avalanches could trigger the deep persistent layer."
     },
     {
       "kind": "deep-slab",
@@ -119,7 +120,8 @@ expression: "&forecast"
       "size": 3,
       "distribution": "isolated",
       "time_of_day": null,
-      "sensitivity": "reactive"
+      "sensitivity": "reactive",
+      "description": "Weak snow layers exist at the bottom of the snowpack, in areas where there was snow before Jan 31st. These could be reactive to the weight of one person, and a collapse could travel through the snow and set off avalanches above you."
     },
     {
       "kind": "wind-slab",
@@ -138,7 +140,8 @@ expression: "&forecast"
       "size": 2,
       "distribution": "specific",
       "time_of_day": "all-day",
-      "sensitivity": "reactive"
+      "sensitivity": "reactive",
+      "description": "New windslabs have developed in areas sheltered from the S/SE winds. Watch out for areas around ridges where the snow feels hollow, punchy or stiff. Even small avalanches could trigger the deep persistent layer."
     }
   ],
   "elevation_bands": {

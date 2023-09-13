@@ -19,6 +19,7 @@ use minijinja::{
     value::{Value, ValueKind},
     Error, ErrorKind,
 };
+use pulldown_cmark::{Event, Tag};
 use rust_embed::{EmbeddedFile, RustEmbed};
 use uuid::Uuid;
 
@@ -245,11 +246,46 @@ pub async fn middleware<B>(
         .map_err(map_eyre_error)?
         .to_string();
     let i18n_fl = i18n.clone();
-    let i18n_fla = i18n.clone();
-    environment.add_function("fl", move |message_id: &str| i18n_fl.get(message_id));
-    environment.add_function("fla", move |message_id: &str, args: Value| {
-        Ok(i18n_fla.get_args(message_id, jinja_to_fluent_args(args)?))
+    let i18n_fl_md = i18n.clone();
+    // Render a fluent message.
+    environment.add_function("fl", move |message_id: &str, args: Option<Value>| {
+        Ok(if let Some(args) = args {
+            i18n_fl.get_args(message_id, jinja_to_fluent_args(args)?)
+        } else {
+            i18n_fl.get(message_id)
+        })
     });
+    // Render fluent message as markdown.
+    environment.add_function(
+        "fl_md",
+        move |message_id: &str, args: Option<Value>, options: Option<Value>| {
+            let options = options.unwrap_or_default();
+            let message = if let Some(args) = args {
+                i18n_fl_md.get_args(message_id, jinja_to_fluent_args(args)?)
+            } else {
+                i18n_fl_md.get(message_id)
+            };
+
+            let parser = pulldown_cmark::Parser::new(&message);
+
+            // An option to strip paragraph tags from the parsed markdown. `true` by default.
+            let parser: Box<dyn Iterator<Item = Event>> = match options.get_attr("strip_paragraph")
+            {
+                Ok(value) if !value.is_undefined() && !value.is_true() => {
+                    Box::new(parser.into_iter())
+                }
+                _ => Box::new(parser.filter_map(|event| match event {
+                    Event::Start(Tag::Paragraph) => None,
+                    Event::End(Tag::Paragraph) => None,
+                    _ => Some(event),
+                })),
+            };
+
+            let mut html = String::new();
+            pulldown_cmark::html::push_html(&mut html, parser);
+            Ok(html)
+        },
+    );
     environment.add_function("ansi_to_html", |ansi_string: &str| {
         ansi_to_html::convert_escaped(ansi_string).map_err(|error| {
             Error::new(

@@ -32,6 +32,10 @@ month-10 = October
 month-11 = November
 # Month of the year
 month-12 = December
+# A short single-word heading for avalanche problem type
+problem-type-heading-short = Type
+# A heading for avalanche problem type.
+problem-type-heading = Problem Type
 # Avalanche problem type. A type of loose snow avalanche composed of dry snow.
 problem-type-loose-dry = Loose Dry
 # Avalanche problem type. A type of loose snow avalanche composed of wet or moist snow.
@@ -47,7 +51,7 @@ problem-type-persistent-slab = Persistent Slab
 # Avalanche problem type. A weak layer, usually at or near the base of the snowpack, that resists bonding to an overlying slab over an extended time period.
 problem-type-deep-slab = Deep Slab
 # Avalanche problem type. An overhanging ledge or shelf of snow that usually forms over the lee side of ridges.
-problem-stype-cornice = Cornice
+problem-type-cornice = Cornice
 # Avalanche problem type. The process of the entire snowpack sliding as a unit on the ground.
 problem-type-glide = Glide
 # Field heading for avalanche problem type
@@ -67,7 +71,7 @@ problem-type-persistent-slab-about = A slab formed over a persistent weak layer.
 # Helpful information about the "Deep Slab" avalanche problem type
 problem-type-deep-slab-about = A weak layer, usually at or near the base of the snowpack, that resists bonding to an overlying slab over an extended time period.
 # Helpful information about the "Cornice" avalanche problem type
-problem-stype-cornice-about = An overhanging ledge or shelf of snow that usually forms over the lee side of ridges.
+problem-type-cornice-about = An overhanging ledge or shelf of snow that usually forms over the lee side of ridges.
 # Helpful information about the "Glide" avalanche problem type
 problem-type-glide-about = The process of the entire snowpack sliding as a unit on the ground.
 # Field heading for the size of an avalanche if it were to occur
@@ -210,9 +214,17 @@ confidence-low-about = The forecaster's confidence level is Low about this part 
 confidence-moderate-about = The forecaster's confidence level is Moderate about this part of the forecast
 # Description for the confidence value, when the convidence is "High"
 confidence-high-about = The forecaster's confidence level is High about this part of the forecast
+# Message with disclaimer and information at the start of the printed page
 disclaimer-message = This is a trial avalanche forecasting service run by non-professional volunteers from Gudauri, supported remotely by experienced avalanche forecasters. The information presented here may sometimes be incomplete or inaccurate - do not only rely on this forecast in your safety decisions.
-forecast-forecaster-heading-colon = Forecaster:
+# Field on the forecast page that specifies the person who created the forecast.
+forecast-forecaster = **Forecaster:** {$name}
+# Heading for the name of the person who created this forecast
 forecast-forecaster-heading = Forecaster
-forecast-issued-at-heading-colon = Forecast issued at:
-forecast-valid-until-heading-colon = Forecast valid until:
-until-time = {$time}
+# Heading for field on the forecast page that specifies the date and time that the
+# forecast was issued at
+forecast-issued-at = **Forecast issued at:** {$time}
+# Field on the forecast page that specifies the date and time that the
+# forecast is valid until
+forecast-valid-until = **Forecast valid until:** {$time}
+# Caption for the aspect/elevation chart.
+aspect-elevation-chart-caption = Aspect/Elevation
