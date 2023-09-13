@@ -126,11 +126,9 @@ async fn main() -> eyre::Result<()> {
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 
-    // run our app with hyper
-    // `axum::Server` is a re-export of `hyper::Server`
-    let addr = &options.listen_address;
-    tracing::info!("listening on http://{addr}");
-    axum::Server::bind(addr)
+    let url = &options.base_url();
+    tracing::info!("listening on {url}");
+    axum::Server::bind(&options.listen_address)
         .serve(app.into_make_service())
         .await?;
 
