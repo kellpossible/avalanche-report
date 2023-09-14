@@ -6,7 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-gdal = { version = "0.16.0", features = ["array"] }
+# gdal = { version = "0.16.0", features = ["array"] }
 ndarray = "0.15.6"
 eyre = { workspace = true }
-
+tiff = "0.9.0"
+num-traits = "0.2"
+num-derive = "0.4"
+proj4rs = "0.1.1"
+proj = { version = "0.27.2", features = ["bundled_proj"] }
