@@ -3,7 +3,9 @@
 ####################################################################################################
 FROM rust:latest AS builder
 
-RUN apt update && apt install -y nodejs npm curl libgdal-dev
+# libgdal-dev - for gdal-sys
+# sqlite3, cmake, clang - for proj-sys
+RUN apt update && apt install -y nodejs npm curl libgdal-dev sqlite3 cmake clang
 RUN update-ca-certificates
 
 RUN curl --location https://github.com/casey/just/releases/download/1.13.0/just-1.13.0-x86_64-unknown-linux-musl.tar.gz \
