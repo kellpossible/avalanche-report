@@ -40,6 +40,14 @@ pub fn main() {
         "./node_modules/leaflet/dist/leaflet.css",
         dist_dir.join("leaflet.css"),
     );
+    deploy_file(
+        "./node_modules/leaflet-gesture-handling/dist/leaflet-gesture-handling.css",
+        dist_dir.join("leaflet-gesture-handling.css"),
+    );
+    deploy_file(
+        "./node_modules/leaflet-gesture-handling/dist/leaflet-gesture-handling.js",
+        dist_dir.join("leaflet-gesture-handling.js"),
+    );
     fs_extra::dir::copy(
         "./node_modules/leaflet/dist/images/",
         dist_dir,

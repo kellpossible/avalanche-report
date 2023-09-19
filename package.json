@@ -3,9 +3,10 @@
     "tailwindcss": "^3.3.3"
   },
   "dependencies": {
-    "htmx.org": "^1.8.4",
+    "htmx.org": "^1.9.5",
     "leaflet": "^1.9.3",
     "leaflet-geotag-photo": "^0.6.2",
+    "leaflet-gesture-handling": "^1.2.2",
     "leaflet-locationpicker": "^0.3.4",
     "uplot": "^1.6.24"
   }
