@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 forecast-spreadsheet = { path = "./forecast-spreadsheet" }
-geo = { path = "./geo" }
+# geo = { path = "./geo" }
 
 axum = { version = "0.6.20", features = ["headers"] }
 axum-extra = { version = "0.7.7", default-features = false, features = ["cookie"] }

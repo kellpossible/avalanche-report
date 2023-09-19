@@ -204,7 +204,6 @@ dependencies = [
  "forecast-spreadsheet",
  "fs_extra",
  "futures",
- "geo",
  "governor",
  "http",
  "http-body",
