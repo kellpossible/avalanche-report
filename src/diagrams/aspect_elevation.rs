@@ -18,12 +18,14 @@ use once_cell::sync::Lazy;
 use regex::{Captures, Regex};
 use resvg::{tiny_skia, usvg};
 use serde::{Deserialize, Serialize};
-use usvg_text_layout::{fontdb, TreeTextToPath};
+use usvg_text_layout::TreeTextToPath;
 
 use crate::{
     error::{map_eyre_error, map_std_error},
     i18n::I18nLoader,
 };
+
+use super::FONT_DB;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Aspect {
@@ -285,14 +287,6 @@ pub async fn svg_handler(
     let aspect_elevation = AspectElevation::try_from(query).map_err(map_eyre_error)?;
     Ok((headers, generate_svg(aspect_elevation, i18n)))
 }
-
-const FONT_DATA: &[u8] = include_bytes!("./fonts/noto/NotoSans-RegularWithGeorgian.ttf");
-static FONT_DB: Lazy<fontdb::Database> = Lazy::new(|| {
-    let mut db = fontdb::Database::new();
-    db.load_font_data(FONT_DATA.to_vec());
-    db.set_sans_serif_family("Noto Sans");
-    db
-});
 
 fn generate_png(
     aspect_elevation: AspectElevation,

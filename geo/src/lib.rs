@@ -5,7 +5,6 @@ use ndarray::Array2;
 
 pub mod geotiff;
 
-
 pub fn render_elevations<P: AsRef<Path>>(path: P) -> eyre::Result<Array2<u8>> {
     let image = geotiff::load(path)?;
 

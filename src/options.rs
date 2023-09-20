@@ -6,32 +6,30 @@ use serde::{ser::Error, Deserialize, Serialize};
 
 /// Global options for the application.
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Options {
     /// Directory where application data is stored (including logs).
     ///
     /// Default is `data`.
-    #[serde(default = "default_data_dir")]
     pub data_dir: PathBuf,
     /// Base url used for http server.
     ///
     /// Default is `http://{listen_address}/`.
     /// Can be specified by setting the environment variable `BASE_URL`.
-    #[serde(default)]
     base_url: Option<url::Url>,
     /// Address by the http server for listening.
     ///
     /// Default is `127.0.0.1:3000`.
-    #[serde(default = "default_listen_address")]
     pub listen_address: SocketAddr,
     /// Number of analytics event batches that will be submited to the database per hour.
     ///
     /// Default is 60 (one time per minute).
-    #[serde(default = "default_analytics_batch_rate")]
     pub analytics_batch_rate: NonZeroU32,
     /// The default selected langauge for the page (used when the user has not yet set a language
     /// or when their browser does not provide an Accept-Language header).
-    #[serde(default = "default_default_language")]
     pub default_language: unic_langid::LanguageIdentifier,
+    /// Configuration for the map component.
+    pub map: Map,
 }
 
 impl Options {
@@ -48,6 +46,24 @@ impl Options {
     }
 }
 
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct MapTilerSource {
+    api_key: Option<String>,
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone)]
+pub enum MapSource {
+    MapTiler(MapTilerSource),
+    #[default]
+    OpenTopoMap,
+    Ersi,
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone)]
+pub struct Map {
+    source: MapSource,
+}
+
 impl Default for Options {
     fn default() -> Self {
         Self {
@@ -56,6 +72,7 @@ impl Default for Options {
             listen_address: default_listen_address(),
             analytics_batch_rate: default_analytics_batch_rate(),
             default_language: default_default_language(),
+            map: Map::default(),
         }
     }
 }

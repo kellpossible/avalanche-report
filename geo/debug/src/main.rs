@@ -1,6 +1,5 @@
-use plotly::{Image, Configuration};
-use show_image::{create_window, ImageView, ImageInfo, WindowOptions};
-
+use plotly::{Configuration, Image};
+use show_image::{create_window, ImageInfo, ImageView, WindowOptions};
 
 #[show_image::main]
 pub fn main() -> eyre::Result<()> {
@@ -12,7 +11,6 @@ pub fn main() -> eyre::Result<()> {
     // plot.set_configuration(Configuration::default().fill_frame(true));
     // plot.show();
 
-
     let shape = pixels.shape();
     let view = ImageView::new(
         ImageInfo::mono8(shape[0] as u32, shape[1] as u32),
@@ -23,4 +21,3 @@ pub fn main() -> eyre::Result<()> {
     window.wait_until_destroyed()?;
     Ok(())
 }
-

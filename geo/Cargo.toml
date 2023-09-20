@@ -10,7 +10,7 @@ edition = "2021"
 ndarray = "0.15.6"
 eyre = { workspace = true }
 tiff = "0.9.0"
-num-traits = "0.2"
-num-derive = "0.4"
+num-traits = { workspace = true }
+num-derive = { workspace = true }
 proj4rs = "0.1.1"
 proj = { version = "0.27.2", features = ["bundled_proj"] }

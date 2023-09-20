@@ -18,7 +18,7 @@ use std::sync::Arc;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "snake_case")]
-enum ElevationBand {
+pub enum ElevationBand {
     HighAlpine,
     Alpine,
     SubAlpine,
@@ -26,7 +26,7 @@ enum ElevationBand {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "snake_case")]
-enum HazardLevel {
+pub enum HazardLevel {
     NoRating,
     Low,
     Moderate,
@@ -53,8 +53,8 @@ impl HazardLevel {
 
 #[derive(Deserialize)]
 pub struct Query {
-    elevation_band: ElevationBand,
-    hazard_level: HazardLevel,
+    pub elevation_band: ElevationBand,
+    pub hazard_level: HazardLevel,
 }
 
 pub fn generate_svg(query: Query, _i18n: Arc<FluentLanguageLoader>) -> String {

@@ -30,18 +30,32 @@
     {%- endif -%}
 {%- endmacro %}
 {% extends "base.html" %}
+{% block title %}
+    {{ formatted_time }} - {{ fl("forecast-area-" ~ area) }} - {{ fl("avalanche-forecast-heading" ) }}
+{% endblock title %}
 {% block head %}
     <link rel="stylesheet" href="/dist/leaflet.css"/>
     <script src="/dist/leaflet.js"></script>
     <link rel="stylesheet" href="/dist/leaflet-gesture-handling.css"/>
     <script src="/dist/leaflet-gesture-handling.js"></script>
+    <script src="/dist/maptiler-sdk.umd.js"></script>
+    <link href="/dist/maptiler-sdk.css" rel="stylesheet"/>
+    <!-- MapTiler SDK + Leaflet bindings -->
+    <script src="/dist/leaflet-maptilersdk.js"></script>
 {% endblock head %}
 {% set overall_hazard = hazard_ratings["overall"].value %}
 {% block body %}
     <div class="flex items-center justify-center w-screen">
         <div class="py-2 w-full md:min-w-3xl md:max-w-3xl">
             <div class="px-2">
-                <h1 class="text-5xl text-center">{{ fl("forecast-area-" ~ area) }}</h1>
+                <div class="grid md:grid-cols-3 grid-cols-1">
+                    <div>
+                        <a class="text-xl font-bold text-blue-600 hover:text-blue-800"
+                           href="../">&lt; {{ fl("back-button-text") }}</a>
+                    </div>
+                    <h1 class="text-5xl text-center">{{ fl("forecast-area-" ~ area) }}</h1>
+                    <div></div>
+                </div>
                 <div class="pt-2 pb-4 text-center">
                     <span>
                         <label for="language-select">Language:</label>
@@ -81,8 +95,8 @@
                 </div>
                 <p class="text-justify pb-4">{{ fl("disclaimer-message") }}</p>
             </div>
-            <figure class="h-screen">
-                <div id="map" class="h-5/6"></div>
+            <figure>
+                <div id="map" class="h-[80vh]"></div>
                 <figcaption class="text-center font-bold">
                     {{ fl("forecast-area-heading") }}
                 </figcaption>
@@ -130,7 +144,7 @@
                 <h2 class="text-4xl text-center">{{ fl("avalanche-problems-heading") }}</h2>
                 {% for problem in avalanche_problems %}
                     <h3 class="text-3xl text-center pt-2">{{ fl("problem-type-" ~ problem.kind) }}</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 p-4 md:py-0">
+                    <div class="grid grid-cols-1 md:grid-cols-3 p-4 md:py-0">
                         <figure class="flex justify-center items-center"
                                 aria-labelledby="problem-type-heading-{{ loop.index0 }}">
                             <img class="min-w-0 max-h-52"
@@ -151,21 +165,29 @@
                              class="text-center order-none md:order-1 font-bold">
                             {{ fl("aspect-elevation-chart-caption") }}
                         </div>
+                        <figure class="flex justify-center items-center"
+                                aria-labelledby="size-bar-heading-{{ loop.index0 }}">
+                            <img class="pl-8 min-w-0 max-h-80 h-3/4"
+                                 src="/diagrams/size.svg?size={{ problem.size }}"
+                                 alt="{{ fl("avalanche-size-heading") }}"/>
+                        </figure>
+                        <div id="size-bar-heading-{{ loop.index0 }}"
+                             class="text-center order-none md:order-1 font-bold">
+                            {{ fl("avalanche-size-heading") }}
+                        </div>
                     </div>
                     <p class="hyphens-auto md:hyphens-none md:text-justify">
                         <span class="italic">{{ fl("problem-type-" ~ problem.kind ~ "-about") }}</span>
                         {{ problem.description }}
                     </p>
                     <p class="p-4 text-center">
-                        <b>{{ fl("avalanche-size-heading") }}</b>: {{ problem.size }}
+                    <b>{{ fl("sensitivity-heading") }}</b>: <span class="italic">{{ fl("sensitivity-" ~ problem.sensitivity ~ "-about") }}</span>
                         <br>
-                        <b>{{ fl("sensitivity-heading") }}</b>: {{ fl("sensitivity-" ~ problem.sensitivity) }}
+                        <b>{{ fl("distribution-heading") }}</b>: <span class="italic">{{ fl("distribution-" ~ problem.distribution ~ "-about") }}</span>
                         <br>
-                        <b>{{ fl("distribution-heading") }}</b>: {{ fl("distribution-" ~ problem.distribution) }}
+                        <b>{{ fl("problem-time-of-day-heading") }}</b>: <span class="italic">{{ fl("time-of-day-" ~ problem.time_of_day) }}</span>
                         <br>
-                        <b>{{ fl("problem-time-of-day-heading") }}</b>: {{ fl("time-of-day-" ~ problem.time_of_day) }}
-                        <br>
-                        <b>{{ fl("trend-heading") }}</b>: {{ fl("trend-" ~ problem.trend) }}
+                        <b>{{ fl("trend-heading") }}</b>: <span class="italic">{{ fl("trend-" ~ problem.trend) }}</span>
                         <br>
                         {% if problem.confidence %}
                             <b>{{ fl("confidence-heading") }}</b>: {{ fl("confidence-" ~ problem.confidence) }}
@@ -176,8 +198,12 @@
                 {% endfor %}
                 <h2 class="text-4xl text-center py-4">{{ fl("recent-relevant-observations-heading") }}</h2>
                 <p class="text-justify md:hyphens-none pb-2">{{ recent_observations }}</p>
-                <h2 class="text-4xl text-center py-2">{{ fl("weather-forecast-heading") }}</h2>
-                <p class="text-justify md:hyphens-none pb-2">{{ weather_forecast }}</p>
+                <h2 class="text-4xl text-center py-2">
+                    {{ fl("weather-forecast-heading") }}
+                </h2>
+                <p class="text-justify md:hyphens-none pb-2">
+                    {{ weather_forecast }}
+                </p>
             </div>
         </div>
     </div>
@@ -186,22 +212,69 @@
         const map = L.map('map', {
             gestureHandling: true
         });
-        const tileServer = {
-            url: "https://api.maptiler.com/maps/winter-v2/{z}/{x}/{y}.png?key=PAwU5jOhvl7JaAABfVB0",
-            attribution: "\u003ca href=\"https://www.maptiler.com/copyright/\" target=\"_blank\"\u003e\u0026copy; MapTiler\u003c/a\u003e \u003ca href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\"\u003e\u0026copy; OpenStreetMap contributors\u003c/a\u003e",
-            tileSize: 512,
-            zoomOffset: -1,
-            minZoom: 1,
-            crossOrigin: true
-        };
-        const tiles = L.tileLayer(tileServer.url, {
-            maxZoom: 19,
-            attribution: tileServer.attribution,
-            tileSize: tileServer.tileSize,
-            zoomOffset: tileServer.zoomOffset,
-            minZoom: tileServer.minZoom,
-            crossOrigin: tileServer.crossOrigin
-        }).addTo(map);
+
+        {% if "MapTiler" in map.source %}
+            var webglSupported = false;
+            try {
+                canvas = document.createElement('canvas');
+                ctx = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                canvas = undefined;
+
+                if (ctx !== null) {
+                    webglSupported = true;
+                }
+            }
+            catch (e) {}
+
+            if (webglSupported) {
+                const mtLayer = L.maptilerLayer({
+                    style: "https://api.maptiler.com/maps/winter-v2/style.json?key={{ map.source["MapTiler"].api_key }}",
+                    language: "{{ LANGUAGE_SHORT }}",
+                }).addTo(map);
+            } else {
+                console.warn("WebGL not supported. Falling back to raster tiles.");
+                const tiles = L.tileLayer(
+                    "https://api.maptiler.com/maps/winter-v2/{z}/{x}/{y}.png?key={{ map.source["MapTiler"].api_key }}",
+                    {
+                        attribution: "\u003ca href=\"https://www.maptiler.com/copyright/\" target=\"_blank\"\u003e\u0026copy; MapTiler\u003c/a\u003e \u003ca href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\"\u003e\u0026copy; OpenStreetMap contributors\u003c/a\u003e",
+                        tileSize: 512,
+                        zoomOffset: -1,
+                        minZoom: 1,
+                        crossOrigin: true
+                    }).addTo(map);
+            }
+        {% elif "Ersi" in map.source %}
+            const tilesBase = L.tileLayer(
+                "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+                {
+                    attribution: "\u003ca href=\"https://www.esri.com\" target=\"_blank\"\u003e\u0026copy; Esri\u003c/a\u003e \u003ca href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\"\u003e\u0026copy; OpenStreetMap contributors\u003c/a\u003e",
+                    tileSize: 256,
+                    zoomOffset: 0,
+                    minZoom: 1,
+                    crossOrigin: true
+                }).addTo(map);
+            const tilesPiste = L.tileLayer(
+                "http://tiles.opensnowmap.org/pistes/{z}/{x}/{y}.png",
+                {
+                    maxZoom: 18,
+                    attribution: "\u003ca href=\"http://opensnowmap.org/\" target=\"_blank\"\u003e\u0026copy; OpenSnowMap\u003c/a\u003e \u003ca href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\"\u003e\u0026copy; OpenStreetMap contributors\u003c/a\u003e",
+                    tileSize: 256,
+                    zoomOffset: 0,
+                    minZoom: 1,
+                    crossOrigin: true,
+                }).addTo(map);
+        {% elif "OpenTopoMap" in map.source %}
+            const tiles = L.tileLayer(
+                "https://tile.opentopomap.org/{z}/{x}/{y}.png",
+                {
+                    attribution: "\u003ca href=\"https://opentopomap.org\" target=\"_blank\"\u003e\u0026copy; OpenTopoMap\u003c/a\u003e \u003ca href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\"\u003e\u0026copy; OpenStreetMap contributors\u003c/a\u003e",
+                    tileSize: 256,
+                    zoomOffset: 0,
+                    minZoom: 1,
+                    crossOrigin: true
+                }).addTo(map);
+        {% endif %}
+
         function onEachFeature(feature, layer) {
             if (feature.properties && feature.properties.popupContent) {
                 layer.bindPopup(feature.properties.popupContent);

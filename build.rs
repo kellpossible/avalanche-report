@@ -48,6 +48,18 @@ pub fn main() {
         "./node_modules/leaflet-gesture-handling/dist/leaflet-gesture-handling.js",
         dist_dir.join("leaflet-gesture-handling.js"),
     );
+    deploy_file(
+        "./node_modules/@maptiler/leaflet-maptilersdk/leaflet-maptilersdk.js",
+        dist_dir.join("leaflet-maptilersdk.js"),
+    );
+    deploy_file(
+        "./node_modules/@maptiler/sdk/dist/maptiler-sdk.umd.js",
+        dist_dir.join("maptiler-sdk.umd.js"),
+    );
+    deploy_file(
+        "./node_modules/@maptiler/sdk/dist/maptiler-sdk.css",
+        dist_dir.join("maptiler-sdk.css"),
+    );
     fs_extra::dir::copy(
         "./node_modules/leaflet/dist/images/",
         dist_dir,

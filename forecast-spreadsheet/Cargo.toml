@@ -14,9 +14,13 @@ time-tz = { workspace = true }
 unic-langid = { workspace = true, features = ["serde"] }
 serde_json = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-serde_repr = "0.1.12"
+serde_repr = { workspace = true }
 once_cell = { workspace = true }
 eyre = { workspace = true }
+num-traits = { workspace = true }
+num-derive = { workspace = true }
+enum-iterator = { workspace = true }
+
 
 [dev-dependencies]
 insta = { version = "1.29.0", features = ["json"] }

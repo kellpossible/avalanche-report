@@ -198,6 +198,7 @@ dependencies = [
  "bytes",
  "color-eyre",
  "deadpool-sqlite",
+ "enum-iterator",
  "erased-serde",
  "eyre",
  "fluent",
@@ -218,6 +219,7 @@ dependencies = [
  "minijinja",
  "minijinja-autoreload",
  "nonzero_ext",
+ "num-traits",
  "once_cell",
  "pulldown-cmark",
  "regex",
@@ -1164,6 +1166,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "enum-iterator"
+version = "1.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7add3873b5dd076766ee79c8e406ad1a472c385476b9e38849f8eec24f1be689"
+dependencies = [
+ "enum-iterator-derive",
+]
+
+[[package]]
+name = "enum-iterator-derive"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eecf8589574ce9b895052fa12d69af7a233f99e6107f5cb8dd1044f2a17bfdcb"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.32",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1349,9 +1371,12 @@ name = "forecast-spreadsheet"
 version = "0.1.0"
 dependencies = [
  "calamine",
+ "enum-iterator",
  "eyre",
  "indexmap 1.9.3",
  "insta",
+ "num-derive",
+ "num-traits",
  "once_cell",
  "serde",
  "serde_json",

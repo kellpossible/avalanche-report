@@ -35,7 +35,7 @@ month-12 = დეკემბერი
 # A short single-word heading for avalanche problem type.
 problem-type-heading-short = ტიპი
 # A heading for avalanche problem type.
-problem-type-heading = Problem Type
+problem-type-heading = {problem-type-heading-short} 
 # Avalanche problem type. A type of loose snow avalanche composed of dry snow.
 problem-type-loose-dry = მშრალი ფხვიერი
 # Avalanche problem type. A type of loose snow avalanche composed of wet or moist snow.
@@ -54,8 +54,6 @@ problem-type-deep-slab = ღრმა დაფა
 problem-type-cornice = კარნიზი
 # Avalanche problem type. The process of the entire snowpack sliding as a unit on the ground.
 problem-type-glide = დაცურება
-# Field heading for avalanche problem type
-problem-type-heading = ტიპი
 # Helpful information about the "Loose Dry" avalanche problem type
 problem-type-loose-dry-about = ზვავის ტიპი რომელიც მშრალი თოვლისგან შედგება
 # Helpful information about the "Loose Wet" avalanche problem type
@@ -76,6 +74,8 @@ problem-type-cornice-about = ზვავის ტიპი. თოვლის
 problem-type-glide-about = ზვავის ტიპი. თოვლის მთლიანი ფენის დაცურება
 # Field heading for the size of an avalanche if it were to occur
 avalanche-size-heading = ზვავის ზომა
+# Denotes a particular avalanche size, where $size is a number from 1 to 5.
+avalanche-size-n = ზომა {$size}
 # Helpful description about size 1 avalanche
 avalanche-size-1-about = ადამიანებისთვის შედარებით უსაფრთხო
 # Helpful description about size 2 avalanche
@@ -154,7 +154,7 @@ elevation-band-alpine = ალპური
 # Elevation band far above the tree level (above Alpine)
 elevation-band-high-alpine = მაღალი ალპური
 # Heading for recent observations
-recent-relevant-observations-heading = ახალი/რელევანტური დაკვირვებები
+recent-relevant-observations-heading = ახალი / რელევანტური დაკვირვებები
 # Heading for weather forecast
 weather-forecast-heading = ამინდის პროგნოზი
 # A heading for an individual avalanche problem type
@@ -229,3 +229,5 @@ forecast-issued-at = **პროგნოზი შედგენილია:*
 forecast-valid-until = **პროგნოზი ვალიდურია** {$time}-მდე
 # Caption for the aspect/elevation chart.
 aspect-elevation-chart-caption = Aspect/Elevation
+# Text inside the Back button.
+back-button-text = უკან

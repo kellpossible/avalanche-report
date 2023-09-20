@@ -54,8 +54,6 @@ problem-type-deep-slab = Deep Slab
 problem-type-cornice = Cornice
 # Avalanche problem type. The process of the entire snowpack sliding as a unit on the ground.
 problem-type-glide = Glide
-# Field heading for avalanche problem type
-problem-type-heading = Type
 # Helpful information about the "Loose Dry" avalanche problem type
 problem-type-loose-dry-about = A type of loose snow avalanche composed of dry snow.
 # Helpful information about the "Loose Wet" avalanche problem type
@@ -76,6 +74,8 @@ problem-type-cornice-about = An overhanging ledge or shelf of snow that usually 
 problem-type-glide-about = The process of the entire snowpack sliding as a unit on the ground.
 # Field heading for the size of an avalanche if it were to occur
 avalanche-size-heading = Avalanche Size
+# Denotes a particular avalanche size, where $size is a number from 1 to 5.
+avalanche-size-n = Size {$size}
 # Helpful description about size 1 avalanche
 avalanche-size-1-about = Relatively harmless to people.
 # Helpful description about size 2 avalanche
@@ -228,3 +228,5 @@ forecast-issued-at = **Forecast issued at:** {$time}
 forecast-valid-until = **Forecast valid until:** {$time}
 # Caption for the aspect/elevation chart.
 aspect-elevation-chart-caption = Aspect/Elevation
+# Text inside the Back button.
+back-button-text = Back

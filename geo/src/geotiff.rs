@@ -1,7 +1,7 @@
-use std::{fs::File, path::Path};
+use eyre::{bail, Context, ContextCompat};
 use ndarray::Array2;
 use num_traits::{FromPrimitive, ToPrimitive};
-use eyre::{bail, Context, ContextCompat};
+use std::{fs::File, path::Path};
 use tiff::tags::Tag;
 
 #[derive(Debug)]

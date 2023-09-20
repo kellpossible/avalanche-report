@@ -3,6 +3,7 @@
     "tailwindcss": "^3.3.3"
   },
   "dependencies": {
+    "@maptiler/leaflet-maptilersdk": "github:maptiler/leaflet-maptilersdk",
     "htmx.org": "^1.9.5",
     "leaflet": "^1.9.3",
     "leaflet-geotag-photo": "^0.6.2",

@@ -244,7 +244,11 @@ pub async fn middleware<B>(
         .get(0)
         .ok_or_else(|| eyre::eyre!("No current language"))
         .map_err(map_eyre_error)?
-        .to_string();
+        .clone();
+
+    let language_short = language.language.to_string();
+    let language_full = language.to_string();
+
     let i18n_fl = i18n.clone();
     let i18n_fl_md = i18n.clone();
     // Render a fluent message.
@@ -310,7 +314,8 @@ pub async fn middleware<B>(
     environment.add_filter("querystring", querystring);
     environment.add_filter("mapinsert", mapinsert);
     environment.add_filter("mapremove", mapremove);
-    environment.add_global("LANGUAGE", language);
+    environment.add_global("LANGUAGE_SHORT", language_short);
+    environment.add_global("LANGUAGE", language_full);
     environment.add_global("URI", uri.to_string());
     environment.add_global("PATH", uri.path().to_string());
     environment.add_global("QUERY", query_value);

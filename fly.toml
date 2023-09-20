@@ -14,6 +14,8 @@ kill_timeout = "5s"
     listen_address="[::]:8080"
     base_url="https://avalanche.ge/"
     default_language="ka-GE"
+    [map.source.MapTiler]
+    api_key="lQBs6EoYSHpb5ulwsURX"
   """
 
 [[mounts]]

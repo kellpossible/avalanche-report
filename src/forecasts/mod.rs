@@ -33,6 +33,7 @@ use crate::{
     google_drive,
     i18n::{self, I18nLoader},
     index::ForecastFileView,
+    options::Map,
     state::AppState,
     templates::{render, TemplatesWithContext},
 };
@@ -129,13 +130,14 @@ pub async fn handler(
     Extension(i18n): Extension<I18nLoader>,
     Extension(templates): Extension<TemplatesWithContext>,
 ) -> axum::response::Result<Response> {
-    let api_key = state.secrets.google_drive_api_key.as_ref().ok_or_else(|| {
+    let google_drive_api_key = state.secrets.google_drive_api_key.as_ref().ok_or_else(|| {
         tracing::error!("Unable to fetch file, Google Drive API Key not specified");
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
     handler_impl(
         file_name,
-        api_key,
+        google_drive_api_key,
+        &state.options.map,
         &state.client,
         &database,
         &templates,
@@ -210,10 +212,11 @@ struct FormattedForecast {
     forecast: Forecast,
     formatted_time: String,
     formatted_valid_until: String,
+    map: Map,
 }
 
 impl FormattedForecast {
-    fn format(forecast: Forecast, i18n: &I18nLoader) -> Self {
+    fn format(forecast: Forecast, i18n: &I18nLoader, map: Map) -> Self {
         let formatted_time = i18n::format_time(forecast.time, i18n);
         let valid_until_time = forecast.time + forecast.valid_for;
         let formatted_valid_until = i18n::format_time(valid_until_time, i18n);
@@ -222,6 +225,7 @@ impl FormattedForecast {
             forecast,
             formatted_time,
             formatted_valid_until,
+            map,
         }
     }
 }
@@ -305,7 +309,8 @@ impl TryFrom<forecast_spreadsheet::AvalancheProblem> for AvalancheProblem {
 #[instrument(level = "error", skip_all)]
 async fn handler_impl(
     file_name: String,
-    api_key: &SecretString,
+    google_drive_api_key: &SecretString,
+    map: &Map,
     client: &reqwest::Client,
     database: &DatabaseInstance,
     templates: &TemplatesWithContext,
@@ -329,8 +334,12 @@ async fn handler_impl(
 
     // Check that file exists in published folder, and not attempting to access a file outside
     // that.
-    let file_list =
-        google_drive::list_files("1so1EaO5clMvBUecCszKlruxnf0XpbWgr", api_key, client).await?;
+    let file_list = google_drive::list_files(
+        "1so1EaO5clMvBUecCszKlruxnf0XpbWgr",
+        google_drive_api_key,
+        client,
+    )
+    .await?;
     let file_metadata = match file_list
         .iter()
         .find(|file_metadata| file_metadata.name == file_name)
@@ -395,14 +404,15 @@ async fn handler_impl(
                 let file = google_drive::export_file(
                     &file_metadata.id,
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    api_key,
+                    google_drive_api_key,
                     client,
                 )
                 .await?;
                 file.bytes().await?.into()
             }
             ForecastFileView::Download => {
-                let file = google_drive::get_file(&file_metadata.id, api_key, client).await?;
+                let file =
+                    google_drive::get_file(&file_metadata.id, google_drive_api_key, client).await?;
                 file.bytes().await?.into()
             }
         };
@@ -463,7 +473,8 @@ async fn handler_impl(
                     let forecast = forecast
                         .try_into()
                         .wrap_err("Error converting forecast into template data")?;
-                    let formatted_forecast = FormattedForecast::format(forecast, &i18n);
+                    let formatted_forecast =
+                        FormattedForecast::format(forecast, &i18n, map.clone());
                     render(&templates.environment, "forecast.html", &formatted_forecast)
                 }
                 ForecastFileView::Json => Ok(Json(forecast).into_response()),

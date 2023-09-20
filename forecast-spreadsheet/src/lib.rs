@@ -11,7 +11,7 @@ use indexmap::{IndexMap, IndexSet};
 use once_cell::sync::Lazy;
 use options::{HazardRatingInput, Options};
 use position::SheetCellPosition;
-use time::{Date, Month, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset};
+use time::{Date, Month, OffsetDateTime, PrimitiveDateTime, Time};
 
 static EXCEL_EPOCH: Lazy<PrimitiveDateTime> = Lazy::new(|| {
     Date::from_calendar_date(1899, Month::December, 30)
@@ -489,10 +489,26 @@ impl FromStr for TimeOfDay {
 
 // Scope of `serde` module conflicts with serde_repr
 mod size {
-    use std::str::FromStr;
+    use std::{fmt::Display, str::FromStr};
 
+    use enum_iterator::Sequence;
+    use num_derive::{FromPrimitive, ToPrimitive};
+    use num_traits::{FromPrimitive, ToPrimitive};
     use serde_repr::{Deserialize_repr, Serialize_repr};
-    #[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug)]
+    #[derive(
+        Serialize_repr,
+        Deserialize_repr,
+        FromPrimitive,
+        ToPrimitive,
+        PartialEq,
+        Debug,
+        PartialOrd,
+        Ord,
+        Eq,
+        Sequence,
+        Copy,
+        Clone,
+    )]
     #[repr(u8)]
     pub enum Size {
         One = 1,
@@ -500,6 +516,13 @@ mod size {
         Three = 3,
         Four = 4,
         Five = 5,
+    }
+
+    impl Display for Size {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            let size: u8 = ToPrimitive::to_u8(self).unwrap();
+            size.fmt(f)
+        }
     }
 
     impl FromStr for Size {
@@ -514,14 +537,10 @@ mod size {
         type Error = eyre::Error;
 
         fn try_from(value: u8) -> Result<Self, Self::Error> {
-            Ok(match value {
-                1 => Self::One,
-                2 => Self::Two,
-                3 => Self::Three,
-                4 => Self::Four,
-                5 => Self::Five,
-                _ => return Err(eyre::eyre!("cannot parse size from value {value}")),
-            })
+            match FromPrimitive::from_u8(value) {
+                Some(variant) => Ok(variant),
+                None => Err(eyre::eyre!("cannot parse size from value {value}")),
+            }
         }
     }
 }
