@@ -167,6 +167,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "619743e34b5ba4e9703bba34deac3427c72507c7159f5fd030aea8cac0cfe341"
 
 [[package]]
+name = "assert-json-diff"
+version = "2.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "47e4f2b81832e72834d7518d8487a0396a28cc408186a2e8854c0f98011faf12"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "async-trait"
 version = "0.1.73"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -188,6 +198,7 @@ name = "avalanche-report"
 version = "0.1.0"
 dependencies = [
  "ansi-to-html",
+ "assert-json-diff",
  "async-trait",
  "axum",
  "axum-extra",
@@ -197,6 +208,7 @@ dependencies = [
  "buildstructor",
  "bytes",
  "color-eyre",
+ "cronchik",
  "deadpool-sqlite",
  "enum-iterator",
  "erased-serde",
@@ -208,12 +220,14 @@ dependencies = [
  "governor",
  "http",
  "http-body",
+ "humansize",
  "humantime",
  "i18n-embed",
  "i18n-embed-fl",
  "indexmap 1.9.3",
  "insta",
  "libsqlite3-sys",
+ "md-5",
  "mime",
  "mime_guess",
  "minijinja",
@@ -227,6 +241,7 @@ dependencies = [
  "resvg",
  "rusqlite",
  "rust-embed",
+ "rusty-s3",
  "sea-query",
  "sea-query-rusqlite",
  "secrecy",
@@ -234,6 +249,7 @@ dependencies = [
  "serde_json",
  "serde_urlencoded",
  "sha2",
+ "tempfile",
  "thiserror",
  "time",
  "time-tz",
@@ -549,7 +565,7 @@ dependencies = [
  "codepage",
  "encoding_rs",
  "log",
- "quick-xml",
+ "quick-xml 0.25.0",
  "serde",
  "zip",
 ]
@@ -834,6 +850,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "cronchik"
+version = "2.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fed6ebd7de0ccc9a965de26ed115973d3ab896b3862c5bf574dc3aafc211388"
+dependencies = [
+ "statiki",
+ "time",
+]
+
+[[package]]
 name = "crossbeam-channel"
 version = "0.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1090,6 +1116,7 @@ checksum = "9ed9a281f7bc9b7576e61468ba615a66a5c8cfdff42420a70aa82701a3b1e292"
 dependencies = [
  "block-buffer",
  "crypto-common",
+ "subtle",
 ]
 
 [[package]]
@@ -1252,6 +1279,12 @@ name = "fallible-streaming-iterator"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7360491ce676a36bf9bb3c56c1aa791658183a54d2744120f27285738d90465a"
+
+[[package]]
+name = "fastrand"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6999dc1837253364c2ebb0704ba97994bd874e8f195d665c50b7548f6ea92764"
 
 [[package]]
 name = "fdeflate"
@@ -1820,6 +1853,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dfa686283ad6dd069f105e5ab091b04c62850d3e4cf5d67debad1933f55023df"
 
 [[package]]
+name = "hmac"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c49c37c09c17a53d937dfbb742eb3a961d65a994e6bcdcf37e7399d0cc8ab5e"
+dependencies = [
+ "digest",
+]
+
+[[package]]
 name = "home"
 version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2377,6 +2419,15 @@ checksum = "090126dc04f95dc0d1c1c91f61bdd474b3930ca064c1edc8a849da2c6cbe1e77"
 dependencies = [
  "autocfg",
  "rawpointer",
+]
+
+[[package]]
+name = "md-5"
+version = "0.10.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6365506850d44bff6e2fbcb5176cf63650e48bd45ef2fe2665ae1570e0f4b9ca"
+dependencies = [
+ "digest",
 ]
 
 [[package]]
@@ -3103,6 +3154,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "quick-xml"
+version = "0.27.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ffc053f057dd768a56f62cd7e434c42c831d296968997e9ac1f76ea7c2d14c41"
+dependencies = [
+ "memchr",
+ "serde",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3487,6 +3548,25 @@ name = "rustversion"
 version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ffc183a10b4478d04cbbbfc96d0873219d962dd5accaff2ffbd4ceb7df837f4"
+
+[[package]]
+name = "rusty-s3"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c92776b0db0fea6d7cc3abb9d0d745814c71124471a3bfd84b1265a28c06130"
+dependencies = [
+ "base64 0.21.4",
+ "hmac",
+ "md-5",
+ "percent-encoding",
+ "quick-xml 0.27.1",
+ "serde",
+ "serde_json",
+ "sha2",
+ "time",
+ "url",
+ "zeroize",
+]
 
 [[package]]
 name = "rustybuzz"
@@ -3942,6 +4022,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "statiki"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "141fa7e1066311e7deec7e1e01faafbead54b064e63f784ac56ecaa886c4949a"
+
+[[package]]
 name = "str_inflector"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4039,6 +4125,19 @@ dependencies = [
  "filetime",
  "libc",
  "xattr",
+]
+
+[[package]]
+name = "tempfile"
+version = "3.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb94d2f3cc536af71caac6b6fcebf65860b347e7ce0cc9ebe8f70d3e521054ef"
+dependencies = [
+ "cfg-if 1.0.0",
+ "fastrand",
+ "redox_syscall",
+ "rustix",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]

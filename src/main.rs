@@ -8,14 +8,16 @@ use axum::{
     Extension, Router,
 };
 use error::map_std_error;
-use eyre::Context;
+use eyre::{Context, ContextCompat};
 use rust_embed::RustEmbed;
 use std::marker::PhantomData;
 use templates::TemplatesWithContext;
 use tower_http::trace::TraceLayer;
 use tracing_appender::rolling::Rotation;
 
-use crate::{options::Options, secrets::Secrets, state::AppState, templates::Templates};
+use crate::{
+    database::backup, options::Options, secrets::Secrets, state::AppState, templates::Templates,
+};
 
 mod admin;
 mod analytics;
@@ -45,6 +47,7 @@ async fn main() -> eyre::Result<()> {
     env::initialize()?;
 
     let options: &'static Options = Box::leak(Box::new(Options::initialize().await?));
+    let secrets = Box::leak(Box::new(Secrets::initialize(options)?));
 
     fs::create_dir_if_not_exists(&options.data_dir)
         .wrap_err_with(|| format!("Unable to create data directory {:?}", options.data_dir))?;
@@ -60,7 +63,7 @@ async fn main() -> eyre::Result<()> {
 
     let _reporting_guard = axum_reporting::initialize(reporting_options)?;
 
-    let secrets = Box::leak(Box::new(Secrets::initialize()?));
+    let client = reqwest::Client::new();
 
     let i18n = i18n::initialize();
     crate::i18n::load_languages(&i18n).wrap_err("Error loading languages")?;
@@ -70,6 +73,18 @@ async fn main() -> eyre::Result<()> {
     let database = database::initialize(&options.data_dir)
         .await
         .wrap_err("Error initializing database")?;
+
+    if let Some(backup) = &options.backup {
+        backup::BackupTask::spawn(backup::Config {
+            client: client.clone(),
+            backup,
+            aws_secret_access_key: secrets
+                .aws_secret_access_key
+                .as_ref()
+                .wrap_err("Expected AWS secret access key to be supplied")?,
+            database: database.clone(),
+        });
+    }
 
     let (analytics_sx, analytics_rx) = analytics::channel();
     let database_analytics = database.clone();
@@ -85,7 +100,7 @@ async fn main() -> eyre::Result<()> {
     let state = AppState {
         options,
         secrets,
-        client: reqwest::Client::new(),
+        client: client.clone(),
         i18n,
         templates,
         database,

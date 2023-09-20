@@ -1,8 +1,10 @@
 use std::{net::SocketAddr, num::NonZeroU32, path::PathBuf};
 
+use cronchik::CronSchedule;
 use eyre::Context;
 use nonzero_ext::nonzero;
 use serde::{ser::Error, Deserialize, Serialize};
+use url::Url;
 
 /// Global options for the application.
 #[derive(Debug, Serialize, Deserialize)]
@@ -30,6 +32,56 @@ pub struct Options {
     pub default_language: unic_langid::LanguageIdentifier,
     /// Configuration for the map component.
     pub map: Map,
+    /// Backup options.
+    pub backup: Option<Backup>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Backup {
+    #[serde(with = "serde_cron")]
+    pub schedule: CronSchedule,
+    pub s3_endpoint: Url,
+    pub s3_bucket_name: String,
+    pub s3_bucket_region: String,
+    #[serde(default = "default_aws_access_key_id")]
+    pub aws_access_key_id: String,
+}
+
+fn default_aws_access_key_id() -> String {
+    std::env::var("AWS_ACCESS_KEY_ID").unwrap_or_default()
+}
+
+mod serde_cron {
+    use cronchik::CronSchedule;
+
+    pub fn serialize<S>(value: &CronSchedule, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&value.to_string())
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<CronSchedule, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct Visitor;
+        impl<'de> serde::de::Visitor<'de> for Visitor {
+            type Value = CronSchedule;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("Expecting a valid cron job string. e.g. \"5 * * * *\"")
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                CronSchedule::parse_str(v).map_err(E::custom)
+            }
+        }
+        deserializer.deserialize_str(Visitor)
+    }
 }
 
 impl Options {
@@ -73,6 +125,7 @@ impl Default for Options {
             analytics_batch_rate: default_analytics_batch_rate(),
             default_language: default_default_language(),
             map: Map::default(),
+            backup: None,
         }
     }
 }
@@ -144,5 +197,32 @@ impl Options {
             println!("INFO: Options:\n\x1b[34m{options}\x1b[0m")
         }
         result
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use insta::assert_json_snapshot;
+    use serde_json::json;
+
+    use super::Backup;
+
+    #[test]
+    fn parse_backup() {
+        let value = json!({ "schedule": "0 1,2,3,4,5 * * *"});
+        let backup: Backup = serde_json::from_value(value.clone()).unwrap();
+        assert_json_snapshot!(backup, @r###"
+        {
+          "schedule": "0 1-5 * * *"
+        }
+        "###);
+
+        let value = json!({ "schedule": "1/10 * * * *"});
+        let backup: Backup = serde_json::from_value(value.clone()).unwrap();
+        assert_json_snapshot!(backup, @r###"
+        {
+          "schedule": "1,11,21,31,41,51 * * * *"
+        }
+        "###);
     }
 }

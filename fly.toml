@@ -14,6 +14,14 @@ kill_timeout = "5s"
     listen_address="[::]:8080"
     base_url="https://avalanche.ge/"
     default_language="ka-GE"
+
+    [backup]
+    schedule="0 0 * * *"
+    aws_access_key_id="AKIAZDRMYMOA6XEZSMGP"
+    s3_endpoint="https://s3.eu-central-1.amazonaws.com"
+    s3_bucket_name="avalanche-ge"
+    s3_bucket_region="eu-central-1"
+
     [map.source.MapTiler]
     api_key="lQBs6EoYSHpb5ulwsURX"
   """

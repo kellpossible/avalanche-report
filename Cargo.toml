@@ -19,6 +19,7 @@ bytes = "1.4.0"
 url = { version = "2.3", features = ["serde"] }
 serde = { workspace = true, features = ["derive"] }
 erased-serde = "0.3.24"
+serde_json = { workspace = true }
 serde_urlencoded = "0.7.1"
 color-eyre = "0.6"
 fluent = "0.16.0"
@@ -26,7 +27,6 @@ futures = "0.3.26"
 tracing-appender = "0.2"
 tracing-subscriber = "0.3"
 http = "0.2.8"
-serde_json = { workspace = true }
 governor = "0.6.0"
 tracing = "0.1"
 mime_guess = "2.0.4"
@@ -68,12 +68,17 @@ uuid = { version = "1.3.0", features = ["v4"] }
 sha2 = "0.10.6"
 indexmap = { workspace = true, features = ["serde"] }
 pulldown-cmark = { version = "0.9.3", default-features = false }
-# markdown = "1.0.0-alpha.13"
 enum-iterator = { workspace = true }
 num-traits = "0.2"
+rusty-s3 = "0.4.1"
+cronchik = { version = "2.0.4", features = ["time"] }
+tempfile = "3.8.0"
+md-5 = "0.10.5"
+humansize = "2.1.3"
 
 [dev-dependencies]
 insta = { version = "1.26.0", features = ["json"]}
+assert-json-diff = { workspace = true }
 
 [build-dependencies]
 fs_extra = "1.2.0"
@@ -99,3 +104,4 @@ unic-langid = "0.9.1"
 num-traits = "0.2"
 num-derive = "0.4"
 enum-iterator = "1.4.1"
+assert-json-diff = "2.0.2"
