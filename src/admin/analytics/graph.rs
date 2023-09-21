@@ -96,40 +96,6 @@ async fn get_analytics_data(
     Ok(data)
 }
 
-/// Condenses the data into periods of `window_seconds`.
-fn condense_data(data: Vec<AnalyticsData>, window_seconds: i64) -> Vec<AnalyticsData> {
-    let mut condensed_data = Vec::new();
-    let mut i = 0;
-    let mut j;
-    let mut k;
-    while i < data.len() {
-        let mut condensed = data[i].clone();
-
-        j = i + 1;
-        while j < data.len() && data[j].time - condensed.time <= (window_seconds / 2) {
-            condensed.visits += data[j].visits;
-            j += 1;
-        }
-
-        if i > 0 {
-            k = i - 1;
-            while k > 0 && condensed.time - data[k].time <= (window_seconds / 2) {
-                condensed.visits += data[k].visits;
-                k -= 1;
-            }
-        }
-
-        while j < data.len() && data[j].time - condensed.time <= window_seconds {
-            j += 1;
-        }
-
-        condensed_data.push(condensed);
-        i = j;
-    }
-
-    condensed_data
-}
-
 fn graph_data(data: Vec<AnalyticsData>) -> eyre::Result<GraphData> {
     if data.is_empty() {
         return Ok(vec![vec![], vec![]]);
