@@ -23,10 +23,6 @@ pub struct Options {
     ///
     /// Default is `127.0.0.1:3000`.
     pub listen_address: SocketAddr,
-    /// Number of analytics event batches that will be submited to the database per hour.
-    ///
-    /// Default is 60 (one time per minute).
-    pub analytics_batch_rate: NonZeroU32,
     /// The default selected langauge for the page (used when the user has not yet set a language
     /// or when their browser does not provide an Accept-Language header).
     pub default_language: unic_langid::LanguageIdentifier,
@@ -34,17 +30,23 @@ pub struct Options {
     pub map: Map,
     /// Backup options.
     pub backup: Option<Backup>,
+    /// Analytics options.
+    pub analytics: Analytics,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Backup {
-    #[serde(with = "serde_cron")]
+    #[serde(with = "serde_cron", default = "default_backup_schedule")]
     pub schedule: CronSchedule,
     pub s3_endpoint: Url,
     pub s3_bucket_name: String,
     pub s3_bucket_region: String,
     #[serde(default = "default_aws_access_key_id")]
     pub aws_access_key_id: String,
+}
+
+fn default_backup_schedule() -> CronSchedule {
+    CronSchedule::parse_str("0 0 * * *").expect("Invalid cron schedule")
 }
 
 fn default_aws_access_key_id() -> String {
@@ -81,6 +83,27 @@ mod serde_cron {
             }
         }
         deserializer.deserialize_str(Visitor)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Analytics {
+    #[serde(with = "serde_cron")]
+    pub compaction_schedule: CronSchedule,
+    /// Number of analytics event batches that will be submited to the database per hour.
+    ///
+    /// Default is 60 (one time per minute).
+    pub event_batch_rate: NonZeroU32,
+}
+
+impl Default for Analytics {
+    fn default() -> Self {
+        Self {
+            compaction_schedule: CronSchedule::parse_str("0 1 * * *")
+                .expect("Invalid cron schedule"),
+            event_batch_rate: default_analytics_batch_rate(),
+        }
     }
 }
 
@@ -122,10 +145,10 @@ impl Default for Options {
             data_dir: default_data_dir(),
             base_url: None,
             listen_address: default_listen_address(),
-            analytics_batch_rate: default_analytics_batch_rate(),
             default_language: default_default_language(),
             map: Map::default(),
             backup: None,
+            analytics: Analytics::default(),
         }
     }
 }

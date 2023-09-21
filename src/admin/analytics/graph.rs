@@ -1,9 +1,9 @@
 use crate::{
-    analytics::{Analytics, AnalyticsIden},
-    database::DatabaseInstance,
+    analytics::{get_time_bounds, Analytics, AnalyticsIden},
+    database::{Database, DatabaseInstance},
     types::Time,
 };
-use eyre::Context;
+use eyre::{Context, ContextCompat};
 use sea_query::{Expr, SqliteQueryBuilder};
 use sea_query_rusqlite::RusqliteBinder;
 use serde::{Deserialize, Serialize};
@@ -16,50 +16,84 @@ struct AnalyticsData {
 }
 
 async fn get_analytics_data(
-    database: &DatabaseInstance,
+    database: &Database,
     options: Options,
 ) -> eyre::Result<Vec<AnalyticsData>> {
-    database
-        .interact(move |conn| {
-            let from: Option<sea_query::Value> =
-                Option::transpose(options.from.map(|from| from.try_into()))?;
-            let to: Option<sea_query::Value> =
-                Option::transpose(options.to.map(|to| to.try_into()))?;
-            let mut query = sea_query::Query::select();
-            query
-                .columns(Analytics::COLUMNS)
-                .from(Analytics::TABLE)
-                .and_where_option(from.map(|from| Expr::col(AnalyticsIden::Time).gte(from)))
-                .and_where_option(to.map(|to| Expr::col(AnalyticsIden::Time).lte(to)));
+    let (min, max) = if let Some(time_bounds) = get_time_bounds(database).await? {
+        time_bounds
+    } else {
+        return Ok(vec![]);
+    };
 
-            if let Some(uri_filter) = options.uri_filter {
-                query.and_where(Expr::cust_with_values(
-                    &format!("{} GLOB ?", AnalyticsIden::Uri.as_ref()),
-                    [uri_filter],
-                ));
-            }
+    let from_min: Time = options
+        .from
+        .map(|from| min.max(*from).into())
+        .unwrap_or(min);
+    let to_max: Time = options.to.map(|to| max.min(*to).into()).unwrap_or(max);
 
-            let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
+    let window = (to_max - from_min) / (options.resolution as f64);
 
-            let mut statement = conn.prepare_cached(&sql)?;
+    let mut from = from_min;
+    let mut to: Time = (*from_min + window).into();
 
-            let mut data = Vec::new();
-            for analytics_result in statement
-                .query_map(&*values.as_params(), |row| Analytics::try_from(row))
-                .wrap_err("Error performing query to obtain `Analytics`")?
-            {
-                let analytics =
-                    analytics_result.wrap_err("Error converting query row into `Analytics`")?;
-                let analytics_data = AnalyticsData {
-                    time: analytics.time.unix_timestamp(),
-                    visits: analytics.visits,
+    let options = std::sync::Arc::new(options);
+    let mut data = Vec::with_capacity(options.resolution);
+    loop {
+        let options_conn = options.clone();
+        let visits = database
+            .get()
+            .await?
+            .interact::<_, eyre::Result<_>>(move |conn| {
+                let mut query = sea_query::Query::select();
+                let from_where = Expr::col(AnalyticsIden::Time).gte(from);
+                let to_where = if to == to_max {
+                    Expr::col(AnalyticsIden::Time).lte(to)
+                } else {
+                    Expr::col(AnalyticsIden::Time).lt(to)
                 };
-                data.push(analytics_data);
-            }
+                query
+                    .expr(Expr::col(AnalyticsIden::Visits).sum())
+                    .from(Analytics::TABLE)
+                    .and_where(from_where)
+                    .and_where(to_where);
 
-            Ok::<_, eyre::Error>(data)
-        })
-        .await?
+                if let Some(ref uri_filter) = options_conn.uri_filter {
+                    query.and_where(Expr::cust_with_values(
+                        &format!("{} GLOB ?", AnalyticsIden::Uri.as_ref()),
+                        [uri_filter],
+                    ));
+                }
+                let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
+                let mut statement = conn.prepare_cached(&sql)?;
+                let visits: u32 = statement
+                    .query_row(&*values.as_params(), |row| {
+                        let visits: Option<i64> = row.get(0)?;
+                        Ok(visits.unwrap_or_default())
+                    })
+                    .wrap_err_with(|| {
+                        format!("Error executing query {sql} with values {values:?}")
+                    })?
+                    .try_into()
+                    .wrap_err("Error converting visits from i32 into u32")?;
+
+                Ok(visits)
+            })
+            .await??;
+        let time = *from + (window.checked_div(2).wrap_err("Error dividing duration")?);
+
+        data.push(AnalyticsData {
+            time: time.unix_timestamp(),
+            visits,
+        });
+
+        from = to;
+        to = (*from + window).into();
+        if *to >= *to_max {
+            break;
+        }
+    }
+
+    Ok(data)
 }
 
 /// Condenses the data into periods of `window_seconds`.
@@ -100,9 +134,6 @@ fn graph_data(data: Vec<AnalyticsData>) -> eyre::Result<GraphData> {
     if data.is_empty() {
         return Ok(vec![vec![], vec![]]);
     }
-    let duration = data.last().expect("not empty").time - data.first().expect("not empty").time;
-    let condense_window = duration / 500;
-    let data = condense_data(data, condense_window);
 
     let mut graph_data = Vec::new();
     let (time_data, visits_data): (Vec<i64>, Vec<f64>) = data
@@ -140,14 +171,15 @@ fn graph_data(data: Vec<AnalyticsData>) -> eyre::Result<GraphData> {
     Ok(graph_data)
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 pub struct Options {
     pub uri_filter: Option<String>,
     pub from: Option<Time>,
     pub to: Option<Time>,
+    pub resolution: usize,
 }
 
-pub async fn graph_analytics(database: &DatabaseInstance, options: Options) -> eyre::Result<Graph> {
+pub async fn graph_analytics(database: &Database, options: Options) -> eyre::Result<Graph> {
     let analytics_data = get_analytics_data(database, options).await?;
     let data = graph_data(analytics_data)?;
     Ok(Graph { data })

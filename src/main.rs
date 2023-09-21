@@ -16,7 +16,8 @@ use tower_http::trace::TraceLayer;
 use tracing_appender::rolling::Rotation;
 
 use crate::{
-    database::backup, options::Options, secrets::Secrets, state::AppState, templates::Templates,
+    analytics::CompactionConfig, database::backup, options::Options, secrets::Secrets,
+    state::AppState, templates::Templates,
 };
 
 mod admin;
@@ -75,7 +76,7 @@ async fn main() -> eyre::Result<()> {
         .wrap_err("Error initializing database")?;
 
     if let Some(backup) = &options.backup {
-        backup::BackupTask::spawn(backup::Config {
+        backup::spawn_backup_task(backup::Config {
             client: client.clone(),
             backup,
             aws_secret_access_key: secrets
@@ -86,13 +87,18 @@ async fn main() -> eyre::Result<()> {
         });
     }
 
+    analytics::spawn_compaction_task(CompactionConfig {
+        schedule: options.analytics.compaction_schedule.clone(),
+        database: database.clone(),
+    });
+
     let (analytics_sx, analytics_rx) = analytics::channel();
     let database_analytics = database.clone();
     tokio::spawn(async move {
         analytics::process_analytics(
             database_analytics,
             analytics_rx,
-            options.analytics_batch_rate,
+            options.analytics.event_batch_rate,
         )
         .await
     });

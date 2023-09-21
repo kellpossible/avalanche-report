@@ -13,6 +13,7 @@ use time::format_description::well_known::{iso8601, Iso8601};
 use crate::state::AppState;
 
 pub mod backup;
+pub mod blob;
 mod migrations;
 
 // pub const DATETIME_FORMAT: &[FormatItem<'static>] =

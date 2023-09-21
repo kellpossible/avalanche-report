@@ -9,6 +9,7 @@ edition = "2021"
 forecast-spreadsheet = { path = "./forecast-spreadsheet" }
 # geo = { path = "./geo" }
 
+average = "0.14.1"
 axum = { version = "0.6.20", features = ["headers"] }
 axum-extra = { version = "0.7.7", default-features = false, features = ["cookie"] }
 base64 = "0.21.0"
@@ -64,7 +65,7 @@ minijinja = { version = "1.0.7", features = ["loader", "builtins", "urlencode", 
 urlencoding = "2.1.2"
 minijinja-autoreload = { version = "1.0.7" }
 async-trait = "0.1.64"
-uuid = { version = "1.3.0", features = ["v4"] }
+uuid = { version = "1.3.0", features = ["v4", "serde"] }
 sha2 = "0.10.6"
 indexmap = { workspace = true, features = ["serde"] }
 pulldown-cmark = { version = "0.9.3", default-features = false }
@@ -77,8 +78,9 @@ md-5 = "0.10.5"
 humansize = "2.1.3"
 
 [dev-dependencies]
-insta = { version = "1.26.0", features = ["json"]}
+insta = { version = "1.26.0", features = ["json", "redactions"]}
 assert-json-diff = { workspace = true }
+proptest = "1.2.0"
 
 [build-dependencies]
 fs_extra = "1.2.0"

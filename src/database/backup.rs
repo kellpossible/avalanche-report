@@ -13,7 +13,6 @@ use tracing::Instrument;
 use crate::options;
 
 use super::{Database, DB_FILE_NAME};
-pub struct BackupTask;
 
 #[derive(Debug)]
 struct BackupInfo {
@@ -67,7 +66,7 @@ async fn perform_backup(config: &Config) -> eyre::Result<BackupInfo> {
     let backup_file = backup_dir.path().join(DB_FILE_NAME);
     let backup_file_query = backup_file.clone();
     instance
-        .interact::<_, eyre::Result<()>>(move |conn| {
+        .interact::<_, eyre::Result<()>>(move |conn: &mut rusqlite::Connection| {
             conn.execute("VACUUM main INTO ?1", [backup_file_query.to_str()])
                 .wrap_err("Error performing VACUUM query")?;
             Ok(())
@@ -143,41 +142,39 @@ pub struct Config {
     pub database: Database,
 }
 
-impl BackupTask {
-    pub fn spawn(config: Config) {
-        let span = tracing::error_span!("backup");
-        tokio::spawn(
-            async move {
-                let mut initial = true;
-                loop {
-                    'retry: loop {
-                        match perform_backup(&config).await.wrap_err_with(|| {
-                            if initial {
-                                "Error performing initial backup"
-                            } else {
-                                "Error performing recurring backup"
-                            }
-                        }) {
-                            Ok(_) => break 'retry,
-                            Err(error) => tracing::error!("{error}"),
+pub fn spawn_backup_task(config: Config) {
+    let span = tracing::error_span!("backup");
+    tokio::spawn(
+        async move {
+            let mut initial = true;
+            loop {
+                'retry: loop {
+                    match perform_backup(&config).await.wrap_err_with(|| {
+                        if initial {
+                            "Error performing initial backup"
+                        } else {
+                            "Error performing recurring backup"
                         }
-                        tracing::warn!("Retrying in 30 seconds...");
-                        tokio::time::sleep(Duration::from_secs(30)).await;
-                        tracing::warn!("Retrying..");
+                    }) {
+                        Ok(_) => break 'retry,
+                        Err(error) => tracing::error!("{error}"),
                     }
-
-                    let next_time = config.backup.schedule.next_time_from_now();
-                    let now = OffsetDateTime::now_utc();
-                    let duration: Duration = (next_time - now)
-                        .try_into()
-                        .expect("Unable to convert duration");
-                    let human_duration = humantime::format_duration(duration.clone());
-                    tracing::info!("Next backup in {human_duration}");
-                    tokio::time::sleep(duration).await;
-                    initial = false;
+                    tracing::warn!("Retrying in 30 seconds...");
+                    tokio::time::sleep(Duration::from_secs(30)).await;
+                    tracing::warn!("Retrying..");
                 }
+
+                let next_time = config.backup.schedule.next_time_from_now();
+                let now = OffsetDateTime::now_utc();
+                let duration: Duration = (next_time - now)
+                    .try_into()
+                    .expect("Unable to convert duration");
+                let human_duration = humantime::format_duration(duration.clone());
+                tracing::info!("Next backup in {human_duration}");
+                tokio::time::sleep(duration).await;
+                initial = false;
             }
-            .instrument(span),
-        );
-    }
+        }
+        .instrument(span),
+    );
 }

@@ -1,7 +1,7 @@
-use std::num::NonZeroU32;
+use std::{collections::HashMap, num::NonZeroU32};
 
 use crate::{
-    database::{DatabaseInstance, DATETIME_FORMAT},
+    database::{Database, DatabaseInstance, DATETIME_FORMAT},
     serde::string,
     templates::render,
     types::Time,
@@ -20,7 +20,7 @@ use crate::{
 mod duration_option {
     use serde::{de::Visitor, Deserialize, Serialize};
 
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, PartialEq)]
     pub enum Duration {
         Duration(time::Duration),
         AllTime,
@@ -112,31 +112,10 @@ pub(super) use duration_option::Duration;
 
 use super::graph::{self, graph_analytics, Graph};
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, PartialEq)]
 pub(super) struct DurationOption {
-    duration: Duration,
-    name: String,
-}
-
-impl DurationOption {
-    fn from_kind(kind: Duration) -> Self {
-        let name: String = match &kind {
-            Duration::Duration(duration) => {
-                let duration_string = if let Ok(duration) = (*duration).try_into() {
-                    humantime::format_duration(duration).to_string()
-                } else {
-                    format!("{} seconds", duration.whole_seconds())
-                };
-                format!("Past {duration_string}")
-            }
-            Duration::AllTime => "All Time".to_string(),
-        };
-
-        Self {
-            name,
-            duration: kind,
-        }
-    }
+    pub duration: Duration,
+    pub name: String,
 }
 
 #[derive(Serialize)]
@@ -173,7 +152,6 @@ pub struct Query {
 
 pub async fn handler(
     Extension(templates): Extension<TemplatesWithContext>,
-    Extension(database): Extension<DatabaseInstance>,
     axum::extract::Query(mut query): axum::extract::Query<Query>,
     headers: axum::headers::HeaderMap,
     State(state): State<AppState>,
@@ -187,47 +165,56 @@ pub async fn handler(
         query.uri_filter = None;
     }
     let duration_options: Vec<DurationOption> = [
-        Duration::from(time::Duration::minutes(10)),
-        Duration::from(time::Duration::hours(24)),
-        Duration::from(time::Duration::days(7)),
-        Duration::from(time::Duration::days(30)),
-        Duration::AllTime,
+        ("10 minutes", time::Duration::minutes(10).into()),
+        ("24 hours", time::Duration::hours(24).into()),
+        ("7 days", time::Duration::days(7).into()),
+        ("1 month", time::Duration::days(30).into()),
+        ("1 year", time::Duration::days(365).into()),
+        ("All Time", Duration::AllTime),
     ]
     .into_iter()
-    .map(DurationOption::from_kind)
+    .map(|(name, duration)| DurationOption {
+        duration,
+        name: name.to_owned(),
+    })
     .collect();
 
-    let selected_duration = query
+    let selected_duration_option = query
         .duration
-        .map(DurationOption::from_kind)
+        .and_then(|duration| {
+            duration_options
+                .iter()
+                .find(|option| option.duration == duration)
+                .cloned()
+        })
         .unwrap_or_else(|| {
             duration_options
                 .get(1)
                 .expect("Expected duration option to be present")
                 .clone()
         });
-    let duration = selected_duration.duration.duration();
+    let duration = selected_duration_option.duration.duration();
     let to = Time::now_utc();
     let from = duration.as_ref().map(|duration| to - *duration);
 
-    let summaries = get_analytics(&database, from, query.uri_filter.clone())
+    let summaries = get_analytics(&state.database, from, query.uri_filter.clone())
         .await
         .map_err(map_eyre_error)?;
 
     let summaries_duration = SummariesDuration {
-        duration_option: selected_duration,
+        duration_option: selected_duration_option,
         to,
         from,
         summaries,
     };
 
     let graph = graph_analytics(
-        &database,
+        &state.database,
         graph::Options {
             to: Some(to),
             from,
             uri_filter: query.uri_filter.clone(),
-            ..graph::Options::default()
+            resolution: 512,
         },
     )
     .await
@@ -236,7 +223,7 @@ pub async fn handler(
     let page = AnalyticsPage {
         duration_options,
         summaries_duration,
-        batch_rate: state.options.analytics_batch_rate,
+        batch_rate: state.options.analytics.event_batch_rate,
         graph,
         query: query.clone(),
     };
@@ -250,11 +237,13 @@ pub async fn handler(
 }
 
 async fn get_analytics(
-    database: &DatabaseInstance,
+    database: &Database,
     from: Option<Time>,
     uri_filter: Option<String>,
 ) -> eyre::Result<Vec<Summary>> {
     database
+        .get()
+        .await?
         .interact(move |conn| {
             let mut query = sea_query::Query::select();
             let visitor_sum = Alias::new("vs");

@@ -10,10 +10,14 @@ use rusqlite::{
     types::{FromSql, FromSqlError},
     ToSql,
 };
+use sea_query::SimpleExpr;
 use serde::{Deserialize, Serialize};
 use time::{serde::iso8601, OffsetDateTime};
 
-use crate::{database, serde::string};
+use crate::{
+    database::{self, DATETIME_FORMAT},
+    serde::string,
+};
 
 /// A Time represnted internally with [OffsetDateTime], which serializes with [iso8601] and
 /// is stored in the database using [database::DATETIME_FORMAT].
@@ -29,6 +33,14 @@ impl Time {
     }
 }
 
+impl Into<SimpleExpr> for Time {
+    fn into(self) -> SimpleExpr {
+        self.format(&DATETIME_FORMAT)
+            .expect("Error formatting time")
+            .into()
+    }
+}
+
 impl ToSql for Time {
     fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
         let time_string: String = self
@@ -36,6 +48,14 @@ impl ToSql for Time {
             .format(&database::DATETIME_FORMAT)
             .map_err(|error| rusqlite::Error::ToSqlConversionFailure(Box::new(error)))?;
         Ok(time_string.into())
+    }
+}
+
+impl FromStr for Time {
+    type Err = time::error::Parse;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        OffsetDateTime::parse(s, &database::DATETIME_FORMAT).map(Self)
     }
 }
 

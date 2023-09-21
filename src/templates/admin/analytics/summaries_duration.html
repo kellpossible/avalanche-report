@@ -103,6 +103,18 @@ function {{ function_name }}() {
                 paths
             }
         ],
+        axes: [
+            {},
+            {
+                show: true,
+                label: "Hits",
+                labelSize: 30,
+                labelFont: "bold 12px Arial",
+                font: "12px Arial",
+                gap: 5,
+                size: 50,
+            },
+        ],
     };
 
     const chartRoot = document.getElementById("{{chart_id}}");
