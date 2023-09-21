@@ -4,7 +4,7 @@
         <select id="duration-select"
                 name="duration"
                 autocomplete="off"
-                hx-get="{{ PATH }}?{{ QUERY | mapremove("duration") | querystring }}"
+                hx-get="{{ PATH }}?{{ QUERY | mapremove("duration") | mapremove("from") | mapremove("to") | querystring }}"
                 hx-target="#summaries-duration"
                 hx-push-url="true"
                 hx-headers='{"X-Template": "admin/analytics/summaries_duration.html"}'
@@ -81,16 +81,28 @@
 {% set function_name = "plot_chart" ~ (chart_id | replace("-", "_")) %}
 function {{ function_name }}() {
     const currentLocalDate = new Date();
-    let offsetMinutes = currentLocalDate.getTimezoneOffset();
+    const offsetSeconds = currentLocalDate.getTimezoneOffset() * 60;
 
     const data = {{ graph.data | tojson }};
-    data[0] = data[0].map(timestamp => timestamp + offsetMinutes);
+
+    const map_data_timezone = (data) => {
+        data[0] = data[0].map(timestamp => timestamp + offsetSeconds);
+        return data;
+    };
 
     const paths = uPlot.paths.bars({size: [1, 50]});
+    var first = true;
 
     const opts = {
         width: 800,
         height: 600,
+        cursor: {
+            drag: {
+                setScale: false,
+                x: true,
+                y: false,
+            }
+        },
         series: [
             {},
             {
@@ -115,6 +127,48 @@ function {{ function_name }}() {
                 size: 50,
             },
         ],
+        hooks: {
+            init: [
+                u => {
+                    u.over.ondblclick = e => {
+                        u.setData(data);
+                    }
+                }
+            ],
+            setSelect: [
+                (u) => {
+                    if (first) {
+                        first = false;
+                        return;
+                    }
+                    const min = u.posToVal(u.select.left, 'x');
+                    const max = u.posToVal(u.select.left + u.select.width, 'x');
+
+                    const fromDate = new Date((min - offsetSeconds) * 1000);
+                    const toDate = new Date((max - offsetSeconds) * 1000);
+
+                    console.log("Fetching data for range...", {fromDate, toDate, min, max});
+                    const request = new Request(`?from=${fromDate.toISOString()}&to=${toDate.toISOString()}`, {
+                        method: "GET",
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    });
+                    fetch(request)
+                        .then((response) => response.json())
+                        .then((json) => {
+                            const newData = map_data_timezone(json.graph.data);
+                            u.setData(newData, false);
+                            // zoom to selection
+                            u.setScale('x', {min, max});
+
+                            // reset selection
+                            u.setSelect({width: 0, height: 0}, false);
+                        });
+
+                }
+            ]
+        }
     };
 
     const chartRoot = document.getElementById("{{chart_id}}");

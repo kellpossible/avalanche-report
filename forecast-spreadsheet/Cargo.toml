@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+utils = { path = "../utils" }
 calamine = "0.19.1"
 indexmap = { workspace = true, features = ["serde"] }
 thiserror = "1.0.38"

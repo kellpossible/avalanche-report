@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 forecast-spreadsheet = { path = "./forecast-spreadsheet" }
+utils = { path = "./utils" }
 # geo = { path = "./geo" }
 
 average = "0.14.1"
@@ -91,6 +92,7 @@ members = [
     "forecast-spreadsheet",
     "geo",
     "geo/debug",
+    "utils",
 ]
 
 [workspace.dependencies]

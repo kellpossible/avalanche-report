@@ -12,6 +12,7 @@ use once_cell::sync::Lazy;
 use options::{HazardRatingInput, Options};
 use position::SheetCellPosition;
 use time::{Date, Month, OffsetDateTime, PrimitiveDateTime, Time};
+use utils::serde::duration_seconds;
 
 static EXCEL_EPOCH: Lazy<PrimitiveDateTime> = Lazy::new(|| {
     Date::from_calendar_date(1899, Month::December, 30)
@@ -552,17 +553,6 @@ pub struct HazardRating {
     pub value: Option<HazardRatingValue>,
     pub trend: Option<Trend>,
     pub confidence: Option<Confidence>,
-}
-
-mod duration_seconds {
-    use serde::Serialize;
-
-    pub fn serialize<S>(duration: &time::Duration, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        duration.whole_seconds().serialize(serializer)
-    }
 }
 
 #[derive(Debug, Serialize)]

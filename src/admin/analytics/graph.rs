@@ -1,6 +1,6 @@
 use crate::{
     analytics::{get_time_bounds, Analytics, AnalyticsIden},
-    database::{Database, DatabaseInstance},
+    database::Database,
     types::Time,
 };
 use eyre::{Context, ContextCompat};
@@ -8,7 +8,7 @@ use sea_query::{Expr, SqliteQueryBuilder};
 use sea_query_rusqlite::RusqliteBinder;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 struct AnalyticsData {
     /// Time in seconds since epoch.
     time: i64,
@@ -19,6 +19,14 @@ async fn get_analytics_data(
     database: &Database,
     options: Options,
 ) -> eyre::Result<Vec<AnalyticsData>> {
+    match (options.from, options.to) {
+        (Some(from), Some(to)) => {
+            if *to < *from {
+                eyre::bail!("Invalid options to: {to} should not be less than from: {from}");
+            }
+        }
+        _ => {}
+    }
     let (min, max) = if let Some(time_bounds) = get_time_bounds(database).await? {
         time_bounds
     } else {
@@ -32,9 +40,14 @@ async fn get_analytics_data(
     let to_max: Time = options.to.map(|to| max.min(*to).into()).unwrap_or(max);
 
     let window = (to_max - from_min) / (options.resolution as f64);
+    let window = if window.is_zero() {
+        time::Duration::milliseconds(1)
+    } else {
+        window
+    };
 
     let mut from = from_min;
-    let mut to: Time = (*from_min + window).into();
+    let mut to: Time = (*from_min + window).min(*to_max).into();
 
     let options = std::sync::Arc::new(options);
     let mut data = Vec::with_capacity(options.resolution);
@@ -137,7 +150,7 @@ fn graph_data(data: Vec<AnalyticsData>) -> eyre::Result<GraphData> {
     Ok(graph_data)
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Options {
     pub uri_filter: Option<String>,
     pub from: Option<Time>,
@@ -146,7 +159,9 @@ pub struct Options {
 }
 
 pub async fn graph_analytics(database: &Database, options: Options) -> eyre::Result<Graph> {
-    let analytics_data = get_analytics_data(database, options).await?;
+    let analytics_data = get_analytics_data(database, options)
+        .await
+        .wrap_err("Error getting analytics data")?;
     let data = graph_data(analytics_data)?;
     Ok(Graph { data })
 }

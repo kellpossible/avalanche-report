@@ -26,6 +26,15 @@ use crate::{
 #[serde(transparent)]
 pub struct Time(#[serde(with = "iso8601")] OffsetDateTime);
 
+impl std::fmt::Display for Time {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0.format(&DATETIME_FORMAT).map_err(|error| {
+            tracing::error!("Error formatting time {error}");
+            std::fmt::Error
+        })?)
+    }
+}
+
 impl Time {
     /// See [OffsetDateTime].
     pub fn now_utc() -> Self {

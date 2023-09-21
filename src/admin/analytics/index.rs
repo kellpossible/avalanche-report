@@ -1,29 +1,39 @@
-use std::{collections::HashMap, num::NonZeroU32};
+use std::num::NonZeroU32;
 
 use crate::{
-    database::{Database, DatabaseInstance, DATETIME_FORMAT},
+    database::{Database, DATETIME_FORMAT},
     serde::string,
     templates::render,
     types::Time,
 };
-use axum::{extract::State, response::Response, Extension};
-use http::Uri;
+use axum::{
+    extract::State,
+    response::{IntoResponse, Response},
+    Extension, Json,
+};
+use eyre::Context;
+use http::{header::CONTENT_TYPE, Uri};
 use sea_query::{Alias, Expr, IntoIden, Order, SimpleExpr, SqliteQueryBuilder};
 use sea_query_rusqlite::RusqliteBinder;
 use serde::{Deserialize, Serialize};
+use time::OffsetDateTime;
+use utils::serde::{duration_seconds_option, rfc3339_option};
 
 use crate::{
     analytics::AnalyticsIden, error::map_eyre_error, state::AppState,
     templates::TemplatesWithContext,
 };
 
+mod serde_duration_secons {}
+
 mod duration_option {
     use serde::{de::Visitor, Deserialize, Serialize};
 
-    #[derive(Clone, Copy, PartialEq)]
+    #[derive(Debug, Clone, Copy, PartialEq)]
     pub enum Duration {
         Duration(time::Duration),
         AllTime,
+        Custom,
     }
 
     impl Duration {
@@ -31,6 +41,7 @@ mod duration_option {
             match self {
                 Duration::Duration(duration) => Some(*duration),
                 Duration::AllTime => None,
+                Duration::Custom => None,
             }
         }
     }
@@ -70,6 +81,7 @@ mod duration_option {
         {
             match v {
                 "all-time" => Ok(Duration::AllTime),
+                "custom" => Ok(Duration::Custom),
                 _ => self.visit_u64(v.parse().map_err(|error| {
                     serde::de::Error::custom(format!(
                         "Unable to parse duration as seconds: {error}"
@@ -103,6 +115,7 @@ mod duration_option {
                     serializer.serialize_u64(duration_seconds)
                 }
                 Duration::AllTime => serializer.serialize_str("all-time"),
+                Duration::Custom => serializer.serialize_str("custom"),
             }
         }
     }
@@ -142,10 +155,15 @@ struct AnalyticsPage {
     query: Query,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "kebab-case")]
+#[serde(default)]
 pub struct Query {
     duration: Option<Duration>,
+    #[serde(with = "rfc3339_option")]
+    from: Option<time::OffsetDateTime>,
+    #[serde(with = "rfc3339_option")]
+    to: Option<time::OffsetDateTime>,
     /// A filter with glob support, like `/forecast/*`
     uri_filter: Option<String>,
 }
@@ -171,6 +189,7 @@ pub async fn handler(
         ("1 month", time::Duration::days(30).into()),
         ("1 year", time::Duration::days(365).into()),
         ("All Time", Duration::AllTime),
+        ("Custom", Duration::Custom),
     ]
     .into_iter()
     .map(|(name, duration)| DurationOption {
@@ -179,31 +198,124 @@ pub async fn handler(
     })
     .collect();
 
-    let selected_duration_option = query
-        .duration
-        .and_then(|duration| {
-            duration_options
+    let custom_duration_option = duration_options
+        .last()
+        .expect("Expected at least one duration option")
+        .clone();
+
+    let (from, to, duration_option) = match (query.from, query.to, query.duration) {
+        (Some(from), Some(to), None) | (Some(from), Some(to), Some(Duration::Custom)) => {
+            (Some(from), Some(to), custom_duration_option)
+        }
+        (Some(from), None, None) | (Some(from), None, Some(Duration::Custom)) => {
+            (Some(from), None, custom_duration_option)
+        }
+        (None, Some(to), None) | (None, Some(to), Some(Duration::Custom)) => {
+            (None, Some(to), custom_duration_option)
+        }
+        (None, Some(_), Some(Duration::AllTime))
+        | (Some(_), None, Some(Duration::AllTime))
+        | (Some(_), Some(_), Some(Duration::AllTime)) => {
+            return Err(eyre::eyre!(
+                "Cannot specify `from` or `to`, and a `duration` of `all-time`"
+            ))
+            .map_err(map_eyre_error);
+        }
+        (Some(_), Some(_), Some(Duration::Duration(_))) => {
+            return Err(eyre::eyre!(
+                "Cannot specify `from` and `to`, and a `duration`"
+            ))
+            .map_err(map_eyre_error);
+        }
+        (None, None, Some(Duration::Custom)) => {
+            return Err(eyre::eyre!(
+                "Cannot specify `duration` as `custom` without also specifying either `from` or `to`"
+            ))
+            .map_err(map_eyre_error);
+        }
+        (Some(from), None, Some(Duration::Duration(duration))) => {
+            let option = duration_options
                 .iter()
-                .find(|option| option.duration == duration)
+                .find(|option| option.duration == Duration::Duration(duration))
                 .cloned()
-        })
-        .unwrap_or_else(|| {
-            duration_options
+                .unwrap_or(custom_duration_option);
+            (Some(from), Some(from + duration), option)
+        }
+        (None, Some(to), Some(Duration::Duration(duration))) => {
+            let option = duration_options
+                .iter()
+                .find(|option| option.duration == Duration::Duration(duration))
+                .cloned()
+                .unwrap_or(custom_duration_option);
+            (Some(to - duration), Some(to), option)
+        }
+        (None, None, Some(Duration::AllTime)) => {
+            let option = duration_options
+                .iter()
+                .find(|option| option.duration == Duration::AllTime)
+                .cloned()
+                .expect("Expected all-time to be in duration options");
+            (None, None, option)
+        }
+        (None, None, Some(Duration::Duration(duration))) => {
+            let option = duration_options
+                .iter()
+                .find(|option| option.duration == Duration::Duration(duration))
+                .cloned()
+                .unwrap_or(custom_duration_option);
+            (Some(OffsetDateTime::now_utc() - duration), None, option)
+        }
+        (None, None, None) => {
+            let option = duration_options
                 .get(1)
                 .expect("Expected duration option to be present")
-                .clone()
-        });
-    let duration = selected_duration_option.duration.duration();
-    let to = Time::now_utc();
-    let from = duration.as_ref().map(|duration| to - *duration);
+                .clone();
+            let from = OffsetDateTime::now_utc()
+                - option
+                    .duration
+                    .duration()
+                    .expect("Expected default option to have a duration");
+            (Some(from), None, option)
+        }
+    };
 
-    let summaries = get_analytics(&state.database, from, query.uri_filter.clone())
-        .await
-        .map_err(map_eyre_error)?;
+    // Don't let the user select Custom
+    let duration_options = if duration_option.duration != Duration::Custom {
+        duration_options
+            .into_iter()
+            .filter(|option| option.duration != Duration::Custom)
+            .collect()
+    } else {
+        duration_options
+    };
+
+    match (query.from, query.to) {
+        (Some(from), Some(to)) => {
+            if to < from {
+                return Err(eyre::eyre!(
+                    "Invalid query parameters to: {to} should not be less than from: {from}"
+                ))
+                .map_err(map_eyre_error);
+            }
+        }
+        _ => {}
+    }
+
+    let from = from.map(Time::from);
+    let to = to.map(Time::from);
+
+    let summaries = get_analytics(
+        &state.database,
+        from.map(Into::into),
+        to.map(Into::into),
+        query.uri_filter.clone(),
+    )
+    .await
+    .map_err(map_eyre_error)?;
 
     let summaries_duration = SummariesDuration {
-        duration_option: selected_duration_option,
-        to,
+        duration_option,
+        to: to.unwrap_or(Time::now_utc()),
         from,
         summaries,
     };
@@ -211,7 +323,7 @@ pub async fn handler(
     let graph = graph_analytics(
         &state.database,
         graph::Options {
-            to: Some(to),
+            to,
             from,
             uri_filter: query.uri_filter.clone(),
             resolution: 512,
@@ -228,6 +340,17 @@ pub async fn handler(
         query: query.clone(),
     };
 
+    if let Some(content_type) = headers.get(CONTENT_TYPE) {
+        let content_type = content_type
+            .to_str()
+            .wrap_err("Invalid content-type header")
+            .map_err(map_eyre_error)?;
+
+        if content_type == "application/json" {
+            return Ok(Json(page).into_response());
+        }
+    }
+
     let template = headers
         .get("X-Template")
         .and_then(|value| value.to_str().ok())
@@ -239,6 +362,7 @@ pub async fn handler(
 async fn get_analytics(
     database: &Database,
     from: Option<Time>,
+    to: Option<Time>,
     uri_filter: Option<String>,
 ) -> eyre::Result<Vec<Summary>> {
     database
@@ -264,7 +388,13 @@ async fn get_analytics(
             if let Some(from) = from {
                 let from_time_string = from.format(&DATETIME_FORMAT)?;
                 query.and_where(
-                    Expr::col(AnalyticsIden::Time).gt(SimpleExpr::Value(from_time_string.into())),
+                    Expr::col(AnalyticsIden::Time).gte(SimpleExpr::Value(from_time_string.into())),
+                );
+            }
+            if let Some(to) = to {
+                let to_time_string = to.format(&DATETIME_FORMAT)?;
+                query.and_where(
+                    Expr::col(AnalyticsIden::Time).lte(SimpleExpr::Value(to_time_string.into())),
                 );
             }
 

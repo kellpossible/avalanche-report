@@ -181,7 +181,7 @@
                         {{ problem.description }}
                     </p>
                     <p class="p-4 text-center">
-                    <b>{{ fl("sensitivity-heading") }}</b>: <span class="italic">{{ fl("sensitivity-" ~ problem.sensitivity ~ "-about") }}</span>
+                        <b>{{ fl("sensitivity-heading") }}</b>: <span class="italic">{{ fl("sensitivity-" ~ problem.sensitivity ~ "-about") }}</span>
                         <br>
                         <b>{{ fl("distribution-heading") }}</b>: <span class="italic">{{ fl("distribution-" ~ problem.distribution ~ "-about") }}</span>
                         <br>
@@ -194,10 +194,17 @@
                             <br>
                         {% endif %}
                     </p>
-                    {% if not loop.last %}<div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>{% endif %}
+                    {% if not loop.last %}
+                        <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20">
+                        </div>
+                    {% endif %}
                 {% endfor %}
-                <h2 class="text-4xl text-center py-4">{{ fl("recent-relevant-observations-heading") }}</h2>
-                <p class="text-justify md:hyphens-none pb-2">{{ recent_observations }}</p>
+                <h2 class="text-4xl text-center py-4">
+                    {{ fl("recent-relevant-observations-heading") }}
+                </h2>
+                <p class="text-justify md:hyphens-none pb-2">
+                    {{ recent_observations }}
+                </p>
                 <h2 class="text-4xl text-center py-2">
                     {{ fl("weather-forecast-heading") }}
                 </h2>
