@@ -130,13 +130,9 @@ pub async fn handler(
     Extension(i18n): Extension<I18nLoader>,
     Extension(templates): Extension<TemplatesWithContext>,
 ) -> axum::response::Result<Response> {
-    let google_drive_api_key = state.secrets.google_drive_api_key.as_ref().ok_or_else(|| {
-        tracing::error!("Unable to fetch file, Google Drive API Key not specified");
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
     handler_impl(
         file_name,
-        google_drive_api_key,
+        &state.options.google_drive_api_key,
         &state.options.map,
         &state.client,
         &database,

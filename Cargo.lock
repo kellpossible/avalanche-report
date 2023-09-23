@@ -258,6 +258,7 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "toml 0.8.0",
+ "toml-env",
  "tower",
  "tower-http",
  "tracing",
@@ -3852,6 +3853,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde-toml-merge"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "250c08954c1c279a877fd44909e7c50d366082d301d23821353f8b9327baf648"
+dependencies = [
+ "toml 0.8.0",
+]
+
+[[package]]
 name = "serde-xml-rs"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4515,6 +4525,18 @@ dependencies = [
  "serde_spanned",
  "toml_datetime",
  "toml_edit 0.20.0",
+]
+
+[[package]]
+name = "toml-env"
+version = "0.3.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "806fb4dd0a3c68514bbeefcc6c7dc9952333cb0b2146742008b4057b89d012f8"
+dependencies = [
+ "serde",
+ "serde-toml-merge",
+ "thiserror",
+ "toml 0.8.0",
 ]
 
 [[package]]

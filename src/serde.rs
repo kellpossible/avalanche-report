@@ -26,3 +26,14 @@ pub mod string {
             .map_err(de::Error::custom)
     }
 }
+
+pub mod hide_secret {
+    use secrecy::SecretString;
+
+    pub fn serialize<S>(_: &SecretString, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&"<SECRET>")
+    }
+}

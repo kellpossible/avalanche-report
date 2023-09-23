@@ -1,43 +1,60 @@
 use std::{net::SocketAddr, num::NonZeroU32, path::PathBuf};
 
 use cronchik::CronSchedule;
-use eyre::Context;
+use eyre::ContextCompat;
 use nonzero_ext::nonzero;
+use secrecy::SecretString;
 use serde::{ser::Error, Deserialize, Serialize};
+use toml_env::TomlKeyPath;
 use url::Url;
+use crate::serde::hide_secret;
 
 /// Global options for the application.
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(default)]
 pub struct Options {
     /// Directory where application data is stored (including logs).
     ///
     /// Default is `data`.
+    #[serde(default = "default_data_dir")]
     pub data_dir: PathBuf,
     /// Base url used for http server.
     ///
     /// Default is `http://{listen_address}/`.
     /// Can be specified by setting the environment variable `BASE_URL`.
+    #[serde(default)]
     base_url: Option<url::Url>,
     /// Address by the http server for listening.
     ///
     /// Default is `127.0.0.1:3000`.
+    #[serde(default = "default_listen_address")]
     pub listen_address: SocketAddr,
     /// The default selected langauge for the page (used when the user has not yet set a language
     /// or when their browser does not provide an Accept-Language header).
+    #[serde(default = "default_default_language")]
     pub default_language: unic_langid::LanguageIdentifier,
     /// Configuration for the map component.
+    #[serde(default)]
     pub map: Map,
     /// Backup options.
+    #[serde(default)]
     pub backup: Option<Backup>,
     /// Analytics options.
+    #[serde(default)]
     pub analytics: Analytics,
+    /// Google Drive API key, used to access forecast spreadsheets.
+    #[serde(serialize_with = "hide_secret::serialize")]
+    pub google_drive_api_key: SecretString,
+    #[serde(serialize_with = "hide_secret::serialize")]
+    /// Hash of the `admin` user password, used to access `/admin/*` rousted.
+    pub admin_password_hash: SecretString
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Backup {
     #[serde(with = "serde_cron", default = "default_backup_schedule")]
     pub schedule: CronSchedule,
+    #[serde(serialize_with = "hide_secret::serialize")]
+    pub aws_secret_access_key: SecretString,
     pub s3_endpoint: Url,
     pub s3_bucket_name: String,
     pub s3_bucket_region: String,
@@ -139,20 +156,6 @@ pub struct Map {
     source: MapSource,
 }
 
-impl Default for Options {
-    fn default() -> Self {
-        Self {
-            data_dir: default_data_dir(),
-            base_url: None,
-            listen_address: default_listen_address(),
-            default_language: default_default_language(),
-            map: Map::default(),
-            backup: None,
-            analytics: Analytics::default(),
-        }
-    }
-}
-
 fn default_data_dir() -> PathBuf {
     "data".into()
 }
@@ -179,47 +182,22 @@ impl std::fmt::Display for Options {
 }
 
 impl Options {
-    /// Initialize the options using the `OPTIONS` environment variable. If `OPTIONS` contains a
-    /// file path, it will load the options from that path, if `OPTIONS` contains a RON file
-    /// definition then it will load the options from the string contained in the variable.
+    /// Initialize options using the [`toml_env`] library.
     pub async fn initialize() -> eyre::Result<Options> {
-        let result = match std::env::var("OPTIONS") {
-            Ok(options) => match toml::from_str(&options) {
-                Ok(options) => {
-                    println!("INFO: Options loaded from `OPTIONS` environment variable");
-                    Ok(options)
-                }
-                Err(error) => {
-                    let path = PathBuf::from(&options);
-                    if path.is_file() {
-                        let options_str = tokio::fs::read_to_string(&path).await?;
-                        let options: Options =
-                            toml::from_str(&options_str).wrap_err_with(|| {
-                                format!("Error deserializing options file: {:?}", path)
-                            })?;
-                        println!("INFO: Options loaded from file specified in `OPTIONS` environment variable: {:?}", path);
-                        Ok(options)
-                    } else {
-                        Err(error).wrap_err_with(|| {
-                            format!(
-                                "Error deserializing options from `OPTIONS` environment variable \
-                            string, or you have specified a file path which does not exist: {:?}",
-                                options
-                            )
-                        })
-                    }
-                }
-            },
-            Err(std::env::VarError::NotPresent) => {
-                println!("INFO: No OPTIONS environment variable found, using default options.");
-                Ok(Options::default())
-            }
-            Err(error) => Err(error).wrap_err("Error reading `OPTIONS` environment variable"),
-        };
-        if let Ok(options) = &result {
-            println!("INFO: Options:\n\x1b[34m{options}\x1b[0m")
-        }
-        result
+        toml_env::initialize(toml_env::Args {
+            config_variable_name: "OPTIONS",
+            logging: toml_env::Logging::StdOut,
+            map_env: [
+                ("ADMIN_PASSWORD_HASH", "admin_password_hash"),
+                ("GOOGLE_DRIVE_API_KEY", "google_drive_api_key"),
+                ("AWS_SECRET_ACCESS_KEY", "backup.aws_secret_access_key"),
+            ]
+            .into_iter()
+            .map(|(key, value)| Ok((key, value.parse::<TomlKeyPath>()?)))
+            .collect::<eyre::Result<Vec<_>>>()?,
+            ..toml_env::Args::default()
+        })?
+        .wrap_err("No configuration specified")
     }
 }
 

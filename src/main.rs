@@ -16,7 +16,7 @@ use tower_http::trace::TraceLayer;
 use tracing_appender::rolling::Rotation;
 
 use crate::{
-    analytics::CompactionConfig, database::backup, options::Options, secrets::Secrets,
+    analytics::CompactionConfig, database::backup, options::Options,
     state::AppState, templates::Templates,
 };
 
@@ -25,7 +25,6 @@ mod analytics;
 mod auth;
 mod database;
 mod diagrams;
-mod env;
 mod error;
 mod forecast_areas;
 mod forecasts;
@@ -35,7 +34,6 @@ mod i18n;
 mod index;
 mod observations;
 mod options;
-mod secrets;
 mod serde;
 mod state;
 mod templates;
@@ -45,10 +43,7 @@ mod types;
 async fn main() -> eyre::Result<()> {
     axum_reporting::setup_error_hooks()?;
 
-    env::initialize()?;
-
     let options: &'static Options = Box::leak(Box::new(Options::initialize().await?));
-    let secrets = Box::leak(Box::new(Secrets::initialize(options)?));
 
     fs::create_dir_if_not_exists(&options.data_dir)
         .wrap_err_with(|| format!("Unable to create data directory {:?}", options.data_dir))?;
@@ -79,10 +74,8 @@ async fn main() -> eyre::Result<()> {
         backup::spawn_backup_task(backup::Config {
             client: client.clone(),
             backup,
-            aws_secret_access_key: secrets
-                .aws_secret_access_key
-                .as_ref()
-                .wrap_err("Expected AWS secret access key to be supplied")?,
+            aws_secret_access_key: &backup
+                .aws_secret_access_key,
             database: database.clone(),
         });
     }
@@ -105,7 +98,6 @@ async fn main() -> eyre::Result<()> {
 
     let state = AppState {
         options,
-        secrets,
         client: client.clone(),
         i18n,
         templates,
@@ -125,7 +117,7 @@ async fn main() -> eyre::Result<()> {
         .route_service("/static/*file", static_handler.into_service())
         .nest(
             "/admin",
-            admin::router(reporting_options, &secrets.admin_password_hash),
+            admin::router(reporting_options, &options.admin_password_hash),
         )
         .fallback(not_found_handler)
         .layer(middleware::from_fn_with_state(

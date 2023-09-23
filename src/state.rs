@@ -2,15 +2,13 @@ use axum::extract::FromRef;
 use tokio::sync::mpsc;
 
 use crate::{
-    analytics, database::Database, i18n::I18nLoader, options::Options, secrets::Secrets,
-    templates::Templates,
+    analytics, database::Database, i18n::I18nLoader, options::Options, templates::Templates,
 };
 
 /// App state is designed to be cheap to clone.
 #[derive(Clone)]
 pub struct AppState {
     pub options: &'static Options,
-    pub secrets: &'static Secrets,
     pub client: reqwest::Client,
     pub i18n: I18nLoader,
     pub templates: Templates,
