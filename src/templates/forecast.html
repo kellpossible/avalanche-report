@@ -174,24 +174,50 @@
                             {{ fl("avalanche-size-heading") }}
                         </div>
                     </div>
-                    <p class="hyphens-auto md:hyphens-none md:text-justify">
+                    <p class="hyphens-auto md:hyphens-none md:text-justify py-2">
                         <span class="italic">{{ fl("problem-type-" ~ problem.kind ~ "-about") }}</span>
                         {{ problem.description }}
                     </p>
-                    <p class="p-4 text-center">
-                        <b>{{ fl("sensitivity-heading") }}</b>: <span class="italic">{{ fl("sensitivity-" ~ problem.sensitivity ~ "-about") }}</span>
-                        <br>
-                        <b>{{ fl("distribution-heading") }}</b>: <span class="italic">{{ fl("distribution-" ~ problem.distribution ~ "-about") }}</span>
-                        <br>
-                        <b>{{ fl("problem-time-of-day-heading") }}</b>: <span class="italic">{{ fl("time-of-day-" ~ problem.time_of_day) }}</span>
-                        <br>
-                        <b>{{ fl("trend-heading") }}</b>: <span class="italic">{{ fl("trend-" ~ problem.trend) }}</span>
-                        <br>
-                        {% if problem.confidence %}
-                            <b>{{ fl("confidence-heading") }}</b>: {{ fl("confidence-" ~ problem.confidence) }}
-                            <br>
-                        {% endif %}
-                    </p>
+                    <div class="py-2">
+                        <table class="w-full">
+                            <tr class="odd:bg-gray-100">
+                                <td class="text-right font-bold p-2">{{ fl("sensitivity-heading") }}</td>
+                                <td class="p-2">{{ fl("sensitivity-" ~ problem.sensitivity ~ "-about") }}</td>
+                            </tr>
+                            <tr class="odd:bg-gray-100">
+                                <td class="text-right font-bold p-2">{{ fl("distribution-heading") }}</td>
+                                <td class="p-2">
+                                    {{ fl("distribution-" ~ problem.distribution ~ "-about") }}
+                                </td>
+                            </tr>
+                            <tr class="odd:bg-gray-100">
+                                <td class="text-right font-bold p-2">
+                                    {{ fl("problem-time-of-day-heading") }}
+                                </td>
+                                <td class="p-2">
+                                    {{ fl("time-of-day-" ~ problem.time_of_day) }}
+                                </td>
+                            </tr>
+                            <tr class="odd:bg-gray-100">
+                                <td class="text-right font-bold p-2">
+                                    {{ fl("trend-heading") }}
+                                </td>
+                                <td class="p-2">
+                                    {{ fl("trend-" ~ problem.trend) }}
+                                </td>
+                            </tr>
+                            {% if problem.confidence %}
+                                <tr class="odd:bg-gray-100">
+                                    <td class="text-center font-bold p-2">
+                                        {{ fl("confidence-heading") }}
+                                    </td>
+                                    <td class="p-2">
+                                        {{ fl("confidence-" ~ problem.confidence) }}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </table>
+                    </div>
                     {% if not loop.last %}
                         <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20">
                         </div>
