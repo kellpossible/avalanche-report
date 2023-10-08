@@ -1,5 +1,6 @@
-use std::{net::SocketAddr, num::NonZeroU32, path::PathBuf};
+use std::{collections::HashMap, net::SocketAddr, num::NonZeroU32, path::PathBuf};
 
+use crate::serde::hide_secret;
 use cronchik::CronSchedule;
 use eyre::ContextCompat;
 use nonzero_ext::nonzero;
@@ -7,7 +8,6 @@ use secrecy::SecretString;
 use serde::{ser::Error, Deserialize, Serialize};
 use toml_env::TomlKeyPath;
 use url::Url;
-use crate::serde::hide_secret;
 
 /// Global options for the application.
 #[derive(Debug, Serialize, Deserialize)]
@@ -46,7 +46,7 @@ pub struct Options {
     pub google_drive_api_key: SecretString,
     #[serde(serialize_with = "hide_secret::serialize")]
     /// Hash of the `admin` user password, used to access `/admin/*` rousted.
-    pub admin_password_hash: SecretString
+    pub admin_password_hash: SecretString,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -58,16 +58,11 @@ pub struct Backup {
     pub s3_endpoint: Url,
     pub s3_bucket_name: String,
     pub s3_bucket_region: String,
-    #[serde(default = "default_aws_access_key_id")]
     pub aws_access_key_id: String,
 }
 
 fn default_backup_schedule() -> CronSchedule {
     CronSchedule::parse_str("0 0 * * *").expect("Invalid cron schedule")
-}
-
-fn default_aws_access_key_id() -> String {
-    std::env::var("AWS_ACCESS_KEY_ID").unwrap_or_default()
 }
 
 mod serde_cron {
@@ -138,8 +133,24 @@ impl Options {
     }
 }
 
+#[derive(Debug, Deserialize, Serialize, Clone, Default)]
+pub enum MapTilerStyle {
+    #[serde(rename = "topo-v2")]
+    Topo,
+    #[serde(rename = "winter-v2")]
+    #[default]
+    Winter
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct MapTilerSource {
+    api_key: Option<String>,
+    #[serde(default)]
+    style: MapTilerStyle,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct TracestrackSource {
     api_key: Option<String>,
 }
 
@@ -149,6 +160,7 @@ pub enum MapSource {
     #[default]
     OpenTopoMap,
     Ersi,
+    Tracestrack(TracestrackSource)
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone)]
@@ -190,11 +202,12 @@ impl Options {
             map_env: [
                 ("ADMIN_PASSWORD_HASH", "admin_password_hash"),
                 ("GOOGLE_DRIVE_API_KEY", "google_drive_api_key"),
+                ("AWS_ACCESS_KEY_ID", "backup.aws_access_key_id"),
                 ("AWS_SECRET_ACCESS_KEY", "backup.aws_secret_access_key"),
             ]
             .into_iter()
             .map(|(key, value)| Ok((key, value.parse::<TomlKeyPath>()?)))
-            .collect::<eyre::Result<Vec<_>>>()?,
+            .collect::<eyre::Result<HashMap<_, _>>>()?,
             ..toml_env::Args::default()
         })?
         .wrap_err("No configuration specified")

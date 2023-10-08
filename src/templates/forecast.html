@@ -221,6 +221,7 @@
         });
 
         {% if "MapTiler" in map.source %}
+            {% set source = map.source["MapTiler"] %}
             var webglSupported = false;
             try {
                 canvas = document.createElement('canvas');
@@ -235,13 +236,13 @@
 
             if (webglSupported) {
                 const mtLayer = L.maptilerLayer({
-                    style: "https://api.maptiler.com/maps/winter-v2/style.json?key={{ map.source["MapTiler"].api_key }}",
+                    style: "https://api.maptiler.com/maps/{{ source.style }}/style.json?key={{ source.api_key }}",
                     language: "{{ LANGUAGE_SHORT }}",
                 }).addTo(map);
             } else {
                 console.warn("WebGL not supported. Falling back to raster tiles.");
                 const tiles = L.tileLayer(
-                    "https://api.maptiler.com/maps/winter-v2/{z}/{x}/{y}.png?key={{ map.source["MapTiler"].api_key }}",
+                    "https://api.maptiler.com/maps/{{ source.style }}/{z}/{x}/{y}.png?key={{ source.api_key }}",
                     {
                         attribution: "\u003ca href=\"https://www.maptiler.com/copyright/\" target=\"_blank\"\u003e\u0026copy; MapTiler\u003c/a\u003e \u003ca href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\"\u003e\u0026copy; OpenStreetMap contributors\u003c/a\u003e",
                         tileSize: 512,
@@ -280,6 +281,25 @@
                     minZoom: 1,
                     crossOrigin: true
                 }).addTo(map);
+        {% elif "Tracestrack" in map.source %}
+        {% set source = map.source["Tracestrack"] %}
+        {% set map_lang_id = "_" %}
+        {% if LANGUAGE_SHORT in ["en", "ar", "de", "es", "fi", "fr", "he", "hu", "it", "ja", "ko", "nl", "pl", "pt", "ru", "uk", "sv", "th", "tr"] %}
+            {% set map_lang_id = LANGUAGE_SHORT %}
+        {% elif LANGUAGE in ["zh-hans", "zh-hant"] %}
+            {% set map_lang_id = LANGUAGE %}
+        {% endif %}
+            const tiles = L.tileLayer(
+                "https://tile.tracestrack.com/topo_{{ map_lang_id }}/{z}/{x}/{y}.png?key={{ source.api_key }}",
+                {
+                    attribution: "Data: © <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap contributors</a>, <a href=\"https://worldcover2021.esa.int\">ESA WorldCover</a>; Maps © <a href=\"https://www.tracestrack.com/\">Tracestrack</a>",
+                    tileSize: 512,
+                    zoomOffset: -1,
+                    minZoom: 1,
+                    crossOrigin: true
+                }).addTo(map);
+            
+
         {% endif %}
 
         function onEachFeature(feature, layer) {

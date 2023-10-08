@@ -1,7 +1,6 @@
 use axum::{extract::State, response::IntoResponse, Extension};
 use color_eyre::Help;
 use eyre::{bail, eyre, Context, ContextCompat};
-use http::StatusCode;
 use i18n_embed::LanguageLoader;
 use serde::Serialize;
 use unic_langid::LanguageIdentifier;
