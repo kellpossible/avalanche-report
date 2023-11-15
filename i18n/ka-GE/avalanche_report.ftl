@@ -231,3 +231,13 @@ forecast-valid-until = **პროგნოზი ვალიდურია** 
 aspect-elevation-chart-caption = Aspect/Elevation
 # Text inside the Back button.
 back-button-text = უკან
+# It is unlikely for an avalanche to occur
+avalanche-probability-unlikely = დაბალი ალბათობა
+# It is possible for an avalanche to occur
+avalanche-probability-possible = შესაძლებელია
+# It is likely for an avalanche to occur
+avalanche-probability-likely = მაღალი ალბათობა
+# It is very likely for an avalanche to occur
+avalanche-probability-very-likely = ძალიან მაღალი ალბათობა
+# It is almost certain for an avalanche to occur
+avalanche-probability-almost-certain = თითქმის აუცილებლად

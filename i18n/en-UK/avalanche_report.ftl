@@ -230,3 +230,13 @@ forecast-valid-until = **Forecast valid until:** {$time}
 aspect-elevation-chart-caption = Aspect/Elevation
 # Text inside the Back button.
 back-button-text = Back
+# It is unlikely for an avalanche to occur
+avalanche-probability-unlikely = Unlikely
+# It is possible for an avalanche to occur
+avalanche-probability-possible = Possible
+# It is likely for an avalanche to occur
+avalanche-probability-likely = Likely
+# It is very likely for an avalanche to occur
+avalanche-probability-very-likely = Very likely
+# It is almost certain for an avalanche to occur
+avalanche-probability-almost-certain = Almost certain

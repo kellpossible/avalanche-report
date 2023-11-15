@@ -97,7 +97,6 @@ pub async fn svg_handler(
     Extension(i18n): Extension<I18nLoader>,
 ) -> axum::response::Result<impl IntoResponse> {
     let mut headers = HeaderMap::new();
-    // headers.insert(header::CONTENT_TYPE, "image/svg+xml".parse().unwrap());
     headers.insert(header::CONTENT_TYPE, "image/svg+xml".parse().unwrap());
     let size_bar = SizeBar::from(query);
     Ok((headers, generate_svg(size_bar, i18n)))

@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="204.4463mm"
+   height="192.87045mm"
+   viewBox="0 0 204.44629 192.87045"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="probability_inkscape.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:pageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="40"
+     fit-margin-bottom="0"
+     inkscape:zoom="0.57944243"
+     inkscape:cx="59.539996"
+     inkscape:cy="418.50577"
+     inkscape:window-width="1920"
+     inkscape:window-height="1034"
+     inkscape:window-x="0"
+     inkscape:window-y="46"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2">
+    <rect
+       x="301.68713"
+       y="322.8288"
+       width="220.12337"
+       height="89.066277"
+       id="rect16458" />
+    <rect
+       x="301.68713"
+       y="322.8288"
+       width="220.12337"
+       height="89.066277"
+       id="rect16458-0" />
+    <rect
+       x="301.68713"
+       y="322.8288"
+       width="220.12337"
+       height="89.066277"
+       id="rect16458-0-6" />
+    <rect
+       x="301.68713"
+       y="322.8288"
+       width="220.12337"
+       height="89.066277"
+       id="rect16458-0-6-7" />
+    <rect
+       x="301.68713"
+       y="322.8288"
+       width="220.12337"
+       height="89.066277"
+       id="rect16458-0-6-7-0" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-40.046658,-74.029324)">
+    <rect
+       style="fill:#f0f0f0;fill-opacity:1;stroke:#000000;stroke-width:3.01493;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
+       id="rect879"
+       width="30.028097"
+       height="189.85553"
+       x="41.554123"
+       y="75.536789" />
+    <rect
+       style="fill:#0182ff;fill-opacity:1;stroke:none;stroke-width:2.60339;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
+       id="very-likely"
+       width="27.585613"
+       height="46.65435"
+       x="42.874958"
+       y="76.488899" />
+    <rect
+       style="fill:#0182ff;fill-opacity:1;stroke:none;stroke-width:2.60339;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
+       id="likely"
+       width="27.585613"
+       height="46.65435"
+       x="42.874954"
+       y="123.67241" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1.66299;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="M 41.913338,123.14325 H 70.460571"
+       id="path9781-8" />
+    <rect
+       style="fill:#0182ff;fill-opacity:1;stroke:none;stroke-width:2.60339;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
+       id="possible"
+       width="27.585613"
+       height="46.65435"
+       x="42.874958"
+       y="170.32677" />
+    <rect
+       style="fill:#0182ff;fill-opacity:1;stroke:none;stroke-width:2.60339;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
+       id="unlikely"
+       width="27.24118"
+       height="47.287552"
+       x="42.874958"
+       y="216.98111" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1.66299;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="M 41.913336,170.32677 H 70.460569"
+       id="path9781-8-0" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1.66299;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="M 41.91334,216.98115 H 70.460573"
+       id="path9781-8-0-3" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.57895496,0,0,0.57895496,-94.66844,-99.204741)"
+       id="very-likely_text"
+       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect16458-0);fill:#000000;fill-opacity:1;stroke:none"
+       inkscape:label=""><tspan
+         x="301.6875"
+         y="358.21875"
+         id="tspan23503">Very Likely</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.57895496,0,0,0.57895496,-91.766593,-53.718)"
+       id="likely_text"
+       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect16458-0-6);fill:#000000;fill-opacity:1;stroke:none"><tspan
+         x="301.6875"
+         y="358.21875"
+         id="tspan23505">Likely</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.57895496,0,0,0.57895496,-92.333852,-5.8944634)"
+       id="possible_text"
+       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect16458-0-6-7);fill:#000000;fill-opacity:1;stroke:none"><tspan
+         x="301.6875"
+         y="358.21875"
+         id="tspan23507">Possible</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.57895496,0,0,0.57895496,-90.970019,40.022067)"
+       id="unlikely_text"
+       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect16458-0-6-7-0);fill:#000000;fill-opacity:1;stroke:none"><tspan
+         x="301.6875"
+         y="358.21875"
+         id="tspan23509">Unlikely </tspan></text>
+  </g>
+</svg>

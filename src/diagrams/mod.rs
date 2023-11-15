@@ -5,6 +5,7 @@ use usvg_text_layout::fontdb;
 pub mod aspect_elevation;
 mod elevation_hazard;
 pub mod size;
+pub mod probability;
 
 pub fn router<S>() -> Router<S>
 where
@@ -16,6 +17,7 @@ where
         .route("/aspect_elevation.svg", get(aspect_elevation::svg_handler))
         .route("/aspect_elevation.png", get(aspect_elevation::png_handler))
         .route("/size.svg", get(size::svg_handler))
+        .route("/probability.svg", get(probability::svg_handler))
 }
 
 const FONT_DATA: &[u8] = include_bytes!("./fonts/noto/NotoSans-RegularWithGeorgian.ttf");
