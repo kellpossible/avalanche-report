@@ -123,36 +123,36 @@
        id="path9781-8-0-3" />
     <text
        xml:space="preserve"
-       transform="matrix(0.57895496,0,0,0.57895496,-94.66844,-99.204741)"
+       transform="matrix(0.57895496,0,0,0.57895496,-94.66844,-96.558906)"
        id="very-likely_text"
-       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect16458-0);fill:#000000;fill-opacity:1;stroke:none"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:33.5135px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect16458-0);fill:#000000;fill-opacity:1;stroke:none"
        inkscape:label=""><tspan
          x="301.6875"
-         y="358.21875"
-         id="tspan23503">Very Likely</tspan></text>
+         y="352.47972"
+         id="tspan957">Very Likely</tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.57895496,0,0,0.57895496,-91.766593,-53.718)"
+       transform="matrix(0.57895496,0,0,0.57895496,-91.766593,-50.013831)"
        id="likely_text"
-       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect16458-0-6);fill:#000000;fill-opacity:1;stroke:none"><tspan
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:33.5135px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect16458-0-6);fill:#000000;fill-opacity:1;stroke:none"><tspan
          x="301.6875"
-         y="358.21875"
-         id="tspan23505">Likely</tspan></text>
+         y="352.47972"
+         id="tspan959">Likely</tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.57895496,0,0,0.57895496,-92.333852,-5.8944634)"
+       transform="matrix(0.57895496,0,0,0.57895496,-92.333852,-2.1902965)"
        id="possible_text"
-       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect16458-0-6-7);fill:#000000;fill-opacity:1;stroke:none"><tspan
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:33.5135px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect16458-0-6-7);fill:#000000;fill-opacity:1;stroke:none"><tspan
          x="301.6875"
-         y="358.21875"
-         id="tspan23507">Possible</tspan></text>
+         y="352.47972"
+         id="tspan961">Possible</tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.57895496,0,0,0.57895496,-90.970019,40.022067)"
+       transform="matrix(0.57895496,0,0,0.57895496,-90.970019,42.667902)"
        id="unlikely_text"
-       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect16458-0-6-7-0);fill:#000000;fill-opacity:1;stroke:none"><tspan
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:33.5135px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect16458-0-6-7-0);fill:#000000;fill-opacity:1;stroke:none"><tspan
          x="301.6875"
-         y="358.21875"
-         id="tspan23509">Unlikely </tspan></text>
+         y="352.47972"
+         id="tspan963">Unlikely </tspan></text>
   </g>
 </svg>

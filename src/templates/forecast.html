@@ -142,10 +142,10 @@
                 <h2 class="text-4xl text-center">{{ fl("avalanche-problems-heading") }}</h2>
                 {% for problem in avalanche_problems %}
                     <h3 class="text-3xl text-center pt-2">{{ fl("problem-type-" ~ problem.kind) }}</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 p-4 md:py-0">
+                    <div class="grid grid-cols-1 md:grid-cols-4 p-4 md:py-0">
                         <figure class="flex justify-center items-center"
                                 aria-labelledby="problem-type-heading-{{ loop.index0 }}">
-                            <img class="min-w-0 max-h-52"
+                            <img class="min-w-0 max-h-52 p-4"
                                  src="/static/images/icons/problem-types/{{ problem.kind }}.png"
                                  alt="{{ fl("problem-type-heading") }} {{ fl("problem-type-" ~ problem.kind)}} Icon"/>
                         </figure>
@@ -155,7 +155,7 @@
                         </div>
                         <figure class="flex justify-center items-center"
                                 aria-labelledby="aspect-elevation-chart-heading-{{ loop.index0 }}">
-                            <img class="min-w-0 max-h-80"
+                            <img class="min-w-0 max-h-60"
                                  src="{{ problem.aspect_elevation_chart }}"
                                  alt="{{ fl("aspect-elevation-chart-caption") }}"/>
                         </figure>
@@ -165,13 +165,23 @@
                         </div>
                         <figure class="flex justify-center items-center"
                                 aria-labelledby="size-bar-heading-{{ loop.index0 }}">
-                            <img class="pl-8 min-w-0 max-h-80 h-3/4"
+                            <img class="pl-8 min-w-0 max-h-60 h-3/4"
                                  src="/diagrams/size.svg?size={{ problem.size }}"
                                  alt="{{ fl("avalanche-size-heading") }}"/>
                         </figure>
                         <div id="size-bar-heading-{{ loop.index0 }}"
                              class="text-center order-none md:order-1 font-bold">
                             {{ fl("avalanche-size-heading") }}
+                        </div>
+                        <figure class="flex justify-center items-center"
+                                aria-labelledby="probability-bar-heading-{{ loop.index0 }}">
+                            <img class="pl-8 min-w-0 max-h-60 h-3/4"
+                                 src="/diagrams/probability.svg?probability={{ problem.probability }}"
+                                 alt="{{ fl("avalanche-likelihood-heading") }}"/>
+                        </figure>
+                        <div id="probability-bar-heading-{{ loop.index0 }}"
+                             class="text-center order-none md:order-1 font-bold">
+                            {{ fl("avalanche-likelihood-heading") }}
                         </div>
                     </div>
                     <p class="hyphens-auto md:hyphens-none md:text-justify py-2">
@@ -185,7 +195,9 @@
                                 <td class="p-2">{{ fl("sensitivity-" ~ problem.sensitivity ~ "-about") }}</td>
                             </tr>
                             <tr class="odd:bg-gray-100">
-                                <td class="text-right font-bold p-2">{{ fl("distribution-heading") }}</td>
+                                <td class="text-right font-bold p-2">
+                                    {{ fl("distribution-heading") }}
+                                </td>
                                 <td class="p-2">
                                     {{ fl("distribution-" ~ problem.distribution ~ "-about") }}
                                 </td>

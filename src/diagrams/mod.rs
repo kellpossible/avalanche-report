@@ -4,8 +4,8 @@ use usvg_text_layout::fontdb;
 
 pub mod aspect_elevation;
 mod elevation_hazard;
-pub mod size;
 pub mod probability;
+pub mod size;
 
 pub fn router<S>() -> Router<S>
 where

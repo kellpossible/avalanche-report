@@ -1,33 +1,12 @@
 use std::collections::HashMap;
 
 use axum::{extract, response::IntoResponse, Extension};
-use enum_iterator::Sequence;
 use http::{header, HeaderMap};
 use once_cell::sync::Lazy;
 use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 
-use crate::i18n::I18nLoader;
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Sequence)]
-#[serde(rename_all = "kebab-case")]
-pub enum Probability {
-    VeryLikely = 4,
-    Likely = 3,
-    Possible = 2,
-    Unlikely = 1,
-}
-
-impl Probability {
-    pub fn id(&self) -> &'static str {
-        match self {
-            Probability::VeryLikely => "very-likely",
-            Probability::Likely => "likely",
-            Probability::Possible => "possible",
-            Probability::Unlikely => "unlikely",
-        }
-    }
-}
+use crate::{forecasts::probability::Probability, i18n::I18nLoader};
 
 pub struct ProbabilityBar {
     probability: Probability,

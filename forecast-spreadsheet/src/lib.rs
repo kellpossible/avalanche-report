@@ -407,12 +407,12 @@ impl FromStr for ProblemKind {
     }
 }
 
-#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug, Deserialize, Serialize, PartialEq, PartialOrd, Eq, Ord)]
 #[serde(rename_all = "kebab-case")]
 pub enum Distribution {
-    Isolated,
-    Specific,
-    Widespread,
+    Isolated = 0,
+    Specific = 1,
+    Widespread = 2,
 }
 
 impl FromStr for Distribution {
@@ -455,13 +455,13 @@ impl FromStr for Confidence {
     }
 }
 
-#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug, Deserialize, Serialize, PartialEq, PartialOrd, Eq, Ord)]
 #[serde(rename_all = "kebab-case")]
 pub enum Sensitivity {
-    Unreactive,
-    Stubborn,
-    Reactive,
-    Touchy,
+    Unreactive = 0,
+    Stubborn = 1,
+    Reactive = 2,
+    Touchy = 3,
 }
 
 impl FromStr for Sensitivity {

@@ -139,7 +139,7 @@ pub enum MapTilerStyle {
     Topo,
     #[serde(rename = "winter-v2")]
     #[default]
-    Winter
+    Winter,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -160,7 +160,7 @@ pub enum MapSource {
     #[default]
     OpenTopoMap,
     Ersi,
-    Tracestrack(TracestrackSource)
+    Tracestrack(TracestrackSource),
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone)]

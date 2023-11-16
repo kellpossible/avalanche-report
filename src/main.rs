@@ -16,8 +16,8 @@ use tower_http::trace::TraceLayer;
 use tracing_appender::rolling::Rotation;
 
 use crate::{
-    analytics::CompactionConfig, database::backup, options::Options,
-    state::AppState, templates::Templates,
+    analytics::CompactionConfig, database::backup, options::Options, state::AppState,
+    templates::Templates,
 };
 
 mod admin;
@@ -74,8 +74,7 @@ async fn main() -> eyre::Result<()> {
         backup::spawn_backup_task(backup::Config {
             client: client.clone(),
             backup,
-            aws_secret_access_key: &backup
-                .aws_secret_access_key,
+            aws_secret_access_key: &backup.aws_secret_access_key,
             database: database.clone(),
         });
     }

@@ -143,6 +143,8 @@ avalanche-hazard-considerable-likelihood = ბუნებრივი ზვა
 avalanche-hazard-moderate-likelihood = ბუნებრივი ზვავების მოწყვეტის ალბათობა დაბალია და ადამიანის მიერ გამოწვეული ზვავის მოწყვეტა  შესაძლებელია 
 # Description of the likelyhood for avalanches to occur with "Low" avalanche danger
 avalanche-hazard-low-likelihood = ბუნებრივი და ადამიანის ზემოქმედებით გამოწვეული ზვავების მოწყვეტის დაბალი ალბათობა
+# Field heading for the likelihood of an avalanche occurring
+avalanche-likelihood-heading = ალბათობა
 # Table heading for elevation bands (plural)
 elevation-bands-heading = სასიმაღლო ზონები
 # Table heading for elevation bands

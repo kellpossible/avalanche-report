@@ -42,15 +42,24 @@ static TEXT_RE: Lazy<Regex> = Lazy::new(|| {
     .expect("Unable to compile svg text regex")
 });
 
+/// Bound the size to range `[1, 4]`.
+fn restrict_size(size: Size) -> Size {
+    Size::try_from(u8::min(size as u8, 4)).expect("Valid size")
+}
+
 fn generate_svg(size_bar: SizeBar, i18n: Arc<FluentLanguageLoader>) -> String {
     let colour_map: HashMap<String, (Size, &str)> = enum_iterator::all::<Size>()
-        .map(|size| {
+        .filter_map(|size| {
+            if size > Size::Four {
+                return None;
+            }
             let colour = if size > size_bar.size {
                 TRANSPARENT_COLOUR
             } else {
                 FILLED_COLOUR
             };
-            (format!("size{size}"), (size, colour))
+            let id = format!("size{size}");
+            Some((id, (size, colour)))
         })
         .collect();
     let svg = PATH_ID_RE.replace_all(SVG_TEMPLATE, |captures: &Captures| {
@@ -65,13 +74,14 @@ fn generate_svg(size_bar: SizeBar, i18n: Arc<FluentLanguageLoader>) -> String {
     });
     let text_map: HashMap<String, (Size, String)> = enum_iterator::all::<Size>()
         .map(|size| {
-            (
-                format!("size{size}text"),
-                (
-                    size,
-                    fl!(&*i18n, "avalanche-size-n", size = size.to_string()).to_owned(),
-                ),
-            )
+            let message = if size >= Size::Four {
+                fl!(&*i18n, "avalanche-size-4plus").to_owned()
+            } else {
+                fl!(&*i18n, "avalanche-size-n", size = size.to_string()).to_owned()
+            };
+            let size = restrict_size(size);
+            let id = format!("size{size}text");
+            (id, (size, message))
         })
         .collect();
 
@@ -82,7 +92,7 @@ fn generate_svg(size_bar: SizeBar, i18n: Arc<FluentLanguageLoader>) -> String {
             let original_text = captures.name("text").unwrap().as_str();
 
             let value = text_map.get(id).expect("Expected id to be present");
-            let new_text = if value.0 == size_bar.size {
+            let new_text = if value.0 == restrict_size(size_bar.size) {
                 &value.1
             } else {
                 ""

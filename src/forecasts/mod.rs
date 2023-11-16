@@ -41,6 +41,9 @@ use crate::{
 use self::files::{ForecastFiles, ForecastFilesIden};
 
 mod files;
+pub mod probability;
+
+use probability::Probability;
 
 pub static FORECAST_SCHEMA: Lazy<forecast_spreadsheet::options::Options> =
     Lazy::new(|| serde_json::from_str(include_str!("./schemas/0.3.0.json")).unwrap());
@@ -239,6 +242,7 @@ struct AvalancheProblem {
     pub time_of_day: Option<TimeOfDay>,
     pub sensitivity: Option<Sensitivity>,
     pub description: Option<String>,
+    pub probability: Option<Probability>,
 }
 
 fn into_diagram_aspect(aspect: &Aspect) -> diagrams::aspect_elevation::Aspect {
@@ -285,8 +289,12 @@ impl TryFrom<forecast_spreadsheet::AvalancheProblem> for AvalancheProblem {
         .into_query();
 
         let query_string = serde_urlencoded::to_string(query)?;
-
         let aspect_elevation_chart = format!("/diagrams/aspect_elevation.svg?{query_string}");
+
+        let probability = value
+            .sensitivity
+            .zip(value.distribution)
+            .map(|(sensitivity, distribution)| Probability::calculate(sensitivity, distribution));
         Ok(Self {
             kind: value.kind,
             aspect_elevation,
@@ -298,6 +306,7 @@ impl TryFrom<forecast_spreadsheet::AvalancheProblem> for AvalancheProblem {
             time_of_day: value.time_of_day,
             sensitivity: value.sensitivity,
             description: value.description,
+            probability,
         })
     }
 }

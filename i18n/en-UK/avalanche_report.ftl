@@ -76,6 +76,8 @@ problem-type-glide-about = The process of the entire snowpack sliding as a unit 
 avalanche-size-heading = Avalanche Size
 # Denotes a particular avalanche size, where $size is a number from 1 to 5.
 avalanche-size-n = Size {$size}
+# Denotes an avalanche of size >= 4
+avalanche-size-4plus = Size 4+
 # Helpful description about size 1 avalanche
 avalanche-size-1-about = Relatively harmless to people.
 # Helpful description about size 2 avalanche
@@ -142,6 +144,8 @@ avalanche-hazard-considerable-likelihood = Natural avalanches are possible, huma
 avalanche-hazard-moderate-likelihood = Natural avalanches are unlikely, human-triggered avalanches are possible.
 # Description of the likelyhood for avalanches to occur with "Low" avalanche danger
 avalanche-hazard-low-likelihood = Natural and human-triggered avalanches are unlikely.
+# Field heading for the likelihood of an avalanche occurring
+avalanche-likelihood-heading = Likelihood
 # Table heading for elevation bands (plural)
 elevation-bands-heading = Elevation Zones
 # Table heading for elevation bands

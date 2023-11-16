@@ -7,6 +7,10 @@ watch-rust:
 watch-tailwind:
     cargo watch -w src/templates -s "just tailwind"
 
+fmt:
+    cargo fmt
+    just fmt-templates
+
 fmt-templates:
     djlint --reformat --profile jinja ./src/templates/
 
