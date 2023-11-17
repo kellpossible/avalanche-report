@@ -135,7 +135,7 @@ pub async fn handler(
 ) -> axum::response::Result<Response> {
     handler_impl(
         file_name,
-        &state.options.google_drive_api_key,
+        &state.options.google_drive.api_key,
         &state.options.map,
         &state.client,
         &database,

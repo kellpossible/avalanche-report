@@ -6,7 +6,7 @@ use eyre::ContextCompat;
 use nonzero_ext::nonzero;
 use secrecy::SecretString;
 use serde::{ser::Error, Deserialize, Serialize};
-use toml_env::TomlKeyPath;
+use toml_env::AutoMapEnvArgs;
 use url::Url;
 
 /// Global options for the application.
@@ -18,9 +18,9 @@ pub struct Options {
     #[serde(default = "default_data_dir")]
     pub data_dir: PathBuf,
     /// Base url used for http server.
+    /// Can be specified by setting the environment variable `BASE_URL`.
     ///
     /// Default is `http://{listen_address}/`.
-    /// Can be specified by setting the environment variable `BASE_URL`.
     #[serde(default)]
     base_url: Option<url::Url>,
     /// Address by the http server for listening.
@@ -32,25 +32,39 @@ pub struct Options {
     /// or when their browser does not provide an Accept-Language header).
     #[serde(default = "default_default_language")]
     pub default_language: unic_langid::LanguageIdentifier,
-    /// Configuration for the map component.
+    /// See [`Map`].
     #[serde(default)]
     pub map: Map,
-    /// Backup options.
+    /// See [`Backup`].
     #[serde(default)]
     pub backup: Option<Backup>,
-    /// Analytics options.
+    /// See [`Analytics`].
     #[serde(default)]
     pub analytics: Analytics,
-    /// Google Drive API key, used to access forecast spreadsheets.
+    /// See [`GoogleDrive`].
+    pub google_drive: GoogleDrive,
     #[serde(serialize_with = "hide_secret::serialize")]
-    pub google_drive_api_key: SecretString,
-    #[serde(serialize_with = "hide_secret::serialize")]
-    /// Hash of the `admin` user password, used to access `/admin/*` rousted.
+    /// (REQUIRED) Hash of the `admin` user password, used to access `/admin/*` routes.
     pub admin_password_hash: SecretString,
 }
 
+/// Configuration for using Google Drive.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GoogleDrive {
+    /// The identifier for the folder in Google Drive where the published forecasts are stored.
+    pub published_folder_id: String,
+    /// Google Drive API key, used to access forecast spreadsheets.
+    #[serde(serialize_with = "hide_secret::serialize")]
+    pub api_key: SecretString,
+}
+
+/// `avalanche-report` has a built-in backup facility which can save the database and push it to an
+/// amazon s3 compatible storage API.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Backup {
+    /// Schedule for when the backup is performed.
+    ///
+    /// Default is `0 0 * * *`.
     #[serde(with = "serde_cron", default = "default_backup_schedule")]
     pub schedule: CronSchedule,
     #[serde(serialize_with = "hide_secret::serialize")]
@@ -98,9 +112,13 @@ mod serde_cron {
     }
 }
 
+/// `avalanche-report` has a built-in server-side analytics collection mechanism.
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Analytics {
+    /// Schedule for when analytics data compaction is performed.
+    ///
+    /// Default is `0 1 * * *`.
     #[serde(with = "serde_cron")]
     pub compaction_schedule: CronSchedule,
     /// Number of analytics event batches that will be submited to the database per hour.
@@ -145,6 +163,7 @@ pub enum MapTilerStyle {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct MapTilerSource {
     api_key: Option<String>,
+    /// Sets the map style.
     #[serde(default)]
     style: MapTilerStyle,
 }
@@ -163,9 +182,12 @@ pub enum MapSource {
     Tracestrack(TracestrackSource),
 }
 
+/// Configuration for the map component.
 #[derive(Default, Debug, Deserialize, Serialize, Clone)]
 pub struct Map {
-    source: MapSource,
+    /// The source for the basemap of the map component.
+    /// Default is [`MapSource::OpenTopoMap`].
+    pub source: MapSource,
 }
 
 fn default_data_dir() -> PathBuf {
@@ -197,17 +219,12 @@ impl Options {
     /// Initialize options using the [`toml_env`] library.
     pub async fn initialize() -> eyre::Result<Options> {
         toml_env::initialize(toml_env::Args {
-            config_variable_name: "OPTIONS",
+            config_variable_name: "AVALANCHE_REPORT",
             logging: toml_env::Logging::StdOut,
-            map_env: [
-                ("ADMIN_PASSWORD_HASH", "admin_password_hash"),
-                ("GOOGLE_DRIVE_API_KEY", "google_drive_api_key"),
-                ("AWS_ACCESS_KEY_ID", "backup.aws_access_key_id"),
-                ("AWS_SECRET_ACCESS_KEY", "backup.aws_secret_access_key"),
-            ]
-            .into_iter()
-            .map(|(key, value)| Ok((key, value.parse::<TomlKeyPath>()?)))
-            .collect::<eyre::Result<HashMap<_, _>>>()?,
+            auto_map_env: Some(AutoMapEnvArgs {
+                prefix: Some("AVALANCHE_REPORT"),
+                ..AutoMapEnvArgs::default()
+            }),
             ..toml_env::Args::default()
         })?
         .wrap_err("No configuration specified")

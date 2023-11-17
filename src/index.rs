@@ -89,8 +89,8 @@ pub async fn handler(
     State(state): State<AppState>,
 ) -> axum::response::Result<impl IntoResponse> {
     let files = google_drive::list_files(
-        "1so1EaO5clMvBUecCszKlruxnf0XpbWgr",
-        &state.options.google_drive_api_key,
+        &state.options.google_drive.published_folder_id,
+        &state.options.google_drive.api_key,
         &state.client,
     )
     .await

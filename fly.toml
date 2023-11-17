@@ -9,7 +9,7 @@ kill_signal = "SIGINT"
 kill_timeout = "5s"
 
 [env]
-  OPTIONS = """
+  AVALANCHE_REPORT = """
     data_dir="/data-volume"
     listen_address="[::]:8080"
     base_url="https://avalanche.ge/"

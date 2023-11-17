@@ -1,3 +1,8 @@
+build:
+    npm install
+    just tailwind
+    cargo build --release
+
 tailwind:
     npx tailwindcss --input src/style.css --output dist/style.css
 

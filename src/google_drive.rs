@@ -30,9 +30,35 @@ pub struct ListFileMetadata {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct ListFilesResult {
-    pub files: Vec<ListFileMetadata>,
+enum ListFilesResult {
+    Files(Vec<ListFileMetadata>),
+    Error(GoogleDriveError),
 }
+
+impl From<ListFilesResult> for Result<Vec<ListFileMetadata>, GoogleDriveError> {
+    fn from(value: ListFilesResult) -> Self {
+        match value {
+            ListFilesResult::Files(files) => Ok(files),
+            ListFilesResult::Error(error) => Err(error),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct GoogleDriveError {
+    pub code: u16,
+    pub errors: Vec<serde_json::Value>,
+    pub message: String,
+}
+
+impl std::fmt::Display for GoogleDriveError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "code: {}, message: {}", self.code, self.message)
+    }
+}
+
+impl std::error::Error for GoogleDriveError {}
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -60,8 +86,8 @@ pub async fn list_files(
     let query_string = serde_urlencoded::to_string(query)?;
     let url: Url = format!("https://www.googleapis.com/drive/v3/files?{query_string}").parse()?;
     let response = client.get(url).send().await?;
-    let result: ListFilesResult = response.json().await?;
-    Ok(result.files)
+    let files = Result::from(response.json::<ListFilesResult>().await?)?;
+    Ok(files)
 }
 
 pub struct File {
