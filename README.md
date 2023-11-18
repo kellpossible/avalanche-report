@@ -157,3 +157,7 @@ api_key="SECRET"
 ```
 
 Options can also be specified using the `AVALANCHE_REPORT` environment variable, with a multiline string containing all options specified in TOML format. See the [`fly.toml`](./fly.toml)'s `env.AVALANCHE_REPORT` key for an example of this in a deployment.
+
+## Background
+
+There is a blog post which explains the inception, history and motivations for this project: [Introducing `avalanche-report`](https://lukefrisken.com/code/introducing-avalanche-report/).
