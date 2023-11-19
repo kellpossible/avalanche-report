@@ -1,0 +1,32 @@
+{% macro forecast_intro(overall_hazard, description, formatted_time, formatted_valid_until, forecaster_name) %}
+    <div class="grid md:grid-cols-5 sm:grid-cols-1 pb-2 pt-4">
+        <div class="md:col-span-1 flex justify-center items-center">
+            <img class="md:w-fit w-24 md:px-2"
+                 src="/static/images/icons/hazard-rating/{{ overall_hazard }}.png"
+                 alt="Icon for {{ fl("avalanche-hazard-heading") }}: {{ fl("avalanche-hazard-" ~ overall_hazard) }}"/>
+        </div>
+        <div class="md:col-span-4">
+            <p class="italic hyphens-auto md:text-justify">
+                {{ fl("avalanche-hazard-" ~ overall_hazard ~ "-likelihood") }} {{ fl("avalanche-hazard-" ~ overall_hazard ~ "-size-distribution") }}
+            </p>
+            <p class="md:text-justify">{{ description }}</p>
+        </div>
+    </div>
+    <div class="py-4">
+        <p class="text-center">
+            {% autoescape false %}
+                {{ fl_md("forecast-issued-at", {'time': formatted_time}) }}
+            {% endautoescape %}
+        </p>
+        <p class="text-center">
+            {% autoescape false %}
+                {{ fl_md("forecast-valid-until", {'time': formatted_valid_until}) }}
+            {% endautoescape %}
+        </p>
+        <p class="text-center">
+            {% autoescape false %}
+                {{ fl_md("forecast-forecaster", {'name': forecaster_name}) }}
+            {% endautoescape %}
+        </p>
+    </div>
+{% endmacro %}

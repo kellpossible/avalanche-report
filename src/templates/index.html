@@ -1,10 +1,45 @@
 {% from "macros/language_select.html" import language_select %}
+{% from "macros/forecast_intro.html" import forecast_intro %}
 {% extends "base.html" %}
-{% macro forecast_block(forecast, emphasize=false) %}
+{% macro current_forecast_block(current_forecast) %}
+    <div class="py-4">
+        {% if current_forecast %}
+            <a href="/forecasts/{{ current_forecast.file.file.name | urlencode }}">
+                <h2 class="text-4xl font-bold text-blue-600">Current Forecast</h2>
+            </a>
+            {% with forecast = current_forecast.forecast %}
+                {{ forecast_intro(
+                overall_hazard=forecast.hazard_ratings.overall.value,
+                description=forecast.description,
+                formatted_time=forecast.formatted_time,
+                formatted_valid_until=forecast.formatted_valid_until,
+                forecaster_name=forecast.forecaster.name
+                ) }}
+            {% endwith %}
+            <div>
+                <a class="text-xl font-bold text-blue-600 hover:text-blue-800"
+                   href="/forecasts/{{ current_forecast.file.file.name | urlencode }}">View full forecast</a>
+            </div>
+        {% else %}
+            <h2 class="text-4xl font-bold">No Current Forecast</h2>
+            <img src="/static/images/icons/hazard-rating/no-rating.png"
+                 class="w-8 h-8 mx-1"/>
+            <p>Please check the forecast archive below for the most recent forecast for this area</p>
+        {% endif %}
+    </div>
+{% endmacro %}
+{% macro forecast_archive_block(forecast, emphasize=false) %}
     <p>
         <a class="text-xl font-bold text-blue-600 hover:text-blue-800 visited:text-purple-600 {% if emphasize %}text-xl font-bold{% endif %}"
            href="/forecasts/{{ forecast.file.file.name | urlencode }}">
-            {{ forecast.details.formatted_time }}
+            <span class="inline-flex items-baseline">
+                {% if forecast.forecast %}
+                    {% set hazard_rating = forecast.forecast.hazard_ratings.overall.value %}
+                    <img src="/static/images/icons/hazard-rating/{{ hazard_rating }}.png"
+                         class="self-center w-8 h-8 mx-1"/>
+                {% endif %}
+                <span>{{ forecast.details.formatted_time }}</span>
+            </span>
         </a>
     </p>
 {% endmacro %}
@@ -26,28 +61,19 @@
             {% if (forecasts | length) == 0 %}
                 <p class="text-2xl font-bold text-rose-600">{{ fl("no-forecasts-available-message") }}</p>
             {% else %}
-                <div class="py-10">
-                    <h2 class="text-4xl font-bold">2022/23 Season Forecast Closed</h2>
-                    <p>
-                        Thank you all the volunteers who contributed to producing the forecast this season. We hope this service has been helpful for you and next season we hope to be back with more resources and a better, more professional product.
-                    </p>
+                <div class="py-5">{{ current_forecast_block(current_forecast=current_forecast) }}</div>
+                <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
+                <div class="py-5">
+                    <p class="md:text-justify">{{ fl("disclaimer-message") }}</p>
                     <p>
                         See <a class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
     href="https://www.facebook.com/groups/830534093958221">Our Facebook Page</a> for discussion and updates, and watch this space.
                     </p>
-                    <figure class="py-5">
-                        <iframe src="https://psavalancheconsulting.github.io/ElevationMap.html"
-                                class="w-full"
-                                height="480px"></iframe>
-                        <figcaption class="italic">
-                            {{ fl("elevation-bands-heading") }}
-                        </figcaption>
-                    </figure>
                 </div>
                 <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
                 <div class="py-5 text-slate-500">
                     <h2 class="text-2xl font-bold py-2">{{ fl("forecast-archive-heading") }}</h2>
-                    {% for forecast in forecasts %}{{ forecast_block(forecast=forecast) }}{% endfor %}
+                    {% for forecast in forecasts %}{{ forecast_archive_block(forecast=forecast) }}{% endfor %}
                 </div>
             {% endif %}
             {% if (errors | length) != 0 %}

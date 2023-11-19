@@ -367,7 +367,7 @@ fn parse_aspects(input: &str) -> std::result::Result<IndexSet<Aspect>, ParseAspe
         .collect()
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct AspectElevation {
     pub aspects: IndexSet<Aspect>,
 }
@@ -548,7 +548,7 @@ mod size {
 pub use size::Size;
 use time_tz::{Offset, TimeZone};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct HazardRating {
     pub value: Option<HazardRatingValue>,
     pub trend: Option<Trend>,
@@ -574,7 +574,7 @@ pub struct Forecast {
     pub elevation_bands: IndexMap<ElevationBandId, ElevationRange>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct Forecaster {
     pub name: String,
     pub organisation: Option<String>,

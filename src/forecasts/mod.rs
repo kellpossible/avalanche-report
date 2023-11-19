@@ -30,7 +30,7 @@ use crate::{
     database::DatabaseInstance,
     diagrams,
     error::map_eyre_error,
-    google_drive,
+    google_drive::{self, ListFileMetadata},
     i18n::{self, I18nLoader},
     index::ForecastFileView,
     options::Map,
@@ -135,6 +135,7 @@ pub async fn handler(
 ) -> axum::response::Result<Response> {
     handler_impl(
         file_name,
+        &state.options.google_drive.published_folder_id,
         &state.options.google_drive.api_key,
         &state.options.map,
         &state.client,
@@ -146,8 +147,8 @@ pub async fn handler(
     .map_err(map_eyre_error)
 }
 
-#[derive(Debug, Serialize)]
-struct Forecast {
+#[derive(Debug, Serialize, Clone)]
+pub struct Forecast {
     pub language: unic_langid::LanguageIdentifier,
     pub area: AreaId,
     pub forecaster: Forecaster,
@@ -162,7 +163,7 @@ struct Forecast {
     pub elevation_bands: IndexMap<ElevationBandId, ElevationRange>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct ElevationRange {
     pub upper: Option<i64>,
     pub lower: Option<i64>,
@@ -205,17 +206,17 @@ impl TryFrom<forecast_spreadsheet::Forecast> for Forecast {
     }
 }
 
-#[derive(Debug, Serialize)]
-struct FormattedForecast {
+#[derive(Debug, Serialize, Clone)]
+pub struct FormattedForecast {
     #[serde(flatten)]
-    forecast: Forecast,
-    formatted_time: String,
-    formatted_valid_until: String,
-    map: Map,
+    pub forecast: Forecast,
+    pub formatted_time: String,
+    pub formatted_valid_until: String,
+    pub map: Map,
 }
 
 impl FormattedForecast {
-    fn format(forecast: Forecast, i18n: &I18nLoader, map: Map) -> Self {
+    pub fn format(forecast: Forecast, i18n: &I18nLoader, map: Map) -> Self {
         let formatted_time = i18n::format_time(forecast.time, i18n);
         let valid_until_time = forecast.time + forecast.valid_for;
         let formatted_valid_until = i18n::format_time(valid_until_time, i18n);
@@ -229,8 +230,8 @@ impl FormattedForecast {
     }
 }
 
-#[derive(Debug, Serialize)]
-struct AvalancheProblem {
+#[derive(Debug, Serialize, Clone)]
+pub struct AvalancheProblem {
     pub kind: ProblemKind,
     pub aspect_elevation: IndexMap<ElevationBandId, AspectElevation>,
     // TODO: convert to URL with base
@@ -314,6 +315,7 @@ impl TryFrom<forecast_spreadsheet::AvalancheProblem> for AvalancheProblem {
 #[instrument(level = "error", skip_all)]
 async fn handler_impl(
     file_name: String,
+    google_drive_published_folder_id: &str,
     google_drive_api_key: &SecretString,
     map: &Map,
     client: &reqwest::Client,
@@ -340,15 +342,12 @@ async fn handler_impl(
     // Check that file exists in published folder, and not attempting to access a file outside
     // that.
     let file_list = google_drive::list_files(
-        "1so1EaO5clMvBUecCszKlruxnf0XpbWgr",
+        google_drive_published_folder_id,
         google_drive_api_key,
         client,
     )
     .await?;
-    let file_metadata = match file_list
-        .iter()
-        .find(|file_metadata| file_metadata.name == file_name)
-    {
+    let file_metadata = match google_drive::get_file_in_list(&file_name, &file_list) {
         Some(file_metadata) => file_metadata,
         None => return Ok(StatusCode::NOT_FOUND.into_response()),
     };
@@ -363,6 +362,68 @@ async fn handler_impl(
         }
     };
 
+    let requested = match view {
+        ForecastFileView::Html | ForecastFileView::Json => RequestedForecastData::Forecast,
+        ForecastFileView::Download => RequestedForecastData::File,
+    };
+
+    match get_forecast_data(
+        &file_metadata,
+        requested,
+        client,
+        database,
+        google_drive_api_key,
+    )
+    .await?
+    {
+        ForecastData::Forecast(forecast) => match view {
+            ForecastFileView::Html => {
+                let forecast = forecast
+                    .try_into()
+                    .wrap_err("Error converting forecast into template data")?;
+                let formatted_forecast = FormattedForecast::format(forecast, &i18n, map.clone());
+                render(&templates.environment, "forecast.html", &formatted_forecast)
+            }
+            ForecastFileView::Json => Ok(Json(forecast).into_response()),
+            _ => unreachable!(),
+        },
+        ForecastData::File(file_bytes) => {
+            let mut response = file_bytes.into_response();
+            let header_value = HeaderValue::from_str(&file_metadata.mime_type)?;
+            response.headers_mut().insert(CONTENT_TYPE, header_value);
+            Ok(response)
+        }
+    }
+}
+
+pub enum RequestedForecastData {
+    /// Request the forecast as parsed forecast data. File must be a spreadsheet.
+    Forecast,
+    /// Request the forecast as a file to download.
+    File,
+}
+
+pub enum ForecastData {
+    Forecast(forecast_spreadsheet::Forecast),
+    File(Vec<u8>),
+}
+
+/// Get the forecast data for a given file in the published directory.
+///
+/// WARNING: this does not perform the check whether the specified `file_metadata` is within the
+/// published directory.
+pub async fn get_forecast_data(
+    file_metadata: &ListFileMetadata,
+    requested: RequestedForecastData,
+    client: &reqwest::Client,
+    database: &DatabaseInstance,
+    google_drive_api_key: &SecretString,
+) -> eyre::Result<ForecastData> {
+    if matches!(requested, RequestedForecastData::Forecast) {
+        if !file_metadata.is_google_sheet() {
+            eyre::bail!("Unsupported mime type for requested data Forecast: {file_metadata:?}");
+        }
+    }
     let google_drive_id = file_metadata.id.clone();
     let cached_forecast_file: Option<Vec<u8>> = database
         .interact(move |conn| {
@@ -404,8 +465,8 @@ async fn handler_impl(
         cached_forecast_file
     } else {
         tracing::debug!("Fetching updated/new forecast file");
-        let forecast_file_bytes: Vec<u8> = match view {
-            ForecastFileView::Html | ForecastFileView::Json => {
+        let forecast_file_bytes: Vec<u8> = match requested {
+            RequestedForecastData::Forecast => {
                 let file = google_drive::export_file(
                     &file_metadata.id,
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -415,7 +476,7 @@ async fn handler_impl(
                 .await?;
                 file.bytes().await?.into()
             }
-            ForecastFileView::Download => {
+            RequestedForecastData::File => {
                 let file =
                     google_drive::get_file(&file_metadata.id, google_drive_api_key, client).await?;
                 file.bytes().await?.into()
@@ -464,8 +525,8 @@ async fn handler_impl(
         forecast_file_bytes
     };
 
-    match view {
-        ForecastFileView::Html | ForecastFileView::Json => {
+    match requested {
+        RequestedForecastData::Forecast => {
             let forecast: forecast_spreadsheet::Forecast =
                 forecast_spreadsheet::parse_excel_spreadsheet(
                     &forecast_file_bytes,
@@ -473,25 +534,9 @@ async fn handler_impl(
                 )
                 .context("Error parsing forecast spreadsheet")?;
 
-            match view {
-                ForecastFileView::Html => {
-                    let forecast = forecast
-                        .try_into()
-                        .wrap_err("Error converting forecast into template data")?;
-                    let formatted_forecast =
-                        FormattedForecast::format(forecast, &i18n, map.clone());
-                    render(&templates.environment, "forecast.html", &formatted_forecast)
-                }
-                ForecastFileView::Json => Ok(Json(forecast).into_response()),
-                _ => unreachable!(),
-            }
+            Ok(ForecastData::Forecast(forecast))
         }
-        ForecastFileView::Download => {
-            let mut response = forecast_file_bytes.into_response();
-            let header_value = HeaderValue::from_str(&file_metadata.mime_type)?;
-            response.headers_mut().insert(CONTENT_TYPE, header_value);
-            Ok(response)
-        }
+        RequestedForecastData::File => Ok(ForecastData::File(forecast_file_bytes)),
     }
 }
 

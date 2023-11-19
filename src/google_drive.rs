@@ -28,6 +28,12 @@ pub struct ListFileMetadata {
     pub modified_time: time::OffsetDateTime,
 }
 
+impl ListFileMetadata {
+    pub fn is_google_sheet(&self) -> bool {
+        self.mime_type == "application/vnd.google-apps.spreadsheet"
+    }
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 enum ListFilesResult {
@@ -88,6 +94,19 @@ pub async fn list_files(
     let response = client.get(url).send().await?;
     let files = Result::from(response.json::<ListFilesResult>().await?)?;
     Ok(files)
+}
+
+pub fn get_file_in_list<'a>(
+    file_name: &str,
+    file_list: &'a [ListFileMetadata],
+) -> Option<&'a ListFileMetadata> {
+    match file_list
+        .iter()
+        .find(|file_metadata| file_metadata.name == file_name)
+    {
+        Some(file_metadata) => Some(file_metadata),
+        None => return None,
+    }
 }
 
 pub struct File {
