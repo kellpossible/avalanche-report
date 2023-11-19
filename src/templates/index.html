@@ -21,10 +21,12 @@
                    href="/forecasts/{{ current_forecast.file.file.name | urlencode }}">View full forecast</a>
             </div>
         {% else %}
-            <h2 class="text-4xl font-bold">No Current Forecast</h2>
-            <img src="/static/images/icons/hazard-rating/no-rating.png"
-                 class="w-8 h-8 mx-1"/>
-            <p>Please check the forecast archive below for the most recent forecast for this area</p>
+            <span class="inline-flex items-baseline">
+                <img src="/static/images/icons/hazard-rating/no-rating.svg"
+                     class="self-center w-12 h-12 mx-1"/>
+                <h2 class="text-4xl font-bold">No Current Forecast</h2>
+            </span>
+            <p>Please check the forecast archive below for the most recent forecast for this area.</p>
         {% endif %}
     </div>
 {% endmacro %}
