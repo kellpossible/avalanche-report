@@ -5,7 +5,7 @@
     <div class="py-4">
         {% if current_forecast %}
             <a href="/forecasts/{{ current_forecast.file.file.name | urlencode }}">
-                <h2 class="text-4xl font-bold text-blue-600">Current Forecast</h2>
+                <h2 class="text-4xl font-bold text-blue-600">{{ fl("current-forecast") }}</h2>
             </a>
             {% with forecast = current_forecast.forecast %}
                 {{ forecast_intro(
@@ -18,15 +18,15 @@
             {% endwith %}
             <div>
                 <a class="text-xl font-bold text-blue-600 hover:text-blue-800"
-                   href="/forecasts/{{ current_forecast.file.file.name | urlencode }}">View full forecast</a>
+                   href="/forecasts/{{ current_forecast.file.file.name | urlencode }}">{{ fl("view-full-forecast-button") }}</a>
             </div>
         {% else %}
             <span class="inline-flex items-baseline">
                 <img src="/static/images/icons/hazard-rating/no-rating.svg"
                      class="self-center w-12 h-12 mx-1"/>
-                <h2 class="text-4xl font-bold">No Current Forecast</h2>
+                <h2 class="text-4xl font-bold">{{ fl("no-current-forecast-heading") }}</h2>
             </span>
-            <p>Please check the forecast archive below for the most recent forecast for this area.</p>
+            <p>{{ fl("check-forecast-archive-below") }}</p>
         {% endif %}
     </div>
 {% endmacro %}
@@ -67,9 +67,10 @@
                 <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
                 <div class="py-5">
                     <p class="md:text-justify">{{ fl("disclaimer-message") }}</p>
-                    <p>
-                        See <a class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
-    href="https://www.facebook.com/groups/830534093958221">Our Facebook Page</a> for discussion and updates, and watch this space.
+                    <p class="prose max-w-none">
+                        {% autoescape false %}
+                            {{ fl_md("see-facebook-page-message", {"url": "https://www.facebook.com/groups/830534093958221"} ) }}
+                        {% endautoescape %}
                     </p>
                 </div>
                 <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>

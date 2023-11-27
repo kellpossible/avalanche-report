@@ -1,4 +1,15 @@
 avalanche-forecast-heading = ზვავის პროგნოზი
+# Heading for the current forecast section on an index page
+current-forecast-heading = მიმდინარე პროგნოზი
+# Heading for when there is no current forecast on an index page
+no-current-forecast-heading = ამჟამინდელი პროგნოზი არ არის
+# Button to view the full avalanche forecast
+view-full-forecast-button = სრული პროგნოზის ნახვა
+# Text on the index page explaining to check the forecast archive because there is no current forecast.
+check-forecast-archive-below = ამ არეალზე უახლესი ინფორმაციისთვის გთხოვთ, შეამოწმოთ ქვემოთ მოცემული პროგნოზების არქივი
+# Message on the index page
+# TODO: Remove and replace with user configured content in the database.
+see-facebook-page-message = თვალი ადევნეთ ჩვენს [Facebook გვერდზე]({$url}) დისკუსიებს და განახლებებს
 # Heading for the area that the forecast is about
 forecast-area-heading = პროგნოზის არეა
 # The Gudauri forecast area name
@@ -218,7 +229,7 @@ confidence-moderate-about = დამკვირვებელი ბოლო
 # Description for the confidence value, when the convidence is "High"
 confidence-high-about = დამკვირვებელი დარწმუნებულია პროგნოზის ამ ნაწილის სიზუსტეში
 # Message with disclaimer and information at the start of the printed page
-disclaimer-message = ეს არის საცდელი ზვავსაშიშროების პროგნოზი რომელიც მომზადებულია გუდაურში, მოხალისეების მიერ, გამოცდილი საერთაშორისო ექსპერტის დახმარებით. აქ მოცემული ინფორმაცია შეიძლება იყოს არასრული ან უზუსტო - არ დაეყრდნოთ მხოლოდ ამ პროგნოზს თქვენს უსაფრთხოებასთან დაკავშირებული გადაწყვეტილებების მოღებისას
+disclaimer-message = ეს არის საცდელი ზვავსაშიშროების პროგნოზი რომელიც მომზადებულია გუდაურში, მოხალისეების მიერ, გამოცდილი საერთაშორისო ექსპერტის დახმარებით. აქ მოცემული ინფორმაცია შეიძლება იყოს არასრული ან უზუსტო - არ დაეყრდნოთ მხოლოდ ამ პროგნოზს თქვენს უსაფრთხოებასთან დაკავშირებული გადაწყვეტილებების მიღებისას
 # Field on the forecast page that specifies the person who created the forecast.
 forecast-forecaster = **დამკვირვებელი** {$name}
 # Heading for the name of the person who created this forecast
