@@ -5,7 +5,8 @@ use axum::{
     response::{IntoResponse, Redirect, Response},
 };
 use axum_extra::extract::CookieJar;
-use http::{header::SET_COOKIE, StatusCode, Uri};
+use eyre::{Context, ContextCompat};
+use http::{header::SET_COOKIE, StatusCode};
 use i18n_embed::{
     fluent::{fluent_language_loader, FluentLanguageLoader, NegotiationStrategy},
     LanguageLoader,
@@ -15,7 +16,12 @@ use serde::Deserialize;
 use std::{str::FromStr, sync::Arc};
 use time::OffsetDateTime;
 
-use crate::{error::map_std_error, serde::string, state::AppState};
+use crate::{
+    error::{map_eyre_error, map_std_error},
+    serde::string,
+    state::AppState,
+    types::Uri,
+};
 
 #[derive(RustEmbed)]
 #[folder = "i18n/"]
@@ -72,17 +78,27 @@ pub fn load_languages(loader: &I18nLoader) -> eyre::Result<()> {
 #[derive(Deserialize)]
 pub struct Query {
     lang: unic_langid::LanguageIdentifier,
-    #[serde(with = "string")]
-    uri: Uri,
 }
 
-/// Handler to select a language by setting the `lang` cookie.
+/// The name of the cookie used to store the user selected language.
+const LANG_COOKIE_NAME: &str = "lang";
+
+/// Handler to select a language by setting the [`LANG_COOKIE_NAME`] cookie.
 pub async fn handler(
     axum::extract::Query(query): axum::extract::Query<Query>,
+    headers: HeaderMap,
 ) -> axum::response::Result<impl IntoResponse> {
-    let mut response = Redirect::to(&query.uri.to_string()).into_response();
+    let referer_str = headers
+        .get("Referer")
+        .wrap_err("No referer headers")
+        .map_err(map_eyre_error)?
+        .to_str()
+        .wrap_err("Referer is not a valid string")
+        .map_err(map_eyre_error)?;
+    let mut response = Redirect::to(referer_str).into_response();
     let lang = query.lang;
-    let value = HeaderValue::from_str(&format!("lang={lang}")).map_err(map_std_error)?;
+    let value =
+        HeaderValue::from_str(&format!("{LANG_COOKIE_NAME}={lang}")).map_err(map_std_error)?;
     response.headers_mut().insert(SET_COOKIE, value);
     Ok(response)
 }
@@ -96,8 +112,7 @@ pub async fn middleware<B>(
     let cookies = CookieJar::from_headers(request.headers());
     let cookie_lang = match Option::transpose(
         cookies
-            .iter()
-            .find(|cookie| cookie.name() == "lang")
+            .get(LANG_COOKIE_NAME)
             .map(|cookie| unic_langid::LanguageIdentifier::from_str(cookie.value())),
     ) {
         Ok(cookie_lang) => cookie_lang,

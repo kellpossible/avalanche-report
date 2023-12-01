@@ -4,7 +4,7 @@ use axum::{
     http::{header, StatusCode, Uri},
     middleware,
     response::{Html, IntoResponse, Response},
-    routing::get,
+    routing::{get, post},
     Extension, Router,
 };
 use error::map_std_error;
@@ -25,6 +25,7 @@ mod analytics;
 mod auth;
 mod database;
 mod diagrams;
+mod disclaimer;
 mod error;
 mod forecast_areas;
 mod forecasts;
@@ -108,6 +109,7 @@ async fn main() -> eyre::Result<()> {
     let app = Router::new()
         .route("/", get(index::handler))
         .route("/i18n", get(i18n::handler))
+        .route("/disclaimer", post(disclaimer::handler))
         .route("/forecasts/:file_name", get(forecasts::handler))
         .nest("/diagrams", diagrams::router())
         .nest("/observations", observations::router())
@@ -119,6 +121,10 @@ async fn main() -> eyre::Result<()> {
             admin::router(reporting_options, &options.admin_password_hash),
         )
         .fallback(not_found_handler)
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            disclaimer::middleware,
+        ))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             templates::middleware,

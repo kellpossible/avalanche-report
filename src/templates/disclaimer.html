@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block body %}
+    <form action="/disclaimer" method="post" id="disclaimerForm">
+        <label for="acceptDisclaimer">
+            <input type="checkbox"
+                   id="acceptDisclaimer"
+                   name="acceptDisclaimer"
+                   required>
+            I accept this disclaimer
+        </label>
+        <br>
+        <input type="submit" value="Continue">
+    </form>
+{% endblock body %}
