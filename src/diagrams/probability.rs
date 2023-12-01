@@ -58,17 +58,19 @@ fn generate_svg(probability_bar: ProbabilityBar, i18n: I18nLoader) -> String {
             captured_string.to_string()
         }
     });
-    let text_map: HashMap<String, (Probability, String)> = enum_iterator::all::<Probability>()
-        .map(|probability| {
-            (
-                format!("{}_text", probability.id()),
-                (
-                    probability,
-                    i18n.get(&format!("avalanche-probability-{}", probability.id())),
-                ),
-            )
-        })
-        .collect();
+
+    let text_map: HashMap<&'static str, String> = vec![
+        (
+            "high_text",
+            i18n_embed_fl::fl!(i18n, "avalanche-probability-high"),
+        ),
+        (
+            "low_text",
+            i18n_embed_fl::fl!(i18n, "avalanche-probability-low"),
+        ),
+    ]
+    .into_iter()
+    .collect();
 
     TEXT_RE
         .replace_all(&svg, |captures: &Captures| {
@@ -76,19 +78,8 @@ fn generate_svg(probability_bar: ProbabilityBar, i18n: I18nLoader) -> String {
             let captured_string = captures.get(0).unwrap().as_str();
             let original_text = captures.name("text").unwrap().as_str();
 
-            let value = text_map.get(id).expect("Expected id to be present");
-            let new_text = &value.1;
-
-            let original_fill = captures.name("fill").unwrap().as_str();
-            let new_fill = if value.0 == probability_bar.probability {
-                &original_fill
-            } else {
-                DISABLED_COLOUR
-            };
-
-            captured_string
-                .replace(original_text, new_text)
-                .replace(original_fill, new_fill)
+            let new_text = text_map.get(id).expect("Expected id to be present");
+            captured_string.replace(original_text, new_text)
         })
         .to_string()
 }

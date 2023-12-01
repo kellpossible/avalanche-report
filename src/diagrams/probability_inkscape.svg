@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="204.4463mm"
+   width="132.89413mm"
    height="192.87045mm"
-   viewBox="0 0 204.44629 192.87045"
+   viewBox="0 0 132.89412 192.87045"
    version="1.1"
    id="svg5"
    inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
@@ -25,7 +25,7 @@
      showgrid="false"
      fit-margin-top="0"
      fit-margin-left="0"
-     fit-margin-right="40"
+     fit-margin-right="50"
      fit-margin-bottom="0"
      inkscape:zoom="0.57944243"
      inkscape:cx="59.539996"
@@ -124,35 +124,19 @@
     <text
        xml:space="preserve"
        transform="matrix(0.57895496,0,0,0.57895496,-94.66844,-96.558906)"
-       id="very-likely_text"
+       id="high_text"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:33.5135px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect16458-0);fill:#000000;fill-opacity:1;stroke:none"
        inkscape:label=""><tspan
          x="301.6875"
          y="352.47972"
-         id="tspan957">Very Likely</tspan></text>
-    <text
-       xml:space="preserve"
-       transform="matrix(0.57895496,0,0,0.57895496,-91.766593,-50.013831)"
-       id="likely_text"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:33.5135px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect16458-0-6);fill:#000000;fill-opacity:1;stroke:none"><tspan
-         x="301.6875"
-         y="352.47972"
-         id="tspan959">Likely</tspan></text>
-    <text
-       xml:space="preserve"
-       transform="matrix(0.57895496,0,0,0.57895496,-92.333852,-2.1902965)"
-       id="possible_text"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:33.5135px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect16458-0-6-7);fill:#000000;fill-opacity:1;stroke:none"><tspan
-         x="301.6875"
-         y="352.47972"
-         id="tspan961">Possible</tspan></text>
+         id="tspan7552">High</tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.57895496,0,0,0.57895496,-90.970019,42.667902)"
-       id="unlikely_text"
+       id="low_text"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:33.5135px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect16458-0-6-7-0);fill:#000000;fill-opacity:1;stroke:none"><tspan
          x="301.6875"
          y="352.47972"
-         id="tspan963">Unlikely </tspan></text>
+         id="tspan7554">Low</tspan></text>
   </g>
 </svg>
