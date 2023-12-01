@@ -255,3 +255,7 @@ avalanche-probability-likely = Likely
 avalanche-probability-very-likely = Very likely
 # It is almost certain for an avalanche to occur
 avalanche-probability-almost-certain = Almost certain
+# Used on the avalanche probability digram as a label for the highest avalanche probability.
+avalanche-probability-high = High
+# Used on the avalanche probability digram as a label for the lowest avalanche probability.
+avalanche-probability-low = Low
