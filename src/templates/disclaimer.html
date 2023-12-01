@@ -1,14 +1,41 @@
+{% from "macros/language_select.html" import language_select %}
 {% extends "base.html" %}
+{% block title %}
+    Disclaimer
+{% endblock title %}
 {% block body %}
-    <form action="/disclaimer" method="post" id="disclaimerForm">
-        <label for="acceptDisclaimer">
-            <input type="checkbox"
-                   id="acceptDisclaimer"
-                   name="acceptDisclaimer"
-                   required>
-            I accept this disclaimer
-        </label>
-        <br>
-        <input type="submit" value="Continue">
-    </form>
+    <div class="flex items-center justify-center w-screen">
+        <div class="p-2 w-full md:min-w-3xl md:max-w-3xl">
+            <div class="text-center">
+                <h1 class="text-5xl font-bold">Disclaimer</h1>
+                <div class="pb-2">
+                    <span>
+                        <label for="language-select">Language:</label>
+                        {{ language_select() }}
+                    </span>
+                </div>
+            </div>
+            <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
+            <p class="py-4">{{ fl("disclaimer-message") }}</p>
+            <form action="/disclaimer"
+                  method="post"
+                  id="disclaimerForm"
+                  class="text-center">
+                <p class="py-2">
+                    <label for="acceptDisclaimer">
+                        <input type="checkbox"
+                               id="acceptDisclaimer"
+                               name="acceptDisclaimer"
+                               required>
+                        <b class="">I accept this disclaimer</b>
+                    </label>
+                </p>
+                <p class="py-2">
+                    <input type="submit"
+                           value="Continue"
+                           class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded cursor-pointer">
+                </p>
+            </form>
+        </div>
+    </div>
 {% endblock body %}

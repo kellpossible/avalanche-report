@@ -107,12 +107,17 @@ async fn main() -> eyre::Result<()> {
 
     // build our application with a route
     let app = Router::new()
-        .route("/", get(index::handler))
         .route("/i18n", get(i18n::handler))
         .route("/disclaimer", post(disclaimer::handler))
-        .route("/forecasts/:file_name", get(forecasts::handler))
+        .nest(
+            "/",
+            Router::new()
+                .route("/", get(index::handler))
+                .route("/forecasts/:file_name", get(forecasts::handler))
+                .nest("/observations", observations::router())
+                .layer(middleware::from_fn(disclaimer::middleware)),
+        )
         .nest("/diagrams", diagrams::router())
-        .nest("/observations", observations::router())
         .nest("/forecast-areas", forecast_areas::router())
         .route_service("/dist/*file", dist_handler.into_service())
         .route_service("/static/*file", static_handler.into_service())
@@ -121,10 +126,6 @@ async fn main() -> eyre::Result<()> {
             admin::router(reporting_options, &options.admin_password_hash),
         )
         .fallback(not_found_handler)
-        .layer(middleware::from_fn_with_state(
-            state.clone(),
-            disclaimer::middleware,
-        ))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             templates::middleware,
