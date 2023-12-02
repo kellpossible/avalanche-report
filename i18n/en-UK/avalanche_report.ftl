@@ -259,3 +259,5 @@ avalanche-probability-almost-certain = Almost certain
 avalanche-probability-high = High
 # Used on the avalanche probability digram as a label for the lowest avalanche probability.
 avalanche-probability-low = Low
+disclaimer-title = Disclaimer
+accept-disclaimer-checkbox-label = I accept this disclaimer

@@ -254,3 +254,7 @@ avalanche-probability-likely = მაღალი ალბათობა
 avalanche-probability-very-likely = ძალიან მაღალი ალბათობა
 # It is almost certain for an avalanche to occur
 avalanche-probability-almost-certain = თითქმის აუცილებლად
+# Used on the avalanche probability digram as a label for the highest avalanche probability.
+avalanche-probability-high = მაღალი
+# Used on the avalanche probability digram as a label for the lowest avalanche probability.
+avalanche-probability-low = დაბალი

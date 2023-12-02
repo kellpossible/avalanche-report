@@ -1,13 +1,19 @@
 {% from "macros/language_select.html" import language_select %}
 {% extends "base.html" %}
 {% block title %}
-    Disclaimer
+    ⚠ {{ fl("disclaimer-title") }} ⚠
 {% endblock title %}
+{% block head %}
+    <style>
+input:checked + label  {color:black;}
+input + label  {color:red;}
+    </style>
+{% endblock head %}
 {% block body %}
     <div class="flex items-center justify-center w-screen">
         <div class="p-2 w-full md:min-w-3xl md:max-w-3xl">
             <div class="text-center">
-                <h1 class="text-5xl font-bold">Disclaimer</h1>
+                <h1 class="text-5xl font-bold">⚠ {{ fl("disclaimer-title") }} ⚠</h1>
                 <div class="pb-2">
                     <span>
                         <label for="language-select">Language:</label>
@@ -22,12 +28,12 @@
                   id="disclaimerForm"
                   class="text-center">
                 <p class="py-2">
+                    <input type="checkbox"
+                           id="acceptDisclaimer"
+                           name="acceptDisclaimer"
+                           required>
                     <label for="acceptDisclaimer">
-                        <input type="checkbox"
-                               id="acceptDisclaimer"
-                               name="acceptDisclaimer"
-                               required>
-                        <b class="">I accept this disclaimer</b>
+                        <b>{{ fl("accept-disclaimer-checkbox-label") }}</b>
                     </label>
                 </p>
                 <p class="py-2">
