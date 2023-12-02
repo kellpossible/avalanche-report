@@ -10,10 +10,10 @@ input + label  {color:red;}
     </style>
 {% endblock head %}
 {% block body %}
+    <h1 class="text-5xl font-bold text-center">{{ fl("gudauri-avalanche-forecast-heading") }}</h1>
     <div class="flex items-center justify-center w-screen">
         <div class="p-2 w-full md:min-w-3xl md:max-w-3xl">
             <div class="text-center">
-                <h1 class="text-5xl font-bold">⚠ {{ fl("disclaimer-title") }} ⚠</h1>
                 <div class="pb-2">
                     <span>
                         <label for="language-select">Language:</label>
@@ -22,6 +22,7 @@ input + label  {color:red;}
                 </div>
             </div>
             <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
+            <h1 class="pt-8 text-4xl font-bold text-center">⚠ {{ fl("disclaimer-title") }} ⚠</h1>
             <p class="py-4">{{ fl("disclaimer-message") }}</p>
             <form action="/disclaimer"
                   method="post"

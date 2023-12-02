@@ -230,7 +230,7 @@ confidence-moderate-about = The forecaster's confidence level is Moderate about 
 # Description for the confidence value, when the convidence is "High"
 confidence-high-about = The forecaster's confidence level is High about this part of the forecast
 # Message with disclaimer and information at the start of the printed page
-disclaimer-message = This is a trial avalanche forecasting service run by non-professional volunteers from Gudauri, supported remotely by experienced avalanche forecasters. The information presented here may sometimes be incomplete or inaccurate - do not only rely on this forecast in your safety decisions.
+disclaimer-message = Our avalanche forecasters are internationally qualified and experienced professionals, and data is provided by skilled observers. We encourage you to make your own observations and decisions, without relying solely on our forecast, since any forecast is a generalised 'best guess', and in certain cases it might be inaccurate. We can not be held liable for any actions you take in the backcountry that may result in injury, loss or death.
 # Field on the forecast page that specifies the person who created the forecast.
 forecast-forecaster = **Forecaster:** {$name}
 # Heading for the name of the person who created this forecast

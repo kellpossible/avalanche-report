@@ -10,21 +10,22 @@ use axum::{
     response::{IntoResponse, Redirect, Response},
 };
 use axum_extra::extract::CookieJar;
-use http::{header::SET_COOKIE, HeaderValue, Request};
+use eyre::{Context, ContextCompat};
+use http::{header::SET_COOKIE, HeaderMap, HeaderValue, Request};
 
 const DISCLAIMER_COOKIE_NAME: &str = "disclaimer";
 
 /// Handler to accept the disclaimer by setting a cookie [`DISCLAIMER_COOKIE_NAME`].
-pub async fn handler(request: Request<Body>) -> axum::response::Result<impl IntoResponse> {
-    // let referer_str = headers
-    //     .get("Referer")
-    //     .wrap_err("No referer headers")
-    //     .map_err(map_eyre_error)?
-    //     .to_str()
-    //     .wrap_err("Referer is not a valid string")
-    //     .map_err(map_eyre_error)?;
+pub async fn handler(headers: HeaderMap) -> axum::response::Result<impl IntoResponse> {
+    let referer_str = headers
+        .get("Referer")
+        .wrap_err("No referer headers")
+        .map_err(map_eyre_error)?
+        .to_str()
+        .wrap_err("Referer is not a valid string")
+        .map_err(map_eyre_error)?;
 
-    let mut response = Redirect::to(&request.uri().path().to_string()).into_response();
+    let mut response = Redirect::to(referer_str).into_response();
     let value = HeaderValue::from_str(&format!("{DISCLAIMER_COOKIE_NAME}=accepted"))
         .map_err(map_std_error)?;
     response.headers_mut().insert(SET_COOKIE, value);
