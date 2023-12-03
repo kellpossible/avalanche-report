@@ -227,6 +227,7 @@ dependencies = [
  "i18n-embed-fl",
  "indexmap 1.9.3",
  "insta",
+ "isbot",
  "libsqlite3-sys",
  "md-5",
  "mime",
@@ -2251,6 +2252,15 @@ name = "ipnet"
 version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "28b29a3cd74f0f4598934efe3aeba42bae0eb4680554128851ebbecb02af14e6"
+
+[[package]]
+name = "isbot"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f98d665d8689fd01bd1572c10fd58cf38a811f56c2d00b5ec5c0c50dc1eee956"
+dependencies = [
+ "regex",
+]
 
 [[package]]
 name = "itoa"

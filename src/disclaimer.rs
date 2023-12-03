@@ -2,6 +2,7 @@
 
 use crate::{
     error::{map_eyre_error, map_std_error},
+    isbot::IsBot,
     templates::{render, TemplatesWithContext},
 };
 use axum::{
@@ -14,6 +15,11 @@ use eyre::{Context, ContextCompat};
 use http::{header::SET_COOKIE, HeaderMap, HeaderValue, Request};
 
 const DISCLAIMER_COOKIE_NAME: &str = "disclaimer";
+/// TODO: if this version is updated we need new logic to require the current version of the
+/// cookie, otherwise the user should re-accept the updated disclaimer. There should be an
+/// alternate message explaining that the disclaimer has been updated if the user has already
+/// accepted the pevious version.
+const DISCLAIMER_VERSION: u32 = 1;
 
 /// Handler to accept the disclaimer by setting a cookie [`DISCLAIMER_COOKIE_NAME`].
 pub async fn handler(headers: HeaderMap) -> axum::response::Result<impl IntoResponse> {
@@ -26,15 +32,20 @@ pub async fn handler(headers: HeaderMap) -> axum::response::Result<impl IntoResp
         .map_err(map_eyre_error)?;
 
     let mut response = Redirect::to(referer_str).into_response();
-    let value = HeaderValue::from_str(&format!("{DISCLAIMER_COOKIE_NAME}=accepted"))
+    let value = HeaderValue::from_str(&format!("{DISCLAIMER_COOKIE_NAME}=v{DISCLAIMER_VERSION}"))
         .map_err(map_std_error)?;
     response.headers_mut().insert(SET_COOKIE, value);
     Ok(response)
 }
 
 pub async fn middleware<B>(request: Request<B>, next: Next<B>) -> Response {
+    let is_bot = request
+        .extensions()
+        .get::<IsBot>()
+        .expect("Expected extension IsBot to be available")
+        .is_bot();
     let cookies = CookieJar::from_headers(request.headers());
-    if cookies.get(DISCLAIMER_COOKIE_NAME).is_some() {
+    if is_bot || cookies.get(DISCLAIMER_COOKIE_NAME).is_some() {
         return next.run(request).await;
     }
 

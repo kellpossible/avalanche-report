@@ -33,6 +33,7 @@ mod fs;
 mod google_drive;
 mod i18n;
 mod index;
+mod isbot;
 mod observations;
 mod options;
 mod serde;
@@ -142,6 +143,7 @@ async fn main() -> eyre::Result<()> {
             state.clone(),
             database::middleware,
         ))
+        .layer(middleware::from_fn(isbot::middleware))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 

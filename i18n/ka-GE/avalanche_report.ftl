@@ -241,7 +241,7 @@ forecast-issued-at = **პროგნოზი შედგენილია:*
 # forecast is valid until
 forecast-valid-until = **პროგნოზი ვალიდურია** {$time}-მდე
 # Caption for the aspect/elevation chart.
-aspect-elevation-chart-caption = Aspect/Elevation
+aspect-elevation-chart-caption = მხარე/სიმაღლე
 # Text inside the Back button.
 back-button-text = უკან
 # It is unlikely for an avalanche to occur

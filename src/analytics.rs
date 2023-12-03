@@ -20,6 +20,7 @@ use uuid::Uuid;
 
 use crate::{
     database::{Database, DATETIME_FORMAT},
+    isbot::IsBot,
     state::AppState,
     types::{self, Uri},
 };
@@ -472,7 +473,16 @@ pub fn channel() -> (mpsc::Sender<Event>, mpsc::Receiver<Event>) {
 #[tracing::instrument(skip_all)]
 pub async fn middleware<B>(state: State<AppState>, request: Request<B>, next: Next<B>) -> Response {
     let uri = Uri::from(request.uri().clone());
+    let is_bot = request
+        .extensions()
+        .get::<IsBot>()
+        .expect("Expected extension IsBot to be available")
+        .is_bot();
     let response = next.run(request).await;
+    // Skip recording analytics if the request comes from a bot.
+    if is_bot {
+        return response;
+    }
     let uri = match response.status() {
         StatusCode::NOT_FOUND => "/404".parse().expect("unable to parse uri"),
         _ => uri,

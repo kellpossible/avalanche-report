@@ -229,7 +229,8 @@ confidence-low-about = The forecaster's confidence level is Low about this part 
 confidence-moderate-about = The forecaster's confidence level is Moderate about this part of the forecast
 # Description for the confidence value, when the convidence is "High"
 confidence-high-about = The forecaster's confidence level is High about this part of the forecast
-# Message with disclaimer and information at the start of the printed page
+# Message with disclaimer and information at the start of the printed page.
+# REMINDER FOR PROGRAMMER: If this disclaimer message is updated, the DISCLAIMER_VERSION in disclaimer.rs should also be updated so the user needs to accept the updated disclaimer.
 disclaimer-message = Our avalanche forecasters are internationally qualified and experienced professionals, and data is provided by skilled observers. We encourage you to make your own observations and decisions, without relying solely on our forecast, since any forecast is a generalised 'best guess', and in certain cases it might be inaccurate. We can not be held liable for any actions you take in the backcountry that may result in injury, loss or death.
 # Field on the forecast page that specifies the person who created the forecast.
 forecast-forecaster = **Forecaster:** {$name}
