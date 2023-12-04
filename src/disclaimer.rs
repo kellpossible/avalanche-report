@@ -6,7 +6,6 @@ use crate::{
     templates::{render, TemplatesWithContext},
 };
 use axum::{
-    body::Body,
     middleware::Next,
     response::{IntoResponse, Redirect, Response},
 };
@@ -21,6 +20,9 @@ const DISCLAIMER_COOKIE_NAME: &str = "disclaimer";
 /// accepted the pevious version.
 const DISCLAIMER_VERSION: u32 = 1;
 
+/// The Max-Age property for the cookie (in seconds).
+const DISCLAIMER_COOKIE_MAX_AGE_SECONDS: u64 = 365 * 24 * 60 * 60;
+
 /// Handler to accept the disclaimer by setting a cookie [`DISCLAIMER_COOKIE_NAME`].
 pub async fn handler(headers: HeaderMap) -> axum::response::Result<impl IntoResponse> {
     let referer_str = headers
@@ -32,7 +34,7 @@ pub async fn handler(headers: HeaderMap) -> axum::response::Result<impl IntoResp
         .map_err(map_eyre_error)?;
 
     let mut response = Redirect::to(referer_str).into_response();
-    let value = HeaderValue::from_str(&format!("{DISCLAIMER_COOKIE_NAME}=v{DISCLAIMER_VERSION}"))
+    let value = HeaderValue::from_str(&format!("{DISCLAIMER_COOKIE_NAME}=v{DISCLAIMER_VERSION}; Max-Age={DISCLAIMER_COOKIE_MAX_AGE_SECONDS}"))
         .map_err(map_std_error)?;
     response.headers_mut().insert(SET_COOKIE, value);
     Ok(response)

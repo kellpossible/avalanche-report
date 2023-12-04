@@ -118,7 +118,7 @@ async fn main() -> eyre::Result<()> {
                 .route("/", get(index::handler))
                 .route("/forecasts/:file_name", get(forecasts::handler))
                 .nest("/observations", observations::router())
-                .layer(middleware::from_fn(disclaimer::middleware))
+                .layer(middleware::from_fn(disclaimer::middleware)),
         )
         .nest("/diagrams", diagrams::router())
         .nest("/forecast-areas", forecast_areas::router())

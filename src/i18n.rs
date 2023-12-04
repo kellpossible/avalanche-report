@@ -82,6 +82,8 @@ pub struct Query {
 
 /// The name of the cookie used to store the user selected language.
 const LANG_COOKIE_NAME: &str = "lang";
+/// The Max-Age property for the cookie (in seconds).
+const LANG_COOKIE_MAX_AGE_SECONDS: u64 = 365 * 24 * 60 * 60;
 
 /// Handler to select a language by setting the [`LANG_COOKIE_NAME`] cookie.
 pub async fn handler(
@@ -97,8 +99,10 @@ pub async fn handler(
         .map_err(map_eyre_error)?;
     let mut response = Redirect::to(referer_str).into_response();
     let lang = query.lang;
-    let value =
-        HeaderValue::from_str(&format!("{LANG_COOKIE_NAME}={lang}")).map_err(map_std_error)?;
+    let value = HeaderValue::from_str(&format!(
+        "{LANG_COOKIE_NAME}={lang}; Max-Age={LANG_COOKIE_MAX_AGE_SECONDS}"
+    ))
+    .map_err(map_std_error)?;
     response.headers_mut().insert(SET_COOKIE, value);
     Ok(response)
 }
