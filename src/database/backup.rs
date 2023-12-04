@@ -90,7 +90,9 @@ async fn perform_backup(config: &Config) -> eyre::Result<BackupInfo> {
         let engine = base64::engine::general_purpose::STANDARD;
         Ok(engine.encode(&hash))
     })
-    .await??;
+    .await
+    .wrap_err("Error joining md5sum task")?
+    .wrap_err("Error performing md5sum")?;
     headers.insert("content-md5", &md5sum);
 
     let url = put_object.sign(Duration::from_secs(5 * 60 * 60));
@@ -157,7 +159,7 @@ pub fn spawn_backup_task(config: Config) {
                         }
                     }) {
                         Ok(_) => break 'retry,
-                        Err(error) => tracing::error!("{error}"),
+                        Err(error) => tracing::error!("{error:?}"),
                     }
                     tracing::warn!("Retrying in 30 seconds...");
                     tokio::time::sleep(Duration::from_secs(30)).await;
