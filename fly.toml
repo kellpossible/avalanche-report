@@ -17,7 +17,7 @@ kill_timeout = "5s"
 
     [backup]
     schedule="0 0 * * *"
-    aws_access_key_id="AKIAZDRMYMOA6XEZSMGP"
+    aws_access_key_id="AKIAZDRMYMOA6VPVQQYX"
     s3_endpoint="https://s3.eu-central-1.amazonaws.com"
     s3_bucket_name="avalanche-ge"
     s3_bucket_region="eu-central-1"

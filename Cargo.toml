@@ -72,7 +72,7 @@ indexmap = { workspace = true, features = ["serde"] }
 pulldown-cmark = { version = "0.9.3", default-features = false }
 enum-iterator = { workspace = true }
 num-traits = "0.2"
-rusty-s3 = "0.4.1"
+rusty-s3 = "0.5.0"
 cronchik = { version = "2.0.4", features = ["time"] }
 tempfile = "3.8.0"
 md-5 = "0.10.5"
