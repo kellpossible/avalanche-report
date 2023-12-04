@@ -110,13 +110,15 @@ async fn main() -> eyre::Result<()> {
     let app = Router::new()
         .route("/i18n", get(i18n::handler))
         .route("/disclaimer", post(disclaimer::handler))
+        // These routes expose public forecast information and thus have the disclaimer middleware
+        // applied to them.
         .nest(
             "/",
             Router::new()
                 .route("/", get(index::handler))
                 .route("/forecasts/:file_name", get(forecasts::handler))
                 .nest("/observations", observations::router())
-                .layer(middleware::from_fn(disclaimer::middleware)),
+                .layer(middleware::from_fn(disclaimer::middleware))
         )
         .nest("/diagrams", diagrams::router())
         .nest("/forecast-areas", forecast_areas::router())

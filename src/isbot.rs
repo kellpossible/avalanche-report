@@ -23,7 +23,7 @@ pub fn is_bot(headers: &HeaderMap) -> bool {
 
 /// Middleware to detect whether the request is from a bot based on the [`USER_AGENT`] header.
 pub async fn middleware<B>(
-    IsBot(is_bot): IsBot,
+    is_bot: IsBot,
     mut request: Request<B>,
     next: Next<B>,
 ) -> Result<Response, StatusCode> {
