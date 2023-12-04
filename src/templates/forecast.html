@@ -120,7 +120,7 @@
                 <h2 class="text-4xl text-center">{{ fl("avalanche-problems-heading") }}</h2>
                 {% for problem in avalanche_problems %}
                     <h3 class="text-3xl text-center pt-2">{{ fl("problem-type-" ~ problem.kind) }}</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-4 p-4 md:py-0">
+                    <div class="grid grid-cols-2 md:grid-cols-4 p-4 md:py-0">
                         <figure class="flex justify-center items-center"
                                 aria-labelledby="problem-type-heading-{{ loop.index0 }}">
                             <img class="min-w-0 max-h-52 p-4"
@@ -128,7 +128,7 @@
                                  alt="{{ fl("problem-type-heading") }} {{ fl("problem-type-" ~ problem.kind)}} Icon"/>
                         </figure>
                         <div id="problem-type-heading-{{ loop.index0 }}"
-                             class="text-center order-none md:order-1 font-bold">
+                             class="text-center order-1 md:order-1 font-bold">
                             {{ fl("problem-type-heading") }}
                         </div>
                         <figure class="flex justify-center items-center"
@@ -138,27 +138,27 @@
                                  alt="{{ fl("aspect-elevation-chart-caption") }}"/>
                         </figure>
                         <div id="aspect-elevation-chart-heading-{{ loop.index0 }}"
-                             class="text-center order-none md:order-1 font-bold">
+                             class="text-center order-1 md:order-1 font-bold">
                             {{ fl("aspect-elevation-chart-caption") }}
                         </div>
-                        <figure class="flex justify-center items-center"
+                        <figure class="flex justify-center items-center order-1 md:order-none"
                                 aria-labelledby="size-bar-heading-{{ loop.index0 }}">
                             <img class="pl-8 min-w-0 max-h-60 h-3/4"
                                  src="/diagrams/size.svg?size={{ problem.size }}"
                                  alt="{{ fl("avalanche-size-heading") }}"/>
                         </figure>
                         <div id="size-bar-heading-{{ loop.index0 }}"
-                             class="text-center order-none md:order-1 font-bold">
+                             class="text-center order-2 md:order-1 font-bold">
                             {{ fl("avalanche-size-heading") }}
                         </div>
-                        <figure class="flex justify-center items-center"
+                        <figure class="flex justify-center items-center order-1 md:order-none"
                                 aria-labelledby="probability-bar-heading-{{ loop.index0 }}">
                             <img class="pl-8 min-w-0 max-h-60 h-3/4"
                                  src="/diagrams/probability.svg?probability={{ problem.probability }}"
                                  alt="{{ fl("avalanche-likelihood-heading") }}"/>
                         </figure>
                         <div id="probability-bar-heading-{{ loop.index0 }}"
-                             class="text-center order-none md:order-1 font-bold">
+                             class="text-center order-2 md:order-1 font-bold">
                             {{ fl("avalanche-likelihood-heading") }}
                         </div>
                     </div>
