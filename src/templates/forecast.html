@@ -57,12 +57,7 @@
                     <h1 class="text-5xl text-center">{{ fl("forecast-area-" ~ area) }}</h1>
                     <div></div>
                 </div>
-                <div class="pt-2 pb-4 text-center">
-                    <span>
-                        <label for="language-select">Language:</label>
-                        {{ language_select() }}
-                    </span>
-                </div>
+                <div class="pt-2 pb-4 text-center">{{ language_select() }}</div>
                 <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
                 {{ forecast_intro(
                 overall_hazard=overall_hazard,

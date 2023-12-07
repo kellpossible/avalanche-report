@@ -1,16 +1,18 @@
 {% macro language_select() -%}
-    <select id="language-select"
-            name="lang"
-            autocomplete="off"
-            class="p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            onchange="window.location.replace(`/i18n?lang=${this.value}`)">
-        <option value="en-US"
-                {% if LANGUAGE == "en-US" %}selected="selected"{% endif %}>
-            🇬🇧 English
-        </option>
-        <option value="ka-GE"
-                {% if LANGUAGE == "ka-GE" %}selected="selected"{% endif %}>
-            🇬🇪 ქართული
-        </option>
-    </select>
+    <span>
+        <select id="language-select"
+                name="lang"
+                autocomplete="off"
+                class="p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                onchange="window.location.replace(`/i18n?lang=${this.value}`)">
+            <option value="en-US"
+                    {% if LANGUAGE == "en-US" %}selected="selected"{% endif %}>
+                🌍 English
+            </option>
+            <option value="ka-GE"
+                    {% if LANGUAGE == "ka-GE" %}selected="selected"{% endif %}>
+                🌍 ქართული
+            </option>
+        </select>
+    </span>
 {%- endmacro %}
