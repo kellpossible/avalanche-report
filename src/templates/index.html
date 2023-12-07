@@ -69,7 +69,7 @@
                     <p class="md:text-justify">{{ fl("disclaimer-message") }}</p>
                     <p class="prose max-w-none">
                         {% autoescape false %}
-                            {{ fl_md("see-facebook-page-message", {"url": "https://www.facebook.com/groups/830534093958221"} ) }}
+                            {{ fl_md("see-facebook-page-message", {"url": "https://www.facebook.com/groups/830534093958221"}, { "use_isolating": false} ) }}
                         {% endautoescape %}
                     </p>
                 </div>

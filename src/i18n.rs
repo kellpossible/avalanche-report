@@ -13,14 +13,12 @@ use i18n_embed::{
 };
 use rust_embed::RustEmbed;
 use serde::Deserialize;
-use std::{str::FromStr, sync::Arc};
+use std::{collections::HashMap, str::FromStr, sync::Arc};
 use time::OffsetDateTime;
 
 use crate::{
     error::{map_eyre_error, map_std_error},
-    serde::string,
     state::AppState,
-    types::Uri,
 };
 
 #[derive(RustEmbed)]
@@ -54,6 +52,25 @@ fn parse_accept_language(accept_language: &HeaderValue) -> RequestedLanguages {
             .filter_map(|lang| lang.trim().parse::<unic_langid::LanguageIdentifier>().ok())
             .collect(),
     )
+}
+
+/// Negotiate which translated string ot use based on the user's requested languages.
+pub fn negotiate_translated_string<'a>(
+    requested_languages: &[unic_langid::LanguageIdentifier],
+    default_language: &'a unic_langid::LanguageIdentifier,
+    text: &'a HashMap<unic_langid::LanguageIdentifier, String>,
+) -> Option<(&'a unic_langid::LanguageIdentifier, &'a str)> {
+    let available_languages: Vec<_> = text.keys().collect();
+    let selected = fluent_langneg::negotiate_languages(
+        requested_languages,
+        &available_languages,
+        Some(&default_language),
+        fluent_langneg::NegotiationStrategy::Filtering,
+    );
+
+    let first = selected.first();
+
+    first.and_then(|first| text.get(first).map(|text| (**first, text.as_str())))
 }
 
 pub type I18nLoader = Arc<FluentLanguageLoader>;

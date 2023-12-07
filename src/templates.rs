@@ -13,6 +13,7 @@ use axum::{
     response::{IntoResponse, Response},
     Extension,
 };
+use eyre::ContextCompat;
 use fluent::{types::FluentNumber, FluentValue};
 use http::{header::CONTENT_TYPE, Request, StatusCode};
 use minijinja::{
@@ -23,7 +24,11 @@ use pulldown_cmark::{Event, Tag};
 use rust_embed::{EmbeddedFile, RustEmbed};
 use uuid::Uuid;
 
-use crate::{error::map_eyre_error, i18n::I18nLoader, AppState};
+use crate::{
+    error::map_eyre_error,
+    i18n::{negotiate_translated_string, I18nLoader},
+    AppState,
+};
 
 #[derive(RustEmbed)]
 #[folder = "src/templates"]
@@ -251,6 +256,49 @@ pub async fn middleware<B>(
 
     let i18n_fl = i18n.clone();
     let i18n_fl_md = i18n.clone();
+    let i18n_negotiate_translation = i18n.clone();
+
+    let translated_string_default = &state.options.default_language;
+    environment.add_function("translated_string", move |translations: Value| {
+        let available_languages: Vec<unic_langid::LanguageIdentifier> = translations
+            .try_iter()?
+            .map(|key| {
+                let key = match key.as_str() {
+                    Some(key) => key,
+                    None => {
+                        return Err(minijinja::Error::new(
+                            ErrorKind::InvalidOperation,
+                            "key is not a string",
+                        ))
+                    }
+                };
+
+                let language: unic_langid::LanguageIdentifier = key.parse().map_err(|e| {
+                    minijinja::Error::new(
+                        ErrorKind::InvalidOperation,
+                        format!("unable to parse key as language: {e:?}"),
+                    )
+                })?;
+
+                Ok(language)
+            })
+            .collect::<Result<_, minijinja::Error>>()?;
+
+        let requested_languages = i18n_negotiate_translation.current_languages();
+
+        let selected_languages = fluent_langneg::negotiate_languages(
+            &requested_languages,
+            &available_languages,
+            Some(translated_string_default),
+            fluent_langneg::NegotiationStrategy::Filtering,
+        );
+
+        let selected_language = selected_languages
+            .first()
+            .expect("Expected at least one language to be present due to default")
+            .to_string();
+        translations.get_item(&Value::from(selected_language))
+    });
     // Render a fluent message.
     environment.add_function("fl", move |message_id: &str, args: Option<Value>| {
         Ok(if let Some(args) = args {
@@ -260,19 +308,47 @@ pub async fn middleware<B>(
         })
     });
     // Render fluent message as markdown.
+    //
+    // Available options:
+    // + use_isolating - sets the
+    //   https://docs.rs/fluent/latest/fluent/bundle/struct.FluentBundle.html#method.set_use_isolating
+    //   flag for this message.
+    // + strip_paragraph - An option to strip paragraph tags from the parsed markdown. `true` by
+    //   default.
     environment.add_function(
         "fl_md",
         move |message_id: &str, args: Option<Value>, options: Option<Value>| {
             let options = options.unwrap_or_default();
+
             let message = if let Some(args) = args {
-                i18n_fl_md.get_args(message_id, jinja_to_fluent_args(args)?)
+                let use_isolating = if let Ok(value) = options.get_attr("use_isolating") {
+                    match value.kind() {
+                        ValueKind::Bool => {}
+                        invalid => {
+                            return Err(minijinja::Error::new(
+                                ErrorKind::InvalidOperation,
+                                format!("Invalid value kind for option use_isolating: {invalid}"),
+                            ))
+                        }
+                    }
+                    value.is_true()
+                } else {
+                    true
+                };
+                if !use_isolating {
+                    i18n_fl_md.set_use_isolating(false);
+                }
+                let message = i18n_fl_md.get_args(message_id, jinja_to_fluent_args(args)?);
+                if !use_isolating {
+                    i18n_fl_md.set_use_isolating(true);
+                }
+                message
             } else {
                 i18n_fl_md.get(message_id)
             };
 
             let parser = pulldown_cmark::Parser::new(&message);
 
-            // An option to strip paragraph tags from the parsed markdown. `true` by default.
             let parser: Box<dyn Iterator<Item = Event>> = match options.get_attr("strip_paragraph")
             {
                 Ok(value) if !value.is_undefined() && !value.is_true() => {

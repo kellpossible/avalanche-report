@@ -164,7 +164,7 @@
                     </div>
                     <p class="hyphens-auto md:hyphens-none md:text-justify py-2">
                         <span class="italic">{{ fl("problem-type-" ~ problem.kind ~ "-about") }}</span>
-                        {{ problem.description }}
+                        {{ translated_string(problem.description) }}
                     </p>
                     <div class="py-2">
                         <table class="w-full">
@@ -213,13 +213,13 @@
                     {{ fl("recent-relevant-observations-heading") }}
                 </h2>
                 <p class="md:text-justify md:hyphens-none pb-2">
-                    {{ recent_observations }}
+                    {{ translated_string(recent_observations) }}
                 </p>
                 <h2 class="text-4xl text-center py-2">
                     {{ fl("weather-forecast-heading") }}
                 </h2>
                 <p class="md:text-justify md:hyphens-none pb-2">
-                    {{ weather_forecast }}
+                    {{ translated_string(weather_forecast) }}
                 </p>
             </div>
         </div>

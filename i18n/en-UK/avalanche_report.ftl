@@ -262,3 +262,4 @@ avalanche-probability-high = High
 avalanche-probability-low = Low
 disclaimer-title = Disclaimer
 accept-disclaimer-checkbox-label = I accept this disclaimer
+continue-button-text = Continue

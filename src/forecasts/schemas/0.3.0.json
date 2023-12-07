@@ -1,13 +1,6 @@
 {
   "schema_version": "0.3.0",
   "template_version": "Form!G2",
-  "language": {
-    "position": "Form!B2",
-    "map": {
-      "English": "en-UK",
-      "Georgian": "ka-GE"
-    }
-  },
   "area": {
     "position": "Form!B3",
     "map": {
@@ -31,9 +24,27 @@
     "date": "Form!D3",
     "time": "Form!G3"
   },
-  "recent_observations": "Form!A8",
-  "forecast_changes": "Form!A10",
-  "weather_forecast": "Form!A12",
+  "recent_observations": {
+    "root": "Forecast Translation!B5",
+    "translations": {
+      "en-UK": "A1",
+      "ka-GE": "A2"
+    }
+  },
+  "forecast_changes": {
+    "root": "Forecast Translation!B10",
+    "translations": {
+      "en-UK": "A1",
+      "ka-GE": "A2"
+    }
+  },
+  "weather_forecast": {
+    "root": "Forecast Translation!B15",
+    "translations": {
+      "en-UK": "A1",
+      "ka-GE": "A2"
+    }
+  },
   "valid_for": "Form!A14",
   "hazard_ratings": {
     "inputs": {
@@ -88,7 +99,13 @@
           "aspects": "G4"
         }
       },
-      "description": "B7"
+      "description": {
+        "root": "Forecast Translation!B20",
+        "translations": {
+          "en-UK": "A1",
+          "ka-GE": "A2"
+        }
+      }
     },
     {
       "root": "Form!A24",
@@ -114,7 +131,13 @@
           "aspects": "G4"
         }
       },
-      "description": "B7"
+      "description": {
+        "root": "Forecast Translation!B25",
+        "translations": {
+          "en-UK": "A1",
+          "ka-GE": "A2"
+        }
+      }
     },
     {
       "root": "Form!A32",
@@ -140,7 +163,13 @@
           "aspects": "G4"
         }
       },
-      "description": "B7"
+      "description": {
+        "root": "Forecast Translation!B30",
+        "translations": {
+          "en-UK": "A1",
+          "ka-GE": "A2"
+        }
+      }
     },
     {
       "root": "Form!A40",
@@ -166,11 +195,23 @@
           "aspects": "G4"
         }
       },
-      "description": "B7"
+      "description": {
+        "root": "Forecast Translation!B35",
+        "translations": {
+          "en-UK": "A1",
+          "ka-GE": "A2"
+        }
+      }
     }
   ],
   "elevation_bands": ["sub-alpine", "alpine", "high-alpine"],
-  "description": "Form!A63",
+  "description": {
+    "root": "Forecast Translation!B40",
+    "translations": {
+      "en-UK": "A1",
+      "ka-GE": "A2"
+    }
+  },
   "terms": {
     "hazard_rating": {
       "Low 1": "low",
@@ -218,4 +259,3 @@
     }
   }
 }
-

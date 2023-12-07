@@ -149,15 +149,18 @@ pub async fn handler(
 
 #[derive(Debug, Serialize, Clone)]
 pub struct Forecast {
-    pub language: unic_langid::LanguageIdentifier,
     pub area: AreaId,
     pub forecaster: Forecaster,
     pub time: OffsetDateTime,
-    pub recent_observations: Option<String>,
-    pub forecast_changes: Option<String>,
-    pub weather_forecast: Option<String>,
+    #[serde(default)]
+    pub recent_observations: HashMap<unic_langid::LanguageIdentifier, String>,
+    #[serde(default)]
+    pub forecast_changes: HashMap<unic_langid::LanguageIdentifier, String>,
+    #[serde(default)]
+    pub weather_forecast: HashMap<unic_langid::LanguageIdentifier, String>,
     pub valid_for: time::Duration,
-    pub description: Option<String>,
+    #[serde(default)]
+    pub description: HashMap<unic_langid::LanguageIdentifier, String>,
     pub hazard_ratings: IndexMap<HazardRatingKind, HazardRating>,
     pub avalanche_problems: Vec<AvalancheProblem>,
     pub elevation_bands: IndexMap<ElevationBandId, ElevationRange>,
@@ -182,7 +185,6 @@ impl TryFrom<forecast_spreadsheet::Forecast> for Forecast {
     type Error = eyre::Error;
     fn try_from(value: forecast_spreadsheet::Forecast) -> eyre::Result<Self> {
         Ok(Self {
-            language: value.language,
             area: value.area,
             forecaster: value.forecaster,
             time: value.time,
@@ -242,7 +244,8 @@ pub struct AvalancheProblem {
     pub distribution: Option<Distribution>,
     pub time_of_day: Option<TimeOfDay>,
     pub sensitivity: Option<Sensitivity>,
-    pub description: Option<String>,
+    #[serde(default)]
+    pub description: HashMap<unic_langid::LanguageIdentifier, String>,
     pub probability: Option<Probability>,
 }
 

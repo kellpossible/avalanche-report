@@ -229,7 +229,7 @@ confidence-moderate-about = დამკვირვებელი ბოლო
 # Description for the confidence value, when the convidence is "High"
 confidence-high-about = დამკვირვებელი დარწმუნებულია პროგნოზის ამ ნაწილის სიზუსტეში
 # Message with disclaimer and information at the start of the printed page
-disclaimer-message = ეს არის საცდელი ზვავსაშიშროების პროგნოზი რომელიც მომზადებულია გუდაურში, მოხალისეების მიერ, გამოცდილი საერთაშორისო ექსპერტის დახმარებით. აქ მოცემული ინფორმაცია შეიძლება იყოს არასრული ან უზუსტო - არ დაეყრდნოთ მხოლოდ ამ პროგნოზს თქვენს უსაფრთხოებასთან დაკავშირებული გადაწყვეტილებების მიღებისას
+disclaimer-message = ჩვენი ზვავის პროგნოზების სპეციალისტები არიან საერთაშორისო კვალიფიკაციისა და გამოცდილების მქონე პროფესიონალები და მონაცემები მოწოდებულია გამოცდილი დამკვირვებლების მიერ. ჩვენ გვინდა მოგიწოდოთ, რომ თავადაც აწარმოოთ საკუთარი დაკვირვებები და მიიღოთ გადაწყვეტილებები და არ დაეყრდნოთ მხოლოდ ჩვენს პროგნოზებს, რადგან ნებისმიერი პროგნოზი არის განზოგადებული "ვარაუდზე" და ზოგიერთ შემთხვევაში ეს შეიძლება იყოს არაზუსტი. ჩვენ ვერ ავიღებთ პასუხისმგებლობას თქვენს მიერ მთაზე განხორციელებულ ნებისმიერ ქმედებაზე,  რომელმაც შეიძლება გამოიწვიოს დაზიანება, დაკარგვა ან სიკვდილი.
 # Field on the forecast page that specifies the person who created the forecast.
 forecast-forecaster = **დამკვირვებელი** {$name}
 # Heading for the name of the person who created this forecast
@@ -258,3 +258,6 @@ avalanche-probability-almost-certain = თითქმის აუცილე�
 avalanche-probability-high = მაღალი
 # Used on the avalanche probability digram as a label for the lowest avalanche probability.
 avalanche-probability-low = დაბალი
+disclaimer-title = თანხმობა პასუხისმგებლობაზე
+accept-disclaimer-checkbox-label = ვეთანხმები
+continue-button-text = გაგრძელება

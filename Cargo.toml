@@ -25,6 +25,7 @@ serde_json = { workspace = true }
 serde_urlencoded = "0.7.1"
 color-eyre = "0.6"
 fluent = "0.16.0"
+fluent-langneg = "0.13.0"
 futures = "0.3.26"
 tracing-appender = "0.2"
 tracing-subscriber = "0.3"

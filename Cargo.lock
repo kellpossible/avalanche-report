@@ -215,6 +215,7 @@ dependencies = [
  "erased-serde",
  "eyre",
  "fluent",
+ "fluent-langneg",
  "forecast-spreadsheet",
  "fs_extra",
  "futures",

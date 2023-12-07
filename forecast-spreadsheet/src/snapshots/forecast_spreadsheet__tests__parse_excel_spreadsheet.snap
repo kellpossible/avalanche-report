@@ -8,147 +8,123 @@ expression: "&forecast"
     "minor": 3,
     "patch": 3
   },
-  "language": "en-UK",
   "area": "gudauri",
   "forecaster": {
-    "name": "Levi Seiferheld",
-    "organisation": "Vagabond Gudauri"
+    "name": "Manu Greer",
+    "organisation": null
   },
-  "time": "2023-02-07T19:00:00+04:00",
-  "recent_observations": "80 cm of snowfall recorded over the last 2 days with moderate transport from SE quarter, unreactive to ski tests today. No new avalanches observed, but visibility has been limited. Widespread 'whumphing' and cracking observed around the ski resort over the last week, 2200 - 3000m, most aspects (anywhere snow existed before Jan 31st). The snowpack has a 15 - 30cm weak layer (facets) at the ground. Average snow depth is 120 cm at 2700 m.",
-  "forecast_changes": "Significant new snow with moderate winds.",
-  "weather_forecast": "Mostly cloudy tomorrow with some snow showers in the afternoon, light winds, cool temperatures.",
+  "time": "2023-04-03T21:00:00+04:00",
+  "recent_observations": {
+    "en-UK": "3rd April - multiple wet loose in Kobi valley, Size 1, E/SE, 2900 - 2600m. 2nd April - size 1 wet loose Bidara, SW, 2600 m. 30th March - size 2-3 slab (presumably wind), Sadzele lower peak, 3200m, N. \nThe snowpack still has a weak layer of crystalised snow at the ground in some places, at higher elevations from NW through to E aspects. Above this are strong layers of windpacked and re-frozen snow with no significant weaknesses reported. \nNew snow in the few days since March 28th was moved around by first S then N winds. ",
+    "ka-GE": "3 აპრილი - მრავალჯერადი სველი ფხვიერი კობის ხეობაში, ზომა 1, E/SE, 2900 - 2600 მ. 2 აპრილი - ზომა 1 სველი ფხვიერი ბიდარა, SW, 2600 მ. 30 მარტი - 2-3 ზომის ფილა (სავარაუდოდ ქარი), საძელეს ქვედა მწვერვალი 3200მ ნ.\nთოვლის ფენას ჯერ კიდევ აქვს კრისტალიზებული თოვლის სუსტი ფენა მიწაზე ზოგან, უფრო მაღალ სიმაღლეებზე ჩრდილო-დასავლეთიდან E ასპექტამდე. ამის ზემოთ არის ქარიშხალი და ხელახლა გაყინული თოვლის ძლიერი ფენები, მნიშვნელოვანი სისუსტეების გარეშე.\n28 მარტიდან რამდენიმე დღეში ახალმა თოვლმა ჯერ S-მა შემდეგ N ქარმა გადაიტანა."
+  },
+  "forecast_changes": {},
+  "weather_forecast": {
+    "en-UK": "Sunny and warm tomorrow April 4th with light S winds. Wednseday 5th gets even warmer with some rain and thunder in the afternoon, and S winds strengthening. "
+  },
   "valid_for": 172800,
-  "description": "Large amounts of new snow in the last 48 hours with moderate winds will make human triggered avalanches likely, especially at higher elevations. A weak layer at the bottom of the snowpack could produce large avalanches if it is triggered.",
+  "description": {
+    "en-UK": "It's the last forecast of the season and this one's all about heat. Sun, warm air temperatures and rain make loose wet slides likely. There's more snow on the way later this week, and at high elevations there is still the old facet layer lurking, so be vigilant and share your observations on the page. Have a safe and happy spring!\n\n "
+  },
   "hazard_ratings": {
-    "high-alpine": {
-      "value": "considerable",
-      "trend": "improving",
-      "confidence": "moderate"
-    },
     "alpine": {
-      "value": "considerable",
-      "trend": "improving",
-      "confidence": "moderate"
-    },
-    "sub-alpine": {
       "value": "moderate",
-      "trend": "improving",
+      "trend": null,
+      "confidence": null
+    },
+    "high-alpine": {
+      "value": "moderate",
+      "trend": null,
       "confidence": "moderate"
     },
     "overall": {
-      "value": "considerable",
-      "trend": "no-change",
-      "confidence": "moderate"
+      "value": "moderate",
+      "trend": null,
+      "confidence": null
+    },
+    "sub-alpine": {
+      "value": "low",
+      "trend": null,
+      "confidence": null
     }
   },
   "avalanche_problems": [
     {
-      "kind": "storm-slab",
+      "kind": "loose-wet",
       "aspect_elevation": {
-        "high-alpine": {
-          "aspects": [
-            "N",
-            "NE",
-            "E",
-            "SE",
-            "S",
-            "SW",
-            "W",
-            "NW"
-          ]
-        },
         "alpine": {
           "aspects": [
             "N",
             "NE",
-            "E",
-            "SE",
-            "S",
-            "SW",
+            "NW",
             "W",
-            "NW"
+            "SW",
+            "S",
+            "SE",
+            "E"
           ]
         },
-        "sub-alpine": {
+        "high-alpine": {
           "aspects": [
-            "N",
-            "NE",
             "E",
-            "SE",
-            "S",
-            "SW",
             "W",
-            "NW"
+            "S",
+            "SE",
+            "SW"
           ]
         }
       },
-      "confidence": "moderate",
-      "trend": "improving",
+      "confidence": null,
+      "trend": "deteriorating",
       "size": 2,
       "distribution": "widespread",
-      "time_of_day": "all-day",
+      "time_of_day": "afternoon",
       "sensitivity": "reactive",
-      "description": "On steep slopes, especially at higher elevations where winds were stronger, new snow may be reactive to riders. The danger will decrease over the next couple of days.  Even small avalanches could trigger the deep persistent layer."
+      "description": "With temperatures rising and sunny days, snow starts to melt and the snowpack becomes saturated with free water what makes wet loose avalanches possible. Widespread wind and solar crusts that formed before the recent snowfall are a weak interface that the surface snow can slide on. This hazard increases during the day, and is usually at its worst by mid-afternoon.  "
     },
     {
       "kind": "deep-slab",
       "aspect_elevation": {
         "high-alpine": {
           "aspects": [
-            "SW",
-            "W",
             "NW",
             "N",
             "NE",
             "E",
             "SE"
           ]
-        },
-        "alpine": {
-          "aspects": [
-            "W",
-            "NW",
-            "N",
-            "NE",
-            "E"
-          ]
         }
       },
       "confidence": null,
-      "trend": null,
+      "trend": "no-change",
       "size": 3,
       "distribution": "isolated",
-      "time_of_day": null,
-      "sensitivity": "reactive",
-      "description": "Weak snow layers exist at the bottom of the snowpack, in areas where there was snow before Jan 31st. These could be reactive to the weight of one person, and a collapse could travel through the snow and set off avalanches above you."
+      "time_of_day": "all-day",
+      "sensitivity": "stubborn",
+      "description": "The persistent weak basal layer might still be triggered in high alpine areas, particularly in steep areas with a shallow (thin) snowpack or around rocks, where the weight of one or more riders, a hard turn or jump, or a small avalanche could break the slab above."
     },
     {
       "kind": "wind-slab",
       "aspect_elevation": {
         "high-alpine": {
           "aspects": [
-            "N",
-            "NW",
-            "NE",
-            "W"
+            "SE",
+            "S",
+            "SW",
+            "E"
           ]
         }
       },
-      "confidence": "moderate",
-      "trend": "improving",
+      "confidence": null,
+      "trend": "no-change",
       "size": 2,
       "distribution": "specific",
       "time_of_day": "all-day",
       "sensitivity": "reactive",
-      "description": "New windslabs have developed in areas sheltered from the S/SE winds. Watch out for areas around ridges where the snow feels hollow, punchy or stiff. Even small avalanches could trigger the deep persistent layer."
+      "description": "N and NW winds will have formed small slabs on S and SE areas at ridgelines in the high alpine. Watch out for areas that look 'fat', or where the snow feels harder, hollow and drum-like. By the end of the forecast period, slabs will start building on the N again."
     }
   ],
   "elevation_bands": {
-    "sub-alpine": {
-      "upper": 2000,
-      "lower": null
-    },
     "alpine": {
       "upper": 2600,
       "lower": 2000
@@ -156,6 +132,10 @@ expression: "&forecast"
     "high-alpine": {
       "upper": null,
       "lower": 2600
+    },
+    "sub-alpine": {
+      "upper": 2000,
+      "lower": null
     }
   }
 }
