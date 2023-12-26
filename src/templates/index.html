@@ -5,7 +5,7 @@
     <div class="py-4">
         {% if current_forecast %}
             <a href="/forecasts/{{ current_forecast.file.file.name | urlencode }}">
-                <h2 class="text-4xl font-bold text-blue-600">{{ fl("current-forecast") }}</h2>
+                <h2 class="text-4xl font-bold text-blue-600">{{ fl("current-forecast-heading") }}</h2>
             </a>
             {% with forecast = current_forecast.forecast %}
                 {{ forecast_intro(
