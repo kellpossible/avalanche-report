@@ -9,24 +9,12 @@
             <p class="italic hyphens-auto md:text-justify">
                 {{ fl("avalanche-hazard-" ~ overall_hazard ~ "-likelihood") }} {{ fl("avalanche-hazard-" ~ overall_hazard ~ "-size-distribution") }}
             </p>
-            <p class="md:text-justify">{{ translated_string(description) }}</p>
+            <div class="prose leading-normal text-black">{{ translated_string(description) | md }}</div>
         </div>
     </div>
     <div class="py-4">
-        <p class="text-center">
-            {% autoescape false %}
-                {{ fl_md("forecast-issued-at", {'time': formatted_time}) }}
-            {% endautoescape %}
-        </p>
-        <p class="text-center">
-            {% autoescape false %}
-                {{ fl_md("forecast-valid-until", {'time': formatted_valid_until}) }}
-            {% endautoescape %}
-        </p>
-        <p class="text-center">
-            {% autoescape false %}
-                {{ fl_md("forecast-forecaster", {'name': forecaster_name}) }}
-            {% endautoescape %}
-        </p>
+        <p class="text-center">{{ fl_md("forecast-issued-at", {'time': formatted_time}) }}</p>
+        <p class="text-center">{{ fl_md("forecast-valid-until", {'time': formatted_valid_until}) }}</p>
+        <p class="text-center">{{ fl_md("forecast-forecaster", {'name': forecaster_name}) }}</p>
     </div>
 {% endmacro %}

@@ -297,6 +297,7 @@ pub async fn middleware<B>(
             .first()
             .expect("Expected at least one language to be present due to default")
             .to_string();
+        // Return Value because this value is optional.
         translations.get_item(&Value::from(selected_language))
     });
     // Render a fluent message.
@@ -363,7 +364,7 @@ pub async fn middleware<B>(
 
             let mut html = String::new();
             pulldown_cmark::html::push_html(&mut html, parser);
-            Ok(html)
+            Ok(Value::from_safe_string(html))
         },
     );
     environment.add_function("ansi_to_html", |ansi_string: &str| {
@@ -387,6 +388,19 @@ pub async fn middleware<B>(
         })
         .unwrap_or(().into());
     environment.add_function("uuid", || Uuid::new_v4().to_string());
+    environment.add_filter("md", |value: Value| {
+        if value.is_none() || value.is_undefined() {
+            return value;
+        }
+        if let Some(string) = value.as_str() {
+            let parser = pulldown_cmark::Parser::new(string);
+            let mut html = String::new();
+            pulldown_cmark::html::push_html(&mut html, parser);
+            Value::from_safe_string(html)
+        } else {
+            Value::from(())
+        }
+    });
     environment.add_filter("querystring", querystring);
     environment.add_filter("mapinsert", mapinsert);
     environment.add_filter("mapremove", mapremove);

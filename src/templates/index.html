@@ -63,9 +63,7 @@
                 <div class="py-5">
                     <p class="md:text-justify">{{ fl("disclaimer-message") }}</p>
                     <p class="prose max-w-none">
-                        {% autoescape false %}
-                            {{ fl_md("see-facebook-page-message", {"url": "https://www.facebook.com/groups/830534093958221"}, { "use_isolating": false} ) }}
-                        {% endautoescape %}
+                        {{ fl_md("see-facebook-page-message", {"url": "https://www.facebook.com/groups/830534093958221"}, { "use_isolating": false} ) }}
                     </p>
                 </div>
                 <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
@@ -78,9 +76,7 @@
                 <h2 class="text-2xl font-bold text-rose-600">Errors Reading Forecast Files</h2>
                 {% for error in errors %}
                     <h3 class="text-xl font-bold text-rose-600">Error {{ loop.index }}</h3>
-                    {% autoescape false %}
-                        <pre>{{ ansi_to_html(error) }}</pre>
-                    {% endautoescape %}
+                    <pre>{{ ansi_to_html(error) }}</pre>
                 {% endfor %}
             {% endif %}
         </div>

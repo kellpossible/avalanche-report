@@ -157,10 +157,10 @@
                             {{ fl("avalanche-likelihood-heading") }}
                         </div>
                     </div>
-                    <p class="hyphens-auto md:hyphens-none md:text-justify py-2">
-                        <span class="italic">{{ fl("problem-type-" ~ problem.kind ~ "-about") }}</span>
-                        {{ translated_string(problem.description) }}
-                    </p>
+                    <div class="hyphens-auto md:hyphens-none md:text-justify pt-2 italic">
+                        {{ fl("problem-type-" ~ problem.kind ~ "-about") }}
+                    </div>
+                    <div class="prose prose-p:leading-normal text-black pb-2">{{ translated_string(problem.description) | md }}</div>
                     <div class="py-2">
                         <table class="w-full">
                             <tr class="odd:bg-gray-100">
@@ -169,7 +169,9 @@
                             </tr>
                             <tr class="odd:bg-gray-100">
                                 <td class="text-right font-bold p-2">{{ fl("distribution-heading") }}</td>
-                                <td class="p-2">{{ fl("distribution-" ~ problem.distribution ~ "-about") }}</td>
+                                <td class="p-2">
+                                    {{ fl("distribution-" ~ problem.distribution ~ "-about") }}
+                                </td>
                             </tr>
                             <tr class="odd:bg-gray-100">
                                 <td class="text-right font-bold p-2">
@@ -207,15 +209,15 @@
                 <h2 class="text-4xl text-center py-4">
                     {{ fl("recent-relevant-observations-heading") }}
                 </h2>
-                <p class="md:text-justify md:hyphens-none pb-2">
-                    {{ translated_string(recent_observations) }}
-                </p>
+                <div class="pb-2 prose leading-normal text-black">
+                    {{ translated_string(recent_observations) | md }}
+                </div>
                 <h2 class="text-4xl text-center py-2">
                     {{ fl("weather-forecast-heading") }}
                 </h2>
-                <p class="md:text-justify md:hyphens-none pb-2">
-                    {{ translated_string(weather_forecast) }}
-                </p>
+                <div class="pb-2 prose leading-normal text-black">
+                    {{ translated_string(weather_forecast) | md }}
+                </div>
             </div>
         </div>
     </div>
