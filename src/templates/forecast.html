@@ -173,14 +173,16 @@
                                     {{ fl("distribution-" ~ problem.distribution ~ "-about") }}
                                 </td>
                             </tr>
-                            <tr class="odd:bg-gray-100">
-                                <td class="text-right font-bold p-2">
-                                    {{ fl("problem-time-of-day-heading") }}
-                                </td>
-                                <td class="p-2">
-                                    {{ fl("time-of-day-" ~ problem.time_of_day) }}
-                                </td>
-                            </tr>
+                            {% if problem.time_of_day %}
+                                <tr class="odd:bg-gray-100">
+                                    <td class="text-right font-bold p-2">
+                                        {{ fl("problem-time-of-day-heading") }}
+                                    </td>
+                                    <td class="p-2">
+                                        {{ fl("time-of-day-" ~ problem.time_of_day) }}
+                                    </td>
+                                </tr>
+                            {% endif %}
                             <tr class="odd:bg-gray-100">
                                 <td class="text-right font-bold p-2">
                                     {{ fl("trend-heading") }}
