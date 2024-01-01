@@ -8,13 +8,15 @@
                 <h2 class="text-4xl font-bold text-blue-600">{{ fl("current-forecast-heading") }}</h2>
             </a>
             {% with forecast = current_forecast.forecast %}
-                {{ forecast_intro(
-                overall_hazard=forecast.hazard_ratings.overall.value,
-                description=forecast.description,
-                formatted_time=forecast.formatted_time,
-                formatted_valid_until=forecast.formatted_valid_until,
-                forecaster_name=forecast.forecaster.name
-                ) }}
+                <div class="text-left">
+                    {{ forecast_intro(
+                    overall_hazard=forecast.hazard_ratings.overall.value,
+                    description=forecast.description,
+                    formatted_time=forecast.formatted_time,
+                    formatted_valid_until=forecast.formatted_valid_until,
+                    forecaster_name=forecast.forecaster.name
+                    ) }}
+                </div>
             {% endwith %}
             <div>
                 <a class="text-xl font-bold text-blue-600 hover:text-blue-800"
@@ -31,14 +33,14 @@
     </div>
 {% endmacro %}
 {% macro forecast_archive_block(forecast, emphasize=false) %}
-    <p>
+    <p class="py-0.5">
         <a class="text-xl font-bold text-blue-600 hover:text-blue-800 visited:text-purple-600 {% if emphasize %}text-xl font-bold{% endif %}"
            href="/forecasts/{{ forecast.file.file.name | urlencode }}">
             <span class="inline-flex items-baseline">
                 {% if forecast.forecast %}
                     {% set hazard_rating = forecast.forecast.hazard_ratings.overall.value %}
                     <img src="/static/images/icons/hazard-rating/{{ hazard_rating }}.png"
-                         class="self-center w-8 h-8 mx-1"/>
+                         class="self-center h-8 mx-1"/>
                 {% endif %}
                 <span>{{ forecast.details.formatted_time }}</span>
             </span>
