@@ -156,8 +156,6 @@ pub struct Forecast {
     pub recent_observations: HashMap<unic_langid::LanguageIdentifier, String>,
     #[serde(default)]
     pub forecast_changes: HashMap<unic_langid::LanguageIdentifier, String>,
-    #[serde(default)]
-    pub weather_forecast: HashMap<unic_langid::LanguageIdentifier, String>,
     pub valid_for: time::Duration,
     #[serde(default)]
     pub description: HashMap<unic_langid::LanguageIdentifier, String>,
@@ -190,7 +188,6 @@ impl TryFrom<forecast_spreadsheet::Forecast> for Forecast {
             time: value.time,
             recent_observations: value.recent_observations,
             forecast_changes: value.forecast_changes,
-            weather_forecast: value.weather_forecast,
             valid_for: value.valid_for,
             description: value.description,
             hazard_ratings: value.hazard_ratings,
