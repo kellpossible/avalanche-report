@@ -4,6 +4,8 @@ bibliography: [Forecasting.bib]
 
 # Avalanche Likelihood Definition
 
+TODO: Include the points in https://github.com/kellpossible/avalanche-report/issues/52 and reference this paper.
+
 *A Conceptual Model for Avalanche Hazard (CMAH)* @stathamConceptualModelAvalanche2018 is one of the most cited papers used as the basis for modern avalanche forecasting (CITATION NEEDED). One of the terms that it attempts to define is “Likelihood of avalanches”:
 
 > *Likelihood of avalanche(s) is the chance of an avalanche releasing within a specific location and time period, regardless of avalanche size. While probability is dependent on scale, in practice forecasters express their likelihood judgments independently of scale, using qualitative terms such as possible or almost certain ( @stathamAVALANCHEHAZARDDANGER2008 ) across different scales.* 
