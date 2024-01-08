@@ -220,6 +220,16 @@
                 <div class="pb-2 prose max-w-full leading-normal text-black">
                     {{ translated_string(weather_forecast) | md }}
                 </div>
+                {% if is_current and weather_map is defined %}
+                    {% if "Windy" in weather_map %}
+                        {% with windy = weather_map.Windy %}
+                            <iframe width="100%"
+                                    height="450"
+                                    src="https://embed.windy.com/embed2.html?lat={{ windy.latitude }}&lon={{ windy.longitude }}&detailLat={{ windy.latitude }}&detailLon={{ windy.longitude }}&width=650&height=450&zoom=11&level=surface&overlay=wind&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=true&metricWind=m%2Fs&metricTemp=%C2%B0C&radarRange=-1"
+                                    frameborder="0"></iframe>
+                        {% endwith %}
+                    {% endif %}
+                {% endif %}
             </div>
         </div>
     </div>

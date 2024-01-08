@@ -46,6 +46,9 @@ pub struct Options {
     #[serde(serialize_with = "hide_secret::serialize")]
     /// (REQUIRED) Hash of the `admin` user password, used to access `/admin/*` routes.
     pub admin_password_hash: SecretString,
+    /// See [WeatherMap].
+    #[serde(default)]
+    pub weather_map: Option<WeatherMap>,
 }
 
 /// Configuration for using Google Drive.
@@ -56,6 +59,20 @@ pub struct GoogleDrive {
     /// Google Drive API key, used to access forecast spreadsheets.
     #[serde(serialize_with = "hide_secret::serialize")]
     pub api_key: SecretString,
+}
+
+/// Include a current weather map on the forecast page.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum WeatherMap {
+    /// See [WindyWeather].
+    Windy(WindyWeather),
+}
+
+/// Weather map from <https://windy.com>
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WindyWeather {
+    pub latitude: f64,
+    pub longitude: f64,
 }
 
 /// `avalanche-report` has a built-in backup facility which can save the database and push it to an

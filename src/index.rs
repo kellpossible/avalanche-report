@@ -186,7 +186,7 @@ pub async fn handler(
                 .await?
                 {
                     ForecastData::Forecast(forecast) => {
-                        let forecast: Forecast = forecast.try_into()?;
+                        let forecast = Forecast::try_new(forecast, &state.options)?;
                         let formatted_forecast: FormattedForecast =
                             FormattedForecast::format(forecast, &i18n, state.options.map.clone());
                         Some(formatted_forecast)
@@ -214,9 +214,7 @@ pub async fn handler(
 
     let current_forecast = forecasts.first().and_then(|forecast| {
         let f = &forecast.forecast.as_ref()?.forecast;
-        let valid_until = f.time + f.valid_for;
-
-        if time::OffsetDateTime::now_utc() <= valid_until {
+        if f.is_current() {
             Some(forecast.clone())
         } else {
             None
