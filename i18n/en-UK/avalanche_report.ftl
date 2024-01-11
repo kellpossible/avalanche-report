@@ -171,6 +171,8 @@ elevation-band-high-alpine = High Alpine
 recent-relevant-observations-heading = Recent Avalanches and Snowpack
 # Heading for weather forecast
 weather-forecast-heading = Weather Forecast
+# Heading for weather section of the forecast
+weather-heading = Weather
 # A heading for an individual avalanche problem type
 avalanche-problem-heading = Avalanche Problem
 # A heading for all the different avalanche problem types
@@ -263,3 +265,15 @@ avalanche-probability-low = Low
 disclaimer-title = Disclaimer
 accept-disclaimer-checkbox-label = I accept this disclaimer
 continue-button-text = Continue
+about-title = About
+about-description = 
+    This project is run by _Zvavi Saqartvelo - Avalanche Georgia_, a registered
+    non-profit NGO, which has started an avalanche forecasting service in the
+    Republic of Georgia. We provide free, high-quality information and warnings
+    about avalanche conditions in the Gudauri area, which is a popular location
+    for off-piste and backcountry freeriding and ski touring.
+    
+    The website software `avalanche-report` is open source, available over at
+    <https://github.com/kellpossible/avalanche-report>, new contributors are
+    welcome! Feel free to contact us if you wish to deploy something similar
+    for your forecast region.

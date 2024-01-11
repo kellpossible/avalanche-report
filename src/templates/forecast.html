@@ -1,3 +1,4 @@
+{% from "macros/elements.html" import divider %}
 {% from "macros/language_select.html" import language_select %}
 {% from "macros/forecast_intro.html" import forecast_intro %}
 {% macro hazard_rating_number(hazard_value) -%}
@@ -58,7 +59,7 @@
                     <div></div>
                 </div>
                 <div class="pt-2 pb-4 text-center">{{ language_select() }}</div>
-                <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
+                {{ divider() }}
                 {{ forecast_intro(
                 overall_hazard=overall_hazard,
                 description=description,
@@ -66,7 +67,6 @@
                 formatted_valid_until=formatted_valid_until,
                 forecaster_name=forecaster.name
                 ) }}
-                <p class="md:text-justify pb-4">{{ fl("disclaimer-message") }}</p>
             </div>
             <figure>
                 <div id="map" class="h-[80vh]"></div>
@@ -109,7 +109,7 @@
                                 <p class="hyphens-auto md:text-left md:hyphens-none">{{ fl("avalanche-hazard-" ~ band_hazard ~ "-about") }}</p>
                             </div>
                         </div>
-                        {% if not loop.last %}<div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>{% endif %}
+                        {% if not loop.last %}{{ divider() }}{% endif %}
                     {% endfor %}
                 </div>
                 <h2 class="text-4xl text-center">{{ fl("avalanche-problems-heading") }}</h2>
@@ -169,18 +169,12 @@
                             </tr>
                             <tr class="odd:bg-gray-100">
                                 <td class="text-right font-bold p-2">{{ fl("distribution-heading") }}</td>
-                                <td class="p-2">
-                                    {{ fl("distribution-" ~ problem.distribution ~ "-about") }}
-                                </td>
+                                <td class="p-2">{{ fl("distribution-" ~ problem.distribution ~ "-about") }}</td>
                             </tr>
                             {% if problem.time_of_day %}
                                 <tr class="odd:bg-gray-100">
-                                    <td class="text-right font-bold p-2">
-                                        {{ fl("problem-time-of-day-heading") }}
-                                    </td>
-                                    <td class="p-2">
-                                        {{ fl("time-of-day-" ~ problem.time_of_day) }}
-                                    </td>
+                                    <td class="text-right font-bold p-2">{{ fl("problem-time-of-day-heading") }}</td>
+                                    <td class="p-2">{{ fl("time-of-day-" ~ problem.time_of_day) }}</td>
                                 </tr>
                             {% endif %}
                             <tr class="odd:bg-gray-100">
@@ -203,10 +197,7 @@
                             {% endif %}
                         </table>
                     </div>
-                    {% if not loop.last %}
-                        <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20">
-                        </div>
-                    {% endif %}
+                    {% if not loop.last %}{{ divider() }}{% endif %}
                 {% endfor %}
                 <h2 class="text-4xl text-center py-4">
                     {{ fl("recent-relevant-observations-heading") }}
@@ -215,7 +206,7 @@
                     {{ translated_string(recent_observations) | md }}
                 </div>
                 <h2 class="text-4xl text-center py-2">
-                    {{ fl("weather-forecast-heading") }}
+                    {{ fl("weather-heading") }}
                 </h2>
                 <div class="pb-2 prose max-w-full leading-normal text-black">
                     {{ translated_string(weather_forecast) | md }}
@@ -255,6 +246,14 @@
                         {% endwith %}
                     {% endif %}
                 {% endif %}
+            </div>
+            <div class="pt-4">
+                <h2 class="text-4xl text-center">
+                    {{ fl("disclaimer-title") }}
+                </h2>
+                <p class="md:text-justify pb-4">
+                    {{ fl("disclaimer-message") }}
+                </p>
             </div>
         </div>
     </div>

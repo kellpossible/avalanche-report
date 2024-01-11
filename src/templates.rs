@@ -13,7 +13,6 @@ use axum::{
     response::{IntoResponse, Response},
     Extension,
 };
-use eyre::ContextCompat;
 use fluent::{types::FluentNumber, FluentValue};
 use http::{header::CONTENT_TYPE, Request, StatusCode};
 use minijinja::{
@@ -24,11 +23,7 @@ use pulldown_cmark::{Event, Tag};
 use rust_embed::{EmbeddedFile, RustEmbed};
 use uuid::Uuid;
 
-use crate::{
-    error::map_eyre_error,
-    i18n::{negotiate_translated_string, I18nLoader},
-    AppState,
-};
+use crate::{error::map_eyre_error, i18n::I18nLoader, AppState};
 
 #[derive(RustEmbed)]
 #[folder = "src/templates"]
@@ -313,7 +308,7 @@ pub async fn middleware<B>(
     // Available options:
     // + use_isolating - sets the
     //   https://docs.rs/fluent/latest/fluent/bundle/struct.FluentBundle.html#method.set_use_isolating
-    //   flag for this message.
+    //   flag for this message. `true` by default.
     // + strip_paragraph - An option to strip paragraph tags from the parsed markdown. `true` by
     //   default.
     environment.add_function(
@@ -324,7 +319,8 @@ pub async fn middleware<B>(
             let message = if let Some(args) = args {
                 let use_isolating = if let Ok(value) = options.get_attr("use_isolating") {
                     match value.kind() {
-                        ValueKind::Bool => {}
+                        ValueKind::Bool => value.is_true(),
+                        ValueKind::Undefined => false,
                         invalid => {
                             return Err(minijinja::Error::new(
                                 ErrorKind::InvalidOperation,
@@ -332,7 +328,6 @@ pub async fn middleware<B>(
                             ))
                         }
                     }
-                    value.is_true()
                 } else {
                     true
                 };

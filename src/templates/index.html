@@ -1,3 +1,4 @@
+{% from "macros/elements.html" import divider %}
 {% from "macros/language_select.html" import language_select %}
 {% from "macros/forecast_intro.html" import forecast_intro %}
 {% extends "base.html" %}
@@ -56,19 +57,23 @@
     <div class="flex items-center justify-center w-screen">
         <div class="p-2 w-full md:min-w-3xl md:max-w-3xl text-center">
             <div class="pb-2">{{ language_select() }}</div>
-            <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
+            {{ divider() }}
             {% if (forecasts | length) == 0 %}
                 <p class="text-2xl font-bold text-rose-600">{{ fl("no-forecasts-available-message") }}</p>
             {% else %}
                 <div class="py-5">{{ current_forecast_block(current_forecast=current_forecast) }}</div>
-                <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
+                {{ divider() }}
                 <div class="py-5">
-                    <p class="md:text-justify">{{ fl("disclaimer-message") }}</p>
-                    <p class="prose max-w-none">
+                    <h2 class="text-2xl font-bold py-2">{{ fl("about-title") }}</h2>
+                    <div class="prose leading-normal max-w-full text-black md:text-justify text-left">
+                        {{ fl_md("about-description", {}, { "strip_paragraph": false }) }}
+                    </div>
+                    <p class="md:text-justify text-left pt-4">{{ fl("disclaimer-message") }}</p>
+                    <div class="prose leading-normal max-w-full text-black md:text-justify text-left pt-4">
                         {{ fl_md("see-facebook-page-message", {"url": "https://www.facebook.com/groups/830534093958221"}, { "use_isolating": false} ) }}
-                    </p>
+                    </div>
                 </div>
-                <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
+                {{ divider() }}
                 <div class="py-5 text-slate-500">
                     <h2 class="text-2xl font-bold py-2">{{ fl("forecast-archive-heading") }}</h2>
                     {% for forecast in forecasts %}{{ forecast_archive_block(forecast=forecast) }}{% endfor %}
