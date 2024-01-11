@@ -33,7 +33,7 @@ use crate::{
     google_drive::{self, ListFileMetadata},
     i18n::{self, I18nLoader},
     index::ForecastFileView,
-    options::{Map, WeatherMap},
+    options::{Map, WeatherMaps},
     state::AppState,
     templates::{render, TemplatesWithContext},
 };
@@ -162,7 +162,7 @@ pub struct Forecast {
     pub hazard_ratings: IndexMap<HazardRatingKind, HazardRating>,
     pub avalanche_problems: Vec<AvalancheProblem>,
     pub elevation_bands: IndexMap<ElevationBandId, ElevationRange>,
-    pub weather_map: Option<WeatherMap>,
+    pub weather_maps: WeatherMaps,
 }
 
 impl Forecast {
@@ -200,7 +200,7 @@ impl Forecast {
                 .into_iter()
                 .map(|(k, v)| (k, v.into()))
                 .collect(),
-            weather_map: options.weather_map.clone(),
+            weather_maps: options.weather_maps.clone(),
         })
     }
 }

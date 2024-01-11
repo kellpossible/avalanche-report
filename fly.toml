@@ -27,9 +27,12 @@ kill_timeout = "5s"
     # [map.source.Tracestrack]
     # api_key="57a133d4a1807dc8239cbc29a60a9288"
 
-    [weather_map.Windy]
+    [weather_maps.Windy]
     latitude=42.480
     longitude=44.480
+
+    [weather_maps.Meteoblue]
+    location_id="gudauri_georgia_614410"
   """
 
 [[mounts]]

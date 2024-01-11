@@ -23,6 +23,7 @@ serde = { workspace = true, features = ["derive"] }
 erased-serde = "0.3.24"
 serde_json = { workspace = true }
 serde_urlencoded = "0.7.1"
+serde_with = "3.4.0"
 color-eyre = "0.6"
 fluent = "0.16.0"
 fluent-langneg = "0.13.0"
