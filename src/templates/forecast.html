@@ -325,13 +325,13 @@
                     crossOrigin: true
                 }).addTo(map);
         {% elif "Tracestrack" in map.source %}
-        {% set source = map.source["Tracestrack"] %}
-        {% set map_lang_id = "_" %}
-        {% if LANGUAGE_SHORT in ["en", "ar", "de", "es", "fi", "fr", "he", "hu", "it", "ja", "ko", "nl", "pl", "pt", "ru", "uk", "sv", "th", "tr"] %}
-            {% set map_lang_id = LANGUAGE_SHORT %}
-        {% elif LANGUAGE in ["zh-hans", "zh-hant"] %}
-            {% set map_lang_id = LANGUAGE %}
-        {% endif %}
+            {% set source = map.source["Tracestrack"] %}
+            {% set map_lang_id = "en" %}
+            {% if LANGUAGE_SHORT in ["en", "ar", "de", "es", "fi", "fr", "he", "hu", "it", "ja", "ko", "nl", "pl", "pt", "ru", "uk", "sv", "th", "tr"] %}
+                {% set map_lang_id = LANGUAGE_SHORT %}
+            {% elif LANGUAGE in ["zh-hans", "zh-hant"] %}
+                {% set map_lang_id = LANGUAGE %}
+            {% endif %}
             const tiles = L.tileLayer(
                 "https://tile.tracestrack.com/topo_{{ map_lang_id }}/{z}/{x}/{y}.png?key={{ source.api_key }}",
                 {
@@ -341,8 +341,6 @@
                     minZoom: 1,
                     crossOrigin: true
                 }).addTo(map);
-            
-
         {% endif %}
 
         function onEachFeature(feature, layer) {

@@ -22,10 +22,12 @@ kill_timeout = "5s"
     s3_bucket_name="avalanche-ge"
     s3_bucket_region="eu-central-1"
 
-    [map.source.MapTiler]
-    api_key="lQBs6EoYSHpb5ulwsURX"
+    # [map.source.MapTiler]
+    # api_key="lQBs6EoYSHpb5ulwsURX"
     # [map.source.Tracestrack]
     # api_key="57a133d4a1807dc8239cbc29a60a9288"
+    [map]
+    source="OpenTopoMap"
 
     [weather_maps.Windy]
     latitude=42.480
