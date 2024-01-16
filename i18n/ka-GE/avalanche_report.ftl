@@ -281,3 +281,4 @@ about-description =
     <https://github.com/kellpossible/avalanche-report>, new contributors are
     welcome! Feel free to contact the team there if you wish to deploy
     something similar for your forecast region.
+wind-unit-label = Wind Unit:
