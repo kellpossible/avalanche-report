@@ -40,6 +40,7 @@ mod serde;
 mod state;
 mod templates;
 mod types;
+mod user_preferences;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -108,7 +109,8 @@ async fn main() -> eyre::Result<()> {
 
     // build our application with a route
     let app = Router::new()
-        .route("/i18n", get(i18n::handler))
+        // Using a GET request because this supports a redirect.
+        .route("/user-preferences", get(user_preferences::handler))
         .route("/disclaimer", post(disclaimer::handler))
         // These routes expose public forecast information and thus have the disclaimer middleware
         // applied to them.
@@ -137,6 +139,7 @@ async fn main() -> eyre::Result<()> {
             state.clone(),
             i18n::middleware,
         ))
+        .layer(middleware::from_fn(user_preferences::middleware))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             analytics::middleware,
