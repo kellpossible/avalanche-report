@@ -36,6 +36,7 @@ use crate::{
     options::{Map, WeatherMaps},
     state::AppState,
     templates::{render, TemplatesWithContext},
+    user_preferences::{UserPreferences, WindUnit},
 };
 
 use self::files::{ForecastFiles, ForecastFilesIden};
@@ -132,6 +133,7 @@ pub async fn handler(
     Extension(database): Extension<DatabaseInstance>,
     Extension(i18n): Extension<I18nLoader>,
     Extension(templates): Extension<TemplatesWithContext>,
+    Extension(preferences): Extension<UserPreferences>,
 ) -> axum::response::Result<Response> {
     handler_impl(
         file_name,
@@ -140,6 +142,7 @@ pub async fn handler(
         &database,
         &templates,
         &i18n,
+        &preferences,
     )
     .await
     .map_err(map_eyre_error)
@@ -162,7 +165,6 @@ pub struct Forecast {
     pub hazard_ratings: IndexMap<HazardRatingKind, HazardRating>,
     pub avalanche_problems: Vec<AvalancheProblem>,
     pub elevation_bands: IndexMap<ElevationBandId, ElevationRange>,
-    pub weather_maps: WeatherMaps,
 }
 
 impl Forecast {
@@ -176,10 +178,7 @@ impl Forecast {
         }
     }
 
-    pub fn try_new(
-        value: forecast_spreadsheet::Forecast,
-        options: &crate::Options,
-    ) -> eyre::Result<Self> {
+    pub fn try_new(value: forecast_spreadsheet::Forecast) -> eyre::Result<Self> {
         Ok(Self {
             area: value.area,
             forecaster: value.forecaster,
@@ -200,7 +199,6 @@ impl Forecast {
                 .into_iter()
                 .map(|(k, v)| (k, v.into()))
                 .collect(),
-            weather_maps: options.weather_maps.clone(),
         })
     }
 }
@@ -230,10 +228,16 @@ pub struct FormattedForecast {
     pub formatted_valid_until: String,
     pub map: Map,
     pub is_current: bool,
+    pub external_weather_forecast: crate::weather_forecast::Context,
 }
 
 impl FormattedForecast {
-    pub fn format(forecast: Forecast, i18n: &I18nLoader, map: Map) -> Self {
+    pub fn format(
+        forecast: Forecast,
+        i18n: &I18nLoader,
+        options: &crate::Options,
+        preferences: &UserPreferences,
+    ) -> Self {
         let formatted_time = i18n::format_time(forecast.time, i18n);
         let valid_until_time = forecast.time + forecast.valid_for;
         let formatted_valid_until = i18n::format_time(valid_until_time, i18n);
@@ -243,8 +247,9 @@ impl FormattedForecast {
             forecast,
             formatted_time,
             formatted_valid_until,
-            map,
+            map: options.map.clone(),
             is_current,
+            external_weather_forecast: crate::weather_forecast::Context::new(options, preferences),
         }
     }
 }
@@ -340,6 +345,7 @@ async fn handler_impl(
     database: &DatabaseInstance,
     templates: &TemplatesWithContext,
     i18n: &I18nLoader,
+    preferences: &UserPreferences,
 ) -> eyre::Result<Response> {
     let (requested_json, file_name) = {
         let path = std::path::Path::new(&file_name);
@@ -396,10 +402,10 @@ async fn handler_impl(
     {
         ForecastData::Forecast(forecast) => match view {
             ForecastFileView::Html => {
-                let forecast = Forecast::try_new(forecast, options)
+                let forecast = Forecast::try_new(forecast)
                     .wrap_err("Error converting forecast into template data")?;
                 let formatted_forecast =
-                    FormattedForecast::format(forecast, &i18n, options.map.clone());
+                    FormattedForecast::format(forecast, &i18n, options, preferences);
                 render(&templates.environment, "forecast.html", &formatted_forecast)
             }
             ForecastFileView::Json => Ok(Json(forecast).into_response()),

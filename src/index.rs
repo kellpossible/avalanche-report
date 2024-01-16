@@ -17,6 +17,7 @@ use crate::{
     i18n::{self, I18nLoader},
     state::AppState,
     templates::{render, TemplatesWithContext},
+    user_preferences::UserPreferences,
 };
 
 #[derive(Clone, Serialize, Debug)]
@@ -94,6 +95,7 @@ pub async fn handler(
     Extension(templates): Extension<TemplatesWithContext>,
     Extension(i18n): Extension<I18nLoader>,
     Extension(database): Extension<DatabaseInstance>,
+    Extension(preferences): Extension<UserPreferences>,
     State(state): State<AppState>,
 ) -> axum::response::Result<impl IntoResponse> {
     let file_list = google_drive::list_files(
@@ -186,9 +188,13 @@ pub async fn handler(
                 .await?
                 {
                     ForecastData::Forecast(forecast) => {
-                        let forecast = Forecast::try_new(forecast, &state.options)?;
-                        let formatted_forecast: FormattedForecast =
-                            FormattedForecast::format(forecast, &i18n, state.options.map.clone());
+                        let forecast = Forecast::try_new(forecast)?;
+                        let formatted_forecast: FormattedForecast = FormattedForecast::format(
+                            forecast,
+                            &i18n,
+                            &state.options,
+                            &preferences,
+                        );
                         Some(formatted_forecast)
                     }
                     ForecastData::File(_) => {

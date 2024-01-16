@@ -1,7 +1,7 @@
 {% from "macros/elements.html" import divider %}
 {% from "macros/language_select.html" import language_select %}
 {% from "macros/forecast_intro.html" import forecast_intro %}
-{% from "macros/weather.html" import weather %}
+{% from "macros/weather_forecast.html" import weather_forecast_macro %}
 {% macro hazard_rating_number(hazard_value) -%}
     {%- if not hazard_value -%}
         ?
@@ -212,7 +212,12 @@
                 <div class="pb-2 prose max-w-full leading-normal text-black">
                     {{ translated_string(weather_forecast) | md }}
                 </div>
-                {% if is_current %}{{ weather(weather_maps) }}{% endif %}
+                {% if is_current %}
+                    <h3 class="text-3xl text-center py-2">
+                        {{ fl("weather-forecast-heading") }}
+                    </h3>
+                    {{ weather_forecast_macro(external_weather_forecast.weather_maps, external_weather_forecast.wind_unit) }}
+                {% endif %}
             </div>
             <div class="pt-4">
                 <h2 class="text-4xl text-center">

@@ -8,7 +8,7 @@ use axum::{
     Extension, Router,
 };
 use error::map_std_error;
-use eyre::{Context, ContextCompat};
+use eyre::Context;
 use rust_embed::RustEmbed;
 use std::marker::PhantomData;
 use templates::TemplatesWithContext;
@@ -41,6 +41,7 @@ mod state;
 mod templates;
 mod types;
 mod user_preferences;
+mod weather_forecast;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -110,8 +111,12 @@ async fn main() -> eyre::Result<()> {
     // build our application with a route
     let app = Router::new()
         // Using a GET request because this supports a redirect.
-        .route("/user-preferences", get(user_preferences::handler))
+        .route(
+            "/user-preferences-redirect",
+            get(user_preferences::query_set_redirect_handler),
+        )
         .route("/disclaimer", post(disclaimer::handler))
+        .route("/weather-forecast", get(weather_forecast::handler))
         // These routes expose public forecast information and thus have the disclaimer middleware
         // applied to them.
         .nest(
