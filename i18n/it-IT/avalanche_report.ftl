@@ -282,3 +282,4 @@ about-description =
     welcome! Feel free to contact the team there if you wish to deploy
     something similar for your forecast region.
 wind-unit-label = Wind Unit:
+sponsors-title = Sponsors
