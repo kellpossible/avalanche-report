@@ -449,7 +449,7 @@ pub async fn get_forecast_data(
         }
     }
     let google_drive_id = file_metadata.id.clone();
-    let cached_forecast_file: Option<Vec<u8>> = database
+    let cached_forecast_file: Option<ForecastFiles> = database
         .interact(move |conn| {
             let mut query = sea_query::Query::select();
 
@@ -477,19 +477,25 @@ pub async fn get_forecast_data(
             // This logic is a bit buggy on google's side it seems, sometimes they change document
             // but don't update modified time.
             if cached_last_modified == *server_last_modified {
-                Some(cached_forecast_file.file_blob)
+                Some(cached_forecast_file)
             } else {
                 tracing::debug!("Found cached forecast file, but it's outdated");
                 None
             }
         });
 
-    let forecast_file_bytes: Vec<u8> = if let Some(cached_forecast_file) = cached_forecast_file {
+    let forecast_file: ForecastFiles = if let Some(cached_forecast_file) = cached_forecast_file {
         tracing::debug!("Using cached forecast file");
         cached_forecast_file
     } else {
         tracing::debug!("Fetching updated/new forecast file");
-        let forecast_file_bytes: Vec<u8> = match requested {
+        let (forecast_file_bytes, forecast): (
+            Vec<u8>,
+            Option<(
+                forecast_spreadsheet::Forecast,
+                forecast_spreadsheet::Version,
+            )>,
+        ) = match requested {
             RequestedForecastData::Forecast => {
                 let file = google_drive::export_file(
                     &file_metadata.id,
@@ -498,42 +504,69 @@ pub async fn get_forecast_data(
                     client,
                 )
                 .await?;
-                file.bytes().await?.into()
+                let forecast_file_bytes: Vec<u8> = file.bytes().await?.into();
+                let forecast: forecast_spreadsheet::Forecast =
+                    forecast_spreadsheet::parse_excel_spreadsheet(
+                        &forecast_file_bytes,
+                        &*FORECAST_SCHEMA,
+                    )
+                    .context("Error parsing forecast spreadsheet")?;
+
+                (
+                    forecast_file_bytes,
+                    Some((forecast, FORECAST_SCHEMA.schema_version.clone())),
+                )
             }
             RequestedForecastData::File => {
                 let file =
                     google_drive::get_file(&file_metadata.id, google_drive_api_key, client).await?;
-                file.bytes().await?.into()
+                (file.bytes().await?.into(), None)
             }
         };
-        let forecast_files_db = ForecastFiles {
+        let forecast_file_db = ForecastFiles {
             google_drive_id: file_metadata.id.clone(),
             last_modified: file_metadata.modified_time.clone().into(),
             file_blob: forecast_file_bytes.clone(),
+            parsed_forecast: forecast.as_ref().map(|f| f.0.clone()),
+            schema_version: forecast.as_ref().map(|f| f.1.clone()),
         };
+        let forecast_file_db_query = forecast_file_db.clone();
+        tracing::debug!("Updating cached forecast file");
         database
             .interact(move |conn| {
                 let mut query = sea_query::Query::insert();
 
-                let values = forecast_files_db.values();
+                let values = forecast_file_db_query.values()?;
                 query
                     .into_table(ForecastFiles::TABLE)
                     .columns(ForecastFiles::COLUMNS)
                     .values(values)?;
 
-                let excluded_table: Alias = Alias::new("excluded");
+                let excluded_column: Alias = Alias::new("excluded");
                 query.on_conflict(
                     OnConflict::column(ForecastFilesIden::GoogleDriveId)
                         .values([
                             (
                                 ForecastFilesIden::LastModified,
-                                (excluded_table.clone(), ForecastFilesIden::LastModified)
+                                (excluded_column.clone(), ForecastFilesIden::LastModified)
                                     .into_column_ref()
                                     .into(),
                             ),
                             (
                                 ForecastFilesIden::FileBlob,
-                                (excluded_table, ForecastFilesIden::FileBlob)
+                                (excluded_column.clone(), ForecastFilesIden::FileBlob)
+                                    .into_column_ref()
+                                    .into(),
+                            ),
+                            (
+                                ForecastFilesIden::ParsedForecast,
+                                (excluded_column.clone(), ForecastFilesIden::ParsedForecast)
+                                    .into_column_ref()
+                                    .into(),
+                            ),
+                            (
+                                ForecastFilesIden::SchemaVersion,
+                                (excluded_column, ForecastFilesIden::SchemaVersion)
                                     .into_column_ref()
                                     .into(),
                             ),
@@ -546,21 +579,61 @@ pub async fn get_forecast_data(
                 Result::<_, eyre::Error>::Ok(())
             })
             .await??;
-        forecast_file_bytes
+        forecast_file_db
     };
 
     match requested {
         RequestedForecastData::Forecast => {
+            if let Some(forecast) = forecast_file.parsed_forecast {
+                if forecast_file.schema_version == Some(FORECAST_SCHEMA.schema_version) {
+                    tracing::debug!("Re-using parsed forecast");
+                    return Ok(ForecastData::Forecast(forecast));
+                } else {
+                    tracing::warn!(
+                        "Cached forecast schema version {:?} doesn't match current {:?}",
+                        forecast_file.schema_version,
+                        FORECAST_SCHEMA.schema_version
+                    );
+                }
+            }
+            tracing::debug!("Re-parsing forecast");
             let forecast: forecast_spreadsheet::Forecast =
                 forecast_spreadsheet::parse_excel_spreadsheet(
-                    &forecast_file_bytes,
+                    &forecast_file.file_blob,
                     &*FORECAST_SCHEMA,
                 )
                 .context("Error parsing forecast spreadsheet")?;
 
+            let json_forecast: serde_json::Value = serde_json::to_value(forecast.clone())?;
+            tracing::debug!("Updating cached parsed forecast and schema version");
+            database
+                .interact(move |conn| {
+                    let mut query = sea_query::Query::update();
+                    query
+                        .table(ForecastFiles::TABLE)
+                        .values([
+                            (
+                                ForecastFilesIden::ParsedForecast,
+                                Some(json_forecast).into(),
+                            ),
+                            (
+                                ForecastFilesIden::SchemaVersion,
+                                Some(FORECAST_SCHEMA.schema_version.to_string()).into(),
+                            ),
+                        ])
+                        .and_where(
+                            Expr::col(ForecastFilesIden::GoogleDriveId)
+                                .eq(forecast_file.google_drive_id),
+                        );
+                    let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
+                    conn.execute(&sql, &*values.as_params())?;
+                    Result::<_, eyre::Error>::Ok(())
+                })
+                .await??;
+
             Ok(ForecastData::Forecast(forecast))
         }
-        RequestedForecastData::File => Ok(ForecastData::File(forecast_file_bytes)),
+        RequestedForecastData::File => Ok(ForecastData::File(forecast_file.file_blob)),
     }
 }
 

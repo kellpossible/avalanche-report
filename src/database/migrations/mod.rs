@@ -74,6 +74,11 @@ fn list_migrations() -> Vec<Migration> {
             name: "forecast_files",
             kind: MigrationKind::Sql(include_str!("v4_forecast_files.sql")),
         },
+        Migration {
+            version: 5,
+            name: "forecast_json_cache",
+            kind: MigrationKind::Sql(include_str!("v5_forecast_json_cache.sql")),
+        },
     ]
 }
 

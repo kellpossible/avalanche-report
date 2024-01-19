@@ -164,7 +164,7 @@ impl Display for ParseCellError {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq)]
 pub struct Version {
     pub major: u8,
     pub minor: u8,
@@ -177,6 +177,12 @@ pub enum ParseVersionError {
     IncorrectFormat(String),
     #[error("Unable to parse the version number as an integer")]
     ParseInt(#[from] ParseIntError),
+}
+
+impl std::fmt::Display for Version {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
+    }
 }
 
 impl FromStr for Version {
@@ -209,7 +215,7 @@ impl FromStr for Version {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ElevationRange {
     pub upper: Option<i64>,
     pub lower: Option<i64>,
@@ -370,12 +376,12 @@ fn parse_aspects(input: &str) -> std::result::Result<IndexSet<Aspect>, ParseAspe
         .collect()
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AspectElevation {
     pub aspects: IndexSet<Aspect>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct AvalancheProblem {
     pub kind: ProblemKind,
     pub aspect_elevation: IndexMap<ElevationBandId, AspectElevation>,
@@ -552,14 +558,14 @@ mod size {
 pub use size::Size;
 use time_tz::{Offset, TimeZone};
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct HazardRating {
     pub value: Option<HazardRatingValue>,
     pub trend: Option<Trend>,
     pub confidence: Option<Confidence>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Forecast {
     pub template_version: Version,
     pub area: AreaId,
@@ -581,7 +587,7 @@ pub struct Forecast {
     pub elevation_bands: IndexMap<ElevationBandId, ElevationRange>,
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Clone, Deserialize)]
 pub struct Forecaster {
     pub name: String,
     pub organisation: Option<String>,

@@ -1,4 +1,6 @@
-use rusqlite::Row;
+use std::str::FromStr;
+
+use rusqlite::{types::Type, Row};
 use sea_query::SimpleExpr;
 
 use crate::{database::DATETIME_FORMAT, types};
@@ -9,23 +11,32 @@ pub struct ForecastFiles {
     pub google_drive_id: String,
     pub last_modified: types::Time,
     pub file_blob: Vec<u8>,
+    pub parsed_forecast: Option<forecast_spreadsheet::Forecast>,
+    pub schema_version: Option<forecast_spreadsheet::Version>,
 }
 
 impl ForecastFiles {
-    pub const COLUMNS: [ForecastFilesIden; 3] = [
+    pub const COLUMNS: [ForecastFilesIden; 5] = [
         ForecastFilesIden::GoogleDriveId,
         ForecastFilesIden::LastModified,
         ForecastFilesIden::FileBlob,
+        ForecastFilesIden::ParsedForecast,
+        ForecastFilesIden::SchemaVersion,
     ];
     pub const TABLE: ForecastFilesIden = ForecastFilesIden::Table;
 
-    pub fn values(self) -> [SimpleExpr; 3] {
+    pub fn values(self) -> eyre::Result<[SimpleExpr; 5]> {
         let last_modified = self.last_modified_value();
-        [
+        Ok([
             self.google_drive_id.into(),
             last_modified,
             self.file_blob.into(),
-        ]
+            self.parsed_forecast
+                .map(|f| serde_json::to_string(&f))
+                .transpose()?
+                .into(),
+            self.schema_version.map(|v| v.to_string()).into(),
+        ])
     }
 
     pub fn last_modified_value(&self) -> SimpleExpr {
@@ -43,6 +54,8 @@ impl AsRef<str> for ForecastFilesIden {
             Self::GoogleDriveId => "google_drive_id",
             Self::LastModified => "last_modified",
             Self::FileBlob => "file_blob",
+            Self::ParsedForecast => "parsed_forecast",
+            Self::SchemaVersion => "schema_version",
         }
     }
 }
@@ -53,11 +66,28 @@ impl TryFrom<&Row<'_>> for ForecastFiles {
         let google_drive_id = row.get(ForecastFilesIden::GoogleDriveId.as_ref())?;
         let last_modified = row.get(ForecastFilesIden::LastModified.as_ref())?;
         let file_blob = row.get(ForecastFilesIden::FileBlob.as_ref())?;
+        let parsed_forecast: Option<serde_json::Value> =
+            row.get(ForecastFilesIden::ParsedForecast.as_ref())?;
+        let schema_version: Option<String> = row.get(ForecastFilesIden::SchemaVersion.as_ref())?;
 
         Ok(ForecastFiles {
             google_drive_id,
             last_modified,
             file_blob,
+            parsed_forecast: parsed_forecast
+                .map(|f| {
+                    serde_json::from_value(f).map_err(|e| {
+                        rusqlite::Error::FromSqlConversionFailure(4, Type::Text, Box::new(e))
+                    })
+                })
+                .transpose()?,
+            schema_version: schema_version
+                .map(|v| {
+                    forecast_spreadsheet::Version::from_str(&v).map_err(|e| {
+                        rusqlite::Error::FromSqlConversionFailure(5, Type::Text, Box::new(e))
+                    })
+                })
+                .transpose()?,
         })
     }
 }
