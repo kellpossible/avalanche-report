@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use base64::Engine;
 use eyre::{bail, Context, ContextCompat};
-use http::{HeaderValue, StatusCode};
 use humansize::format_size;
 use md5::{Digest, Md5};
 use rusty_s3::{Credentials, S3Action, UrlStyle};
@@ -51,7 +50,7 @@ async fn perform_backup(config: &Config) -> eyre::Result<BackupInfo> {
         .head(head_bucket.sign(Duration::from_secs(60 * 60)))
         .send()
         .await?;
-    if response.status() == StatusCode::NOT_FOUND {
+    if response.status() == reqwest::StatusCode::NOT_FOUND {
         bail!("Unable to perform backup, the bucket {s3_bucket_name} does not exist in the region {s3_bucket_region}")
     }
 
@@ -121,10 +120,18 @@ async fn perform_backup(config: &Config) -> eyre::Result<BackupInfo> {
             .to_str()?
             .to_owned()
             .replace('"', ""),
-        version_id: Option::transpose(headers.get("x-amz-version-id").map(HeaderValue::to_str))?
-            .map(ToOwned::to_owned),
-        expiration: Option::transpose(headers.get("x-amz-expiration").map(HeaderValue::to_str))?
-            .map(ToOwned::to_owned),
+        version_id: Option::transpose(
+            headers
+                .get("x-amz-version-id")
+                .map(reqwest::header::HeaderValue::to_str),
+        )?
+        .map(ToOwned::to_owned),
+        expiration: Option::transpose(
+            headers
+                .get("x-amz-expiration")
+                .map(reqwest::header::HeaderValue::to_str),
+        )?
+        .map(ToOwned::to_owned),
     };
 
     let backup_size = format_size(info.size, humansize::BINARY);

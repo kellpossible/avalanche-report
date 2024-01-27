@@ -1,31 +1,24 @@
 use axum::{
-    extract::State,
-    http::{HeaderMap, HeaderValue, Request},
+    extract::{Request, State},
+    http::{HeaderMap, HeaderValue},
     middleware::Next,
-    response::{IntoResponse, Redirect, Response},
+    response::Response,
 };
-use axum_extra::extract::CookieJar;
-use eyre::{Context, ContextCompat};
-use http::{header::SET_COOKIE, StatusCode};
 use i18n_embed::{
     fluent::{fluent_language_loader, FluentLanguageLoader, NegotiationStrategy},
     LanguageLoader,
 };
 use rust_embed::RustEmbed;
-use serde::Deserialize;
-use std::{collections::HashMap, str::FromStr, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 use time::OffsetDateTime;
 
-use crate::{
-    error::{map_eyre_error, map_std_error},
-    state::AppState,
-    user_preferences::UserPreferences,
-};
+use crate::{state::AppState, user_preferences::UserPreferences};
 
 #[derive(RustEmbed)]
 #[folder = "i18n/"]
 struct Localizations;
 
+#[derive(Clone)]
 pub struct RequestedLanguages(pub Vec<unic_langid::LanguageIdentifier>);
 
 impl std::fmt::Display for RequestedLanguages {
@@ -87,11 +80,11 @@ pub fn load_languages(loader: &I18nLoader) -> eyre::Result<()> {
     Ok(())
 }
 
-pub async fn middleware<B>(
+pub async fn middleware(
     State(state): State<AppState>,
     headers: HeaderMap,
-    mut request: Request<B>,
-    next: Next<B>,
+    mut request: Request,
+    next: Next,
 ) -> Response {
     let preferences: &UserPreferences = request
         .extensions()

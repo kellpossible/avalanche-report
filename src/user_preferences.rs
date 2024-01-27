@@ -1,12 +1,12 @@
 use axum::{
-    extract::Query,
+    extract::{Query, Request},
     middleware::Next,
     response::{IntoResponse, Redirect, Response},
     Extension,
 };
 use axum_extra::extract::CookieJar;
 use eyre::{Context, ContextCompat};
-use http::{header::SET_COOKIE, HeaderMap, HeaderValue, Request, StatusCode};
+use http::{header::SET_COOKIE, HeaderMap, HeaderValue, StatusCode};
 use serde::{Deserialize, Serialize};
 
 use crate::error::map_eyre_error;
@@ -95,7 +95,7 @@ pub async fn query_set_redirect_handler(
 }
 
 /// Middleware for extracting user preferences from cookie that was set using  [`set_handler`].
-pub async fn middleware<B>(mut request: Request<B>, next: Next<B>) -> Response {
+pub async fn middleware(mut request: Request, next: Next) -> Response {
     let cookies = CookieJar::from_headers(request.headers());
     let preferences: UserPreferences =
         match Option::transpose(cookies.get(COOKIE_NAME).map(|cookie| {

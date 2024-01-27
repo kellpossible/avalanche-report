@@ -2,6 +2,7 @@ use axum::{extract::State, response::IntoResponse, Extension};
 use color_eyre::Help;
 use eyre::{bail, eyre, Context, ContextCompat};
 use futures::{stream, StreamExt, TryStreamExt};
+use headers::{CacheControl, Header, HeaderMapExt};
 use i18n_embed::LanguageLoader;
 use serde::Serialize;
 use unic_langid::LanguageIdentifier;
@@ -232,5 +233,11 @@ pub async fn handler(
         forecasts,
         errors,
     };
-    render(&templates.environment, "index.html", &index).map_err(map_eyre_error)
+    let mut response = render(&templates.environment, "index.html", &index)
+        .map_err(map_eyre_error)?
+        .into_response();
+    response
+        .headers_mut()
+        .typed_insert(CacheControl::new().with_no_store());
+    Ok(response)
 }

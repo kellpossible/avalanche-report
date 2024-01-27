@@ -11,8 +11,9 @@ forecast-spreadsheet = { path = "./forecast-spreadsheet" }
 utils = { path = "./utils" }
 # geo = { path = "./geo" }
 average = "0.14.1"
-axum = { version = "0.6.20", features = ["headers"] }
-axum-extra = { version = "0.7.7", default-features = false, features = ["cookie"] }
+axum = { version = "0.7.4" }
+headers = "0.4.0"
+axum-extra = { version = "0.9.2", default-features = false, features = ["cookie"] }
 base64 = "0.21.0"
 bcrypt = "0.15.0"
 ansi-to-html = "0.1.2"
@@ -30,7 +31,7 @@ fluent-langneg = "0.13.0"
 futures = "0.3.26"
 tracing-appender = "0.2"
 tracing-subscriber = "0.3"
-http = "0.2.8"
+http = "1.0.0"
 governor = "0.6.0"
 tracing = "0.1"
 mime_guess = "2.0.4"
@@ -40,11 +41,11 @@ regex = "1.7.1"
 tower = "0.4"
 humantime = "2.1.0"
 nonzero_ext = "0.3.0"
-http-body = "0.4"
+http-body = "1.0.0"
 time-tz = { workspace = true }
-tower-http = { version = "0.4", features = ["trace", "auth"] }
+tower-http = { version = "0.5.1", features = ["trace", "auth"] }
 tokio = { version = "1.24.1", features = ["macros", "rt-multi-thread"] }
-tokio-stream = { version = "0.1.11" }
+tokio-stream = { version = "0.1.14" }
 deadpool-sqlite = { git = "https://github.com/bikeshedder/deadpool.git" } # Needed for new version of rusqlite
 thiserror = "1.0.38"
 libsqlite3-sys = { version = "0.26", features = ["bundled"] }
@@ -60,7 +61,7 @@ once_cell = { workspace = true }
 unic-langid = { workspace = true, features = ["serde"] }
 time = { workspace = true, features = ["serde", "parsing", "formatting", "macros"] }
 resvg = { version = "0.29.0", default-features = false, features = ["filter", "text", "memmap-fonts"] } # required only for svg to png diagram generation
-reqwest = { version = "0.11.14", default-features = false, features = ["json", "stream", "rustls-tls"] }
+reqwest = { version = "0.11.23", default-features = false, features = ["json", "stream", "rustls-tls"] }
 secrecy = { version = "0.8.0", features = ["serde"] }
 usvg-text-layout = { version = "0.29.0", default-features = false, features = ["memmap-fonts"]}
 buildstructor = "0.5.4"

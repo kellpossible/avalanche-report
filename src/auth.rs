@@ -5,7 +5,7 @@ use http::{HeaderValue, StatusCode};
 use secrecy::{ExposeSecret, SecretString};
 use std::{pin::Pin, sync::Arc};
 use tokio::sync::OnceCell;
-use tower_http::auth::AsyncAuthorizeRequest;
+use tower_http::{auth::AsyncAuthorizeRequest, body::UnsyncBoxBody};
 
 /// Basic authentication for accessing logs.
 #[derive(Clone)]
@@ -27,7 +27,7 @@ impl MyBasicAuth {
 }
 
 impl<B: Send + 'static> AsyncAuthorizeRequest<B> for MyBasicAuth {
-    type ResponseBody = http_body::combinators::UnsyncBoxBody<axum::body::Bytes, axum::Error>;
+    type ResponseBody = axum::body::Body;
     type RequestBody = B;
     type Future = Pin<
         Box<

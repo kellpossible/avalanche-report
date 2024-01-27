@@ -1,15 +1,19 @@
 use std::{collections::HashMap, num::NonZeroU32, sync::Arc};
 
 use average::WeightedMean;
-use axum::{extract::State, middleware::Next, response::Response};
+use axum::{
+    extract::{Request, State},
+    middleware::Next,
+    response::Response,
+};
 use cronchik::CronSchedule;
 use eyre::{Context, ContextCompat};
 use futures::{lock::Mutex, StreamExt};
 use governor::{state::StreamRateLimitExt, Quota, RateLimiter};
-use http::{Request, StatusCode};
+use http::StatusCode;
 use nonzero_ext::nonzero;
 use rusqlite::Row;
-use sea_query::{ConditionalStatement, Expr, Func, Order, Query, SimpleExpr, SqliteQueryBuilder};
+use sea_query::{ConditionalStatement, Expr, Order, Query, SimpleExpr, SqliteQueryBuilder};
 use sea_query_rusqlite::RusqliteBinder;
 use serde::Serialize;
 use time::{format_description::well_known::Rfc3339, Duration, OffsetDateTime};
@@ -471,7 +475,7 @@ pub fn channel() -> (mpsc::Sender<Event>, mpsc::Receiver<Event>) {
 
 /// Middleware for performing analytics on incoming requests.
 #[tracing::instrument(skip_all)]
-pub async fn middleware<B>(state: State<AppState>, request: Request<B>, next: Next<B>) -> Response {
+pub async fn middleware(state: State<AppState>, request: Request, next: Next) -> Response {
     let uri = Uri::from(request.uri().clone());
     let is_bot = request
         .extensions()

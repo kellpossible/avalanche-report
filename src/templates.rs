@@ -8,13 +8,13 @@ use std::{
 };
 
 use axum::{
-    extract::State,
+    extract::{Request, State},
     middleware::Next,
     response::{IntoResponse, Response},
     Extension,
 };
 use fluent::{types::FluentNumber, FluentValue};
-use http::{header::CONTENT_TYPE, Request, StatusCode};
+use http::{header::CONTENT_TYPE, StatusCode};
 use minijinja::{
     value::{Value, ValueKind},
     Error, ErrorKind,
@@ -226,11 +226,11 @@ pub fn mapremove(map: Value, key: Cow<'_, str>) -> Result<Value, Error> {
 }
 
 /// Middleware that provides access to all available templates with context injected.
-pub async fn middleware<B>(
+pub async fn middleware(
     State(state): State<AppState>,
     Extension(i18n): Extension<I18nLoader>,
-    mut request: Request<B>,
-    next: Next<B>,
+    mut request: Request,
+    next: Next,
 ) -> axum::response::Result<impl IntoResponse> {
     let mut environment = (*state.templates.reloader.acquire_env().map_err(|error| {
         (
