@@ -42,6 +42,7 @@ mod state;
 mod templates;
 mod types;
 mod user_preferences;
+mod utilities;
 mod weather_forecast;
 
 #[tokio::main]

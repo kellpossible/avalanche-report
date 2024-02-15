@@ -1,3 +1,5 @@
+//! Code to read a GeoTIFF file using [`tiff`].
+
 use eyre::{bail, Context, ContextCompat};
 use ndarray::Array2;
 use num_traits::{FromPrimitive, ToPrimitive};
@@ -595,6 +597,7 @@ pub fn load(path: impl AsRef<Path>) -> eyre::Result<Array2<u8>> {
             _ => None,
         })
         .wrap_err("No geographic coordinate system type")?;
+    dbg!(geographic_type);
 
     let model_tie_point_tag = t.get_tag_f64_vec(Tag::ModelTiepointTag)?;
     let model_pixel_scale_tag = t.get_tag_f64_vec(Tag::ModelPixelScaleTag)?;
@@ -607,6 +610,7 @@ pub fn load(path: impl AsRef<Path>) -> eyre::Result<Array2<u8>> {
     dbg!(width);
     dbg!(height);
 
+    // Project from CRS WGS84 to web mercator (I think?)
     let from_proj =
         proj4rs::Proj::from_proj_string(&format!("+proj=longlat +datum=WGS84 +no_defs +type=crs"))?;
     let to_proj = proj4rs::Proj::from_proj_string("+proj=merc +a=6378137 +b=6378137 +lat_ts=0 +lon_0=0 +x_0=0 +y_0=0 +k=1 +units=m +nadgrids=@null +wktext +no_defs +type=crs")?;

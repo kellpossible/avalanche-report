@@ -19,7 +19,7 @@ use minijinja::{
     value::{Value, ValueKind},
     Error, ErrorKind,
 };
-use pulldown_cmark::{Event, Tag};
+use pulldown_cmark::{Event, Tag, TagEnd};
 use rust_embed::{EmbeddedFile, RustEmbed};
 use uuid::Uuid;
 
@@ -352,7 +352,7 @@ pub async fn middleware(
                 }
                 _ => Box::new(parser.filter_map(|event| match event {
                     Event::Start(Tag::Paragraph) => None,
-                    Event::End(Tag::Paragraph) => None,
+                    Event::End(TagEnd::Paragraph) => None,
                     _ => Some(event),
                 })),
             };
@@ -363,7 +363,7 @@ pub async fn middleware(
         },
     );
     environment.add_function("ansi_to_html", |ansi_string: &str| {
-        ansi_to_html::convert_escaped(ansi_string).map_err(|error| {
+        ansi_to_html::convert_with_opts(ansi_string, &ansi_to_html::Opts::default()).map_err(|error| {
             Error::new(
                 ErrorKind::InvalidOperation,
                 "Error while converting ANSI string to HTML".to_owned(),

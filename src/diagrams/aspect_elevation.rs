@@ -16,9 +16,11 @@ use i18n_embed::fluent::FluentLanguageLoader;
 use i18n_embed_fl::fl;
 use once_cell::sync::Lazy;
 use regex::{Captures, Regex};
-use resvg::{tiny_skia, usvg};
+use resvg::{
+    tiny_skia,
+    usvg::{self, PostProcessingSteps},
+};
 use serde::{Deserialize, Serialize};
-use usvg_text_layout::TreeTextToPath;
 
 use crate::{
     error::{map_eyre_error, map_std_error},
@@ -295,17 +297,20 @@ fn generate_png(
     let svg = generate_svg(aspect_elevation, i18n);
     let options = usvg::Options::default();
     let mut tree = usvg::Tree::from_str(&svg, &options)?;
-    tree.convert_text(&FONT_DB);
-    let pixmap_size = tree.size.to_screen_size();
+    tree.postprocess(
+        PostProcessingSteps {
+            convert_text_into_paths: true,
+        },
+        &FONT_DB,
+    );
+    let pixmap_size = tree.size.to_int_size();
     let mut pixmap = tiny_skia::Pixmap::new(pixmap_size.width(), pixmap_size.height())
         .ok_or_else(|| eyre::eyre!("Unable to create pixmap"))?;
     resvg::render(
         &tree,
-        usvg::FitTo::Original,
-        Default::default(),
-        pixmap.as_mut(),
-    )
-    .ok_or_else(|| eyre::eyre!("Error rendering svg"))?;
+        resvg::tiny_skia::Transform::default(),
+        &mut pixmap.as_mut(),
+    );
     pixmap.encode_png().map_err(eyre::Error::from)
 }
 
