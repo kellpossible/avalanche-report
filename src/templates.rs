@@ -363,13 +363,15 @@ pub async fn middleware(
         },
     );
     environment.add_function("ansi_to_html", |ansi_string: &str| {
-        ansi_to_html::convert_with_opts(ansi_string, &ansi_to_html::Opts::default()).map_err(|error| {
-            Error::new(
-                ErrorKind::InvalidOperation,
-                "Error while converting ANSI string to HTML".to_owned(),
-            )
-            .with_source(error)
-        })
+        ansi_to_html::convert_with_opts(ansi_string, &ansi_to_html::Opts::default()).map_err(
+            |error| {
+                Error::new(
+                    ErrorKind::InvalidOperation,
+                    "Error while converting ANSI string to HTML".to_owned(),
+                )
+                .with_source(error)
+            },
+        )
     });
     let uri = request.uri();
     let query_value: Value = uri
