@@ -1,48 +1,48 @@
-avalanche-forecast-heading = Avalanche Forecast
+avalanche-forecast-heading = Лавинен бюлетин
 # Heading for the current forecast section on an index page
-current-forecast-heading = Current Forecast
+current-forecast-heading = Настояща прогноза
 # Heading for when there is no current forecast on an index page
-no-current-forecast-heading = No Current Forecast
+no-current-forecast-heading = Няма актуална прогноза
 # Button to view the full avalanche forecast
-view-full-forecast-button = View full forecast
+view-full-forecast-button = Виж детайлната прогноза
 # Text on the index page explaining to check the forecast archive because there is no current forecast.
-check-forecast-archive-below = Please check the forecast archive below for the most recent forecast for this area.
+check-forecast-archive-below = За проверка на последно издадените прогнози за този регион, разгледай архива по-долу.
 # Message on the index page
 # TODO: Remove and replace with user configured content in the database.
-see-facebook-page-message = See [Our Facebook Page]({ $url }) for discussion and updates, and watch this space.
+see-facebook-page-message = За подробна информация и дискусии, следи този сайт и [нашата страница във facebook]({ $url }).
 # Heading for the area that the forecast is about
-forecast-area-heading = Forecast Area
+forecast-area-heading = Зона на опериране
 # The Gudauri forecast area name
-forecast-area-gudauri = Gudauri
-gudauri-avalanche-forecast-heading = Gudauri Avalanche Forecast
-latest-forecast-heading = Latest Forecast
-avalanche-hazard-level-heading = Avalanche Hazard Level
-forecast-archive-heading = Forecast Archive
-no-forecasts-available-message = No Forecasts Available
+forecast-area-gudauri = Банско
+gudauri-avalanche-forecast-heading = Лавинен бюлетин Банско
+latest-forecast-heading = Последо издадена прогноза
+avalanche-hazard-level-heading = Степен на лавинна опасност
+forecast-archive-heading = Архив на издадените прогнози
+no-forecasts-available-message = Не е издадена прогноза
 # Month of the year
-month-1 = January
+month-1 = Януари
 # Month of the year
-month-2 = February
+month-2 = Февруари
 # Month of the year
-month-3 = March
+month-3 = Март
 # Month of the year
-month-4 = April
+month-4 = Април
 # Month of the year
-month-5 = May
+month-5 = май
 # Month of the year
-month-6 = June
+month-6 = юни
 # Month of the year
-month-7 = July
+month-7 = юли
 # Month of the year
-month-8 = August
+month-8 = август
 # Month of the year
-month-9 = September
+month-9 = септември
 # Month of the year
-month-10 = October
+month-10 = октомври
 # Month of the year
-month-11 = November
+month-11 = ноември
 # Month of the year
-month-12 = December
+month-12 = декември
 # A short single-word heading for avalanche problem type
 problem-type-heading-short = Type
 # A heading for avalanche problem type.
