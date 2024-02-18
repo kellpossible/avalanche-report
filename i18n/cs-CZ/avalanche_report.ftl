@@ -271,15 +271,11 @@ about-description =
     non-profit NGO, which has started an avalanche forecasting service in the
     Republic of Georgia. We provide free, high-quality information and warnings
     about avalanche conditions in the Gudauri area, which is a popular location
-    for off-piste and backcountry freeriding and ski touring. We heavily rely
-    on the contributions of volunteers and donors, and welcome anyone who is
-    interested to help further the project. 
-    You can contact us via email [zvavisaqartvelo@gmail.com](mailto:zvavisaqartvelo@gmail.com)
-    or [Facebook](https://www.facebook.com/avalanche.ge).
+    for off-piste and backcountry freeriding and ski touring.
     
     The website software `avalanche-report` is open source, available over at
     <https://github.com/kellpossible/avalanche-report>, new contributors are
-    welcome! Feel free to contact the team there if you wish to deploy
-    something similar for your forecast region.
+    welcome! Feel free to contact us if you wish to deploy something similar
+    for your forecast region.
 wind-unit-label = Wind Unit:
 sponsors-title = Sponsors
