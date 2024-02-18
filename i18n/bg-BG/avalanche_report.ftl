@@ -13,8 +13,8 @@ see-facebook-page-message = За подробна информация и дис
 # Heading for the area that the forecast is about
 forecast-area-heading = Зона на опериране
 # The Gudauri forecast area name
-forecast-area-gudauri = Банско
-gudauri-avalanche-forecast-heading = Лавинен бюлетин Банско
+forecast-area-gudauri = Гудаури
+gudauri-avalanche-forecast-heading = Лавинен бюлетин Гудаури
 latest-forecast-heading = Последо издадена прогноза
 avalanche-hazard-level-heading = Степен на лавинна опасност
 forecast-archive-heading = Архив на издадените прогнози
@@ -266,12 +266,5 @@ disclaimer-title = Освобождаване от отговорност
 accept-disclaimer-checkbox-label = Приемам
 continue-button-text = Продължи
 about-title = За нас
-about-description =
-    Лавинна служба Банско е проект на Българска Лавинна Асоциация (БЛА) и се оперира от доброволци, подкрепени от двама сертифицирани професионалисти по лавинна безопасност (Ниво 1) към Канадската Лавинна Асоциация. Целта ни е да предоставяме актуална информация и предупреждения за лавинните условия в района на Банско. Поради ограничените ресурси, разчитаме основно на дарения и приветстваме всеки, който има интерес да подкрепи каузата ни. 
-    Можете да се свържете с нас на [CONTACT@AVALANCHE.BG] (mailto:contact@avalanche.bg)
-    или във [Facebook](https://www.facebook.com/avalanchebulgaria).
-    
-    Софтуерът за издаване на бюлетина `avalanche-report` е с отворен код на
-    <https://github.com/kellpossible/avalanche-report> и който иска да допринесе за разработването му е добре дошъл. Също така, може да се свържете с екипа, ако искате да интегрирате решението за вашия регион на опериране.
 wind-unit-label = Мерна ед. за вятъра
 sponsors-title = Спонсори
