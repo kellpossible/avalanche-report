@@ -1,8 +1,8 @@
-use axum::extract::State;
+use axum::extract::{Request, State};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use deadpool_sqlite::PoolError;
-use http::{Request, StatusCode};
+use http::StatusCode;
 use nonzero_ext::nonzero;
 use std::path::Path;
 use std::sync::Arc;
@@ -101,11 +101,7 @@ impl DatabaseInstance {
 }
 
 #[tracing::instrument(skip_all)]
-pub async fn middleware<B>(
-    state: State<AppState>,
-    mut request: Request<B>,
-    next: Next<B>,
-) -> Response {
+pub async fn middleware(state: State<AppState>, mut request: Request, next: Next) -> Response {
     let database = match state.database.get().await {
         Ok(database) => database,
         Err(error) => {

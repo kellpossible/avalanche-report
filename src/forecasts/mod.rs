@@ -33,9 +33,10 @@ use crate::{
     google_drive::{self, ListFileMetadata},
     i18n::{self, I18nLoader},
     index::ForecastFileView,
-    options::Map,
+    options::{Map, WeatherMaps},
     state::AppState,
     templates::{render, TemplatesWithContext},
+    user_preferences::{UserPreferences, WindUnit},
 };
 
 use self::files::{ForecastFiles, ForecastFilesIden};
@@ -132,16 +133,16 @@ pub async fn handler(
     Extension(database): Extension<DatabaseInstance>,
     Extension(i18n): Extension<I18nLoader>,
     Extension(templates): Extension<TemplatesWithContext>,
+    Extension(preferences): Extension<UserPreferences>,
 ) -> axum::response::Result<Response> {
     handler_impl(
         file_name,
-        &state.options.google_drive.published_folder_id,
-        &state.options.google_drive.api_key,
-        &state.options.map,
+        &state.options,
         &state.client,
         &database,
         &templates,
         &i18n,
+        &preferences,
     )
     .await
     .map_err(map_eyre_error)
@@ -149,40 +150,36 @@ pub async fn handler(
 
 #[derive(Debug, Serialize, Clone)]
 pub struct Forecast {
-    pub language: unic_langid::LanguageIdentifier,
     pub area: AreaId,
     pub forecaster: Forecaster,
     pub time: OffsetDateTime,
-    pub recent_observations: Option<String>,
-    pub forecast_changes: Option<String>,
-    pub weather_forecast: Option<String>,
+    #[serde(default)]
+    pub recent_observations: HashMap<unic_langid::LanguageIdentifier, String>,
+    #[serde(default)]
+    pub forecast_changes: HashMap<unic_langid::LanguageIdentifier, String>,
+    #[serde(default)]
+    pub weather_forecast: HashMap<unic_langid::LanguageIdentifier, String>,
     pub valid_for: time::Duration,
-    pub description: Option<String>,
+    #[serde(default)]
+    pub description: HashMap<unic_langid::LanguageIdentifier, String>,
     pub hazard_ratings: IndexMap<HazardRatingKind, HazardRating>,
     pub avalanche_problems: Vec<AvalancheProblem>,
     pub elevation_bands: IndexMap<ElevationBandId, ElevationRange>,
 }
 
-#[derive(Debug, Serialize, Clone)]
-pub struct ElevationRange {
-    pub upper: Option<i64>,
-    pub lower: Option<i64>,
-}
+impl Forecast {
+    pub fn is_current(&self) -> bool {
+        let valid_until = self.time + self.valid_for;
 
-impl From<forecast_spreadsheet::ElevationRange> for ElevationRange {
-    fn from(value: forecast_spreadsheet::ElevationRange) -> Self {
-        Self {
-            upper: value.upper,
-            lower: value.lower,
+        if time::OffsetDateTime::now_utc() <= valid_until {
+            true
+        } else {
+            false
         }
     }
-}
 
-impl TryFrom<forecast_spreadsheet::Forecast> for Forecast {
-    type Error = eyre::Error;
-    fn try_from(value: forecast_spreadsheet::Forecast) -> eyre::Result<Self> {
+    pub fn try_new(value: forecast_spreadsheet::Forecast) -> eyre::Result<Self> {
         Ok(Self {
-            language: value.language,
             area: value.area,
             forecaster: value.forecaster,
             time: value.time,
@@ -207,25 +204,52 @@ impl TryFrom<forecast_spreadsheet::Forecast> for Forecast {
 }
 
 #[derive(Debug, Serialize, Clone)]
+pub struct ElevationRange {
+    pub upper: Option<i64>,
+    pub lower: Option<i64>,
+}
+
+impl From<forecast_spreadsheet::ElevationRange> for ElevationRange {
+    fn from(value: forecast_spreadsheet::ElevationRange) -> Self {
+        Self {
+            upper: value.upper,
+            lower: value.lower,
+        }
+    }
+}
+
+/// An extension of [Forecast] with values that can only be calculated on the Rust side, perhaps
+/// will be moved to template functions in the future.
+#[derive(Debug, Serialize, Clone)]
 pub struct FormattedForecast {
     #[serde(flatten)]
     pub forecast: Forecast,
     pub formatted_time: String,
     pub formatted_valid_until: String,
     pub map: Map,
+    pub is_current: bool,
+    pub external_weather_forecast: crate::weather_forecast::Context,
 }
 
 impl FormattedForecast {
-    pub fn format(forecast: Forecast, i18n: &I18nLoader, map: Map) -> Self {
+    pub fn format(
+        forecast: Forecast,
+        i18n: &I18nLoader,
+        options: &crate::Options,
+        preferences: &UserPreferences,
+    ) -> Self {
         let formatted_time = i18n::format_time(forecast.time, i18n);
         let valid_until_time = forecast.time + forecast.valid_for;
         let formatted_valid_until = i18n::format_time(valid_until_time, i18n);
+        let is_current = forecast.is_current();
 
         Self {
             forecast,
             formatted_time,
             formatted_valid_until,
-            map,
+            map: options.map.clone(),
+            is_current,
+            external_weather_forecast: crate::weather_forecast::Context::new(options, preferences),
         }
     }
 }
@@ -242,7 +266,8 @@ pub struct AvalancheProblem {
     pub distribution: Option<Distribution>,
     pub time_of_day: Option<TimeOfDay>,
     pub sensitivity: Option<Sensitivity>,
-    pub description: Option<String>,
+    #[serde(default)]
+    pub description: HashMap<unic_langid::LanguageIdentifier, String>,
     pub probability: Option<Probability>,
 }
 
@@ -315,13 +340,12 @@ impl TryFrom<forecast_spreadsheet::AvalancheProblem> for AvalancheProblem {
 #[instrument(level = "error", skip_all)]
 async fn handler_impl(
     file_name: String,
-    google_drive_published_folder_id: &str,
-    google_drive_api_key: &SecretString,
-    map: &Map,
+    options: &crate::Options,
     client: &reqwest::Client,
     database: &DatabaseInstance,
     templates: &TemplatesWithContext,
     i18n: &I18nLoader,
+    preferences: &UserPreferences,
 ) -> eyre::Result<Response> {
     let (requested_json, file_name) = {
         let path = std::path::Path::new(&file_name);
@@ -342,8 +366,8 @@ async fn handler_impl(
     // Check that file exists in published folder, and not attempting to access a file outside
     // that.
     let file_list = google_drive::list_files(
-        google_drive_published_folder_id,
-        google_drive_api_key,
+        &options.google_drive.published_folder_id,
+        &options.google_drive.api_key,
         client,
     )
     .await?;
@@ -372,16 +396,16 @@ async fn handler_impl(
         requested,
         client,
         database,
-        google_drive_api_key,
+        &options.google_drive.api_key,
     )
     .await?
     {
         ForecastData::Forecast(forecast) => match view {
             ForecastFileView::Html => {
-                let forecast = forecast
-                    .try_into()
+                let forecast = Forecast::try_new(forecast)
                     .wrap_err("Error converting forecast into template data")?;
-                let formatted_forecast = FormattedForecast::format(forecast, &i18n, map.clone());
+                let formatted_forecast =
+                    FormattedForecast::format(forecast, &i18n, options, preferences);
                 render(&templates.environment, "forecast.html", &formatted_forecast)
             }
             ForecastFileView::Json => Ok(Json(forecast).into_response()),
@@ -425,7 +449,7 @@ pub async fn get_forecast_data(
         }
     }
     let google_drive_id = file_metadata.id.clone();
-    let cached_forecast_file: Option<Vec<u8>> = database
+    let cached_forecast_file: Option<ForecastFiles> = database
         .interact(move |conn| {
             let mut query = sea_query::Query::select();
 
@@ -453,19 +477,25 @@ pub async fn get_forecast_data(
             // This logic is a bit buggy on google's side it seems, sometimes they change document
             // but don't update modified time.
             if cached_last_modified == *server_last_modified {
-                Some(cached_forecast_file.file_blob)
+                Some(cached_forecast_file)
             } else {
                 tracing::debug!("Found cached forecast file, but it's outdated");
                 None
             }
         });
 
-    let forecast_file_bytes: Vec<u8> = if let Some(cached_forecast_file) = cached_forecast_file {
+    let forecast_file: ForecastFiles = if let Some(cached_forecast_file) = cached_forecast_file {
         tracing::debug!("Using cached forecast file");
         cached_forecast_file
     } else {
         tracing::debug!("Fetching updated/new forecast file");
-        let forecast_file_bytes: Vec<u8> = match requested {
+        let (forecast_file_bytes, forecast): (
+            Vec<u8>,
+            Option<(
+                forecast_spreadsheet::Forecast,
+                forecast_spreadsheet::Version,
+            )>,
+        ) = match requested {
             RequestedForecastData::Forecast => {
                 let file = google_drive::export_file(
                     &file_metadata.id,
@@ -474,42 +504,69 @@ pub async fn get_forecast_data(
                     client,
                 )
                 .await?;
-                file.bytes().await?.into()
+                let forecast_file_bytes: Vec<u8> = file.bytes().await?.into();
+                let forecast: forecast_spreadsheet::Forecast =
+                    forecast_spreadsheet::parse_excel_spreadsheet(
+                        &forecast_file_bytes,
+                        &*FORECAST_SCHEMA,
+                    )
+                    .context("Error parsing forecast spreadsheet")?;
+
+                (
+                    forecast_file_bytes,
+                    Some((forecast, FORECAST_SCHEMA.schema_version.clone())),
+                )
             }
             RequestedForecastData::File => {
                 let file =
                     google_drive::get_file(&file_metadata.id, google_drive_api_key, client).await?;
-                file.bytes().await?.into()
+                (file.bytes().await?.into(), None)
             }
         };
-        let forecast_files_db = ForecastFiles {
+        let forecast_file_db = ForecastFiles {
             google_drive_id: file_metadata.id.clone(),
             last_modified: file_metadata.modified_time.clone().into(),
             file_blob: forecast_file_bytes.clone(),
+            parsed_forecast: forecast.as_ref().map(|f| f.0.clone()),
+            schema_version: forecast.as_ref().map(|f| f.1.clone()),
         };
+        let forecast_file_db_query = forecast_file_db.clone();
+        tracing::debug!("Updating cached forecast file");
         database
             .interact(move |conn| {
                 let mut query = sea_query::Query::insert();
 
-                let values = forecast_files_db.values();
+                let values = forecast_file_db_query.values()?;
                 query
                     .into_table(ForecastFiles::TABLE)
                     .columns(ForecastFiles::COLUMNS)
                     .values(values)?;
 
-                let excluded_table: Alias = Alias::new("excluded");
+                let excluded_column: Alias = Alias::new("excluded");
                 query.on_conflict(
                     OnConflict::column(ForecastFilesIden::GoogleDriveId)
                         .values([
                             (
                                 ForecastFilesIden::LastModified,
-                                (excluded_table.clone(), ForecastFilesIden::LastModified)
+                                (excluded_column.clone(), ForecastFilesIden::LastModified)
                                     .into_column_ref()
                                     .into(),
                             ),
                             (
                                 ForecastFilesIden::FileBlob,
-                                (excluded_table, ForecastFilesIden::FileBlob)
+                                (excluded_column.clone(), ForecastFilesIden::FileBlob)
+                                    .into_column_ref()
+                                    .into(),
+                            ),
+                            (
+                                ForecastFilesIden::ParsedForecast,
+                                (excluded_column.clone(), ForecastFilesIden::ParsedForecast)
+                                    .into_column_ref()
+                                    .into(),
+                            ),
+                            (
+                                ForecastFilesIden::SchemaVersion,
+                                (excluded_column, ForecastFilesIden::SchemaVersion)
                                     .into_column_ref()
                                     .into(),
                             ),
@@ -522,21 +579,61 @@ pub async fn get_forecast_data(
                 Result::<_, eyre::Error>::Ok(())
             })
             .await??;
-        forecast_file_bytes
+        forecast_file_db
     };
 
     match requested {
         RequestedForecastData::Forecast => {
+            if let Some(forecast) = forecast_file.parsed_forecast {
+                if forecast_file.schema_version == Some(FORECAST_SCHEMA.schema_version) {
+                    tracing::debug!("Re-using parsed forecast");
+                    return Ok(ForecastData::Forecast(forecast));
+                } else {
+                    tracing::warn!(
+                        "Cached forecast schema version {:?} doesn't match current {:?}",
+                        forecast_file.schema_version,
+                        FORECAST_SCHEMA.schema_version
+                    );
+                }
+            }
+            tracing::debug!("Re-parsing forecast");
             let forecast: forecast_spreadsheet::Forecast =
                 forecast_spreadsheet::parse_excel_spreadsheet(
-                    &forecast_file_bytes,
+                    &forecast_file.file_blob,
                     &*FORECAST_SCHEMA,
                 )
                 .context("Error parsing forecast spreadsheet")?;
 
+            let json_forecast: serde_json::Value = serde_json::to_value(forecast.clone())?;
+            tracing::debug!("Updating cached parsed forecast and schema version");
+            database
+                .interact(move |conn| {
+                    let mut query = sea_query::Query::update();
+                    query
+                        .table(ForecastFiles::TABLE)
+                        .values([
+                            (
+                                ForecastFilesIden::ParsedForecast,
+                                Some(json_forecast).into(),
+                            ),
+                            (
+                                ForecastFilesIden::SchemaVersion,
+                                Some(FORECAST_SCHEMA.schema_version.to_string()).into(),
+                            ),
+                        ])
+                        .and_where(
+                            Expr::col(ForecastFilesIden::GoogleDriveId)
+                                .eq(forecast_file.google_drive_id),
+                        );
+                    let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
+                    conn.execute(&sql, &*values.as_params())?;
+                    Result::<_, eyre::Error>::Ok(())
+                })
+                .await??;
+
             Ok(ForecastData::Forecast(forecast))
         }
-        RequestedForecastData::File => Ok(ForecastData::File(forecast_file_bytes)),
+        RequestedForecastData::File => Ok(ForecastData::File(forecast_file.file_blob)),
     }
 }
 

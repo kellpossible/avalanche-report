@@ -2,6 +2,7 @@ use axum::{extract::State, response::IntoResponse, Extension};
 use color_eyre::Help;
 use eyre::{bail, eyre, Context, ContextCompat};
 use futures::{stream, StreamExt, TryStreamExt};
+use headers::{CacheControl, Header, HeaderMapExt};
 use i18n_embed::LanguageLoader;
 use serde::Serialize;
 use unic_langid::LanguageIdentifier;
@@ -17,6 +18,7 @@ use crate::{
     i18n::{self, I18nLoader},
     state::AppState,
     templates::{render, TemplatesWithContext},
+    user_preferences::UserPreferences,
 };
 
 #[derive(Clone, Serialize, Debug)]
@@ -94,6 +96,7 @@ pub async fn handler(
     Extension(templates): Extension<TemplatesWithContext>,
     Extension(i18n): Extension<I18nLoader>,
     Extension(database): Extension<DatabaseInstance>,
+    Extension(preferences): Extension<UserPreferences>,
     State(state): State<AppState>,
 ) -> axum::response::Result<impl IntoResponse> {
     let file_list = google_drive::list_files(
@@ -186,9 +189,13 @@ pub async fn handler(
                 .await?
                 {
                     ForecastData::Forecast(forecast) => {
-                        let forecast: Forecast = forecast.try_into()?;
-                        let formatted_forecast: FormattedForecast =
-                            FormattedForecast::format(forecast, &i18n, state.options.map.clone());
+                        let forecast = Forecast::try_new(forecast)?;
+                        let formatted_forecast: FormattedForecast = FormattedForecast::format(
+                            forecast,
+                            &i18n,
+                            &state.options,
+                            &preferences,
+                        );
                         Some(formatted_forecast)
                     }
                     ForecastData::File(_) => {
@@ -214,9 +221,7 @@ pub async fn handler(
 
     let current_forecast = forecasts.first().and_then(|forecast| {
         let f = &forecast.forecast.as_ref()?.forecast;
-        let valid_until = f.time + f.valid_for;
-
-        if time::OffsetDateTime::now_utc() <= valid_until {
+        if f.is_current() {
             Some(forecast.clone())
         } else {
             None
@@ -228,5 +233,11 @@ pub async fn handler(
         forecasts,
         errors,
     };
-    render(&templates.environment, "index.html", &index).map_err(map_eyre_error)
+    let mut response = render(&templates.environment, "index.html", &index)
+        .map_err(map_eyre_error)?
+        .into_response();
+    response
+        .headers_mut()
+        .typed_insert(CacheControl::new().with_no_store());
+    Ok(response)
 }

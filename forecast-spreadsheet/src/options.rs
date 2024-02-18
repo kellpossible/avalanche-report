@@ -10,21 +10,27 @@ use crate::{
 };
 
 #[derive(Deserialize)]
+pub struct TranslatedString {
+    pub root: SheetCellPosition,
+    #[serde(default)]
+    pub translations: HashMap<unic_langid::LanguageIdentifier, CellPosition>,
+}
+
+#[derive(Deserialize)]
 pub struct Options {
     /// What version of the spreadsheet this schema applies to.
     #[serde(with = "string")]
     pub schema_version: Version,
     pub template_version: SheetCellPosition,
-    pub language: Language,
     pub area: Area,
     pub area_definitions: IndexMap<AreaId, AreaDefinition>,
     pub forecaster: Forecaster,
     pub time: Time,
-    pub recent_observations: Option<SheetCellPosition>,
-    pub forecast_changes: Option<SheetCellPosition>,
-    pub weather_forecast: Option<SheetCellPosition>,
+    pub recent_observations: Option<TranslatedString>,
+    pub forecast_changes: Option<TranslatedString>,
+    pub weather_forecast: Option<TranslatedString>,
     pub valid_for: SheetCellPosition,
-    pub description: Option<SheetCellPosition>,
+    pub description: Option<TranslatedString>,
     pub hazard_ratings: HazardRatings,
     pub avalanche_problems: Vec<AvalancheProblem>,
     /// Set of elevation band ids, that needs to match the order and number of
@@ -101,7 +107,7 @@ pub struct AvalancheProblem {
     pub distribution: Option<CellPosition>,
     pub time_of_day: Option<CellPosition>,
     pub trend: Option<CellPosition>,
-    pub description: Option<CellPosition>,
+    pub description: Option<TranslatedString>,
 }
 
 #[derive(Deserialize)]

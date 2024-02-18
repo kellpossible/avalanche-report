@@ -1,4 +1,4 @@
-use std::{collections::HashMap, net::SocketAddr, num::NonZeroU32, path::PathBuf};
+use std::{net::SocketAddr, num::NonZeroU32, path::PathBuf};
 
 use crate::serde::hide_secret;
 use cronchik::CronSchedule;
@@ -6,6 +6,7 @@ use eyre::ContextCompat;
 use nonzero_ext::nonzero;
 use secrecy::SecretString;
 use serde::{ser::Error, Deserialize, Serialize};
+use serde_with::{serde_as, EnumMap};
 use toml_env::AutoMapEnvArgs;
 use url::Url;
 
@@ -46,6 +47,9 @@ pub struct Options {
     #[serde(serialize_with = "hide_secret::serialize")]
     /// (REQUIRED) Hash of the `admin` user password, used to access `/admin/*` routes.
     pub admin_password_hash: SecretString,
+    /// See [WeatherMap].
+    #[serde(default)]
+    pub weather_maps: WeatherMaps,
 }
 
 /// Configuration for using Google Drive.
@@ -56,6 +60,37 @@ pub struct GoogleDrive {
     /// Google Drive API key, used to access forecast spreadsheets.
     #[serde(serialize_with = "hide_secret::serialize")]
     pub api_key: SecretString,
+}
+
+#[serde_as]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct WeatherMaps(#[serde_as(as = "EnumMap")] Vec<WeatherMap>);
+
+impl From<WeatherMaps> for Vec<WeatherMap> {
+    fn from(value: WeatherMaps) -> Self {
+        value.0
+    }
+}
+
+/// Include a current weather map on the forecast page.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum WeatherMap {
+    /// See [WindyWeather].
+    Windy(WindyWeather),
+    Meteoblue(MeteoblueWeather),
+}
+
+/// Weather map from <https://meteoblue.com>
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MeteoblueWeather {
+    pub location_id: String,
+}
+
+/// Weather map from <https://windy.com>
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WindyWeather {
+    pub latitude: f64,
+    pub longitude: f64,
 }
 
 /// `avalanche-report` has a built-in backup facility which can save the database and push it to an

@@ -6,12 +6,13 @@ use crate::{
     templates::{render, TemplatesWithContext},
 };
 use axum::{
+    extract::Request,
     middleware::Next,
     response::{IntoResponse, Redirect, Response},
 };
 use axum_extra::extract::CookieJar;
 use eyre::{Context, ContextCompat};
-use http::{header::SET_COOKIE, HeaderMap, HeaderValue, Request};
+use http::{header::SET_COOKIE, HeaderMap, HeaderValue};
 
 const DISCLAIMER_COOKIE_NAME: &str = "disclaimer";
 /// TODO: if this version is updated we need new logic to require the current version of the
@@ -40,7 +41,7 @@ pub async fn handler(headers: HeaderMap) -> axum::response::Result<impl IntoResp
     Ok(response)
 }
 
-pub async fn middleware<B>(request: Request<B>, next: Next<B>) -> Response {
+pub async fn middleware(request: Request, next: Next) -> Response {
     let is_bot = request
         .extensions()
         .get::<IsBot>()

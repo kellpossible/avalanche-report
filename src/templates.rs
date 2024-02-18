@@ -8,18 +8,18 @@ use std::{
 };
 
 use axum::{
-    extract::State,
+    extract::{Request, State},
     middleware::Next,
     response::{IntoResponse, Response},
     Extension,
 };
 use fluent::{types::FluentNumber, FluentValue};
-use http::{header::CONTENT_TYPE, Request, StatusCode};
+use http::{header::CONTENT_TYPE, StatusCode};
 use minijinja::{
     value::{Value, ValueKind},
     Error, ErrorKind,
 };
-use pulldown_cmark::{Event, Tag};
+use pulldown_cmark::{Event, Tag, TagEnd};
 use rust_embed::{EmbeddedFile, RustEmbed};
 use uuid::Uuid;
 
@@ -226,11 +226,11 @@ pub fn mapremove(map: Value, key: Cow<'_, str>) -> Result<Value, Error> {
 }
 
 /// Middleware that provides access to all available templates with context injected.
-pub async fn middleware<B>(
+pub async fn middleware(
     State(state): State<AppState>,
     Extension(i18n): Extension<I18nLoader>,
-    mut request: Request<B>,
-    next: Next<B>,
+    mut request: Request,
+    next: Next,
 ) -> axum::response::Result<impl IntoResponse> {
     let mut environment = (*state.templates.reloader.acquire_env().map_err(|error| {
         (
@@ -251,6 +251,50 @@ pub async fn middleware<B>(
 
     let i18n_fl = i18n.clone();
     let i18n_fl_md = i18n.clone();
+    let i18n_negotiate_translation = i18n.clone();
+
+    let translated_string_default = &state.options.default_language;
+    environment.add_function("translated_string", move |translations: Value| {
+        let available_languages: Vec<unic_langid::LanguageIdentifier> = translations
+            .try_iter()?
+            .map(|key| {
+                let key = match key.as_str() {
+                    Some(key) => key,
+                    None => {
+                        return Err(minijinja::Error::new(
+                            ErrorKind::InvalidOperation,
+                            "key is not a string",
+                        ))
+                    }
+                };
+
+                let language: unic_langid::LanguageIdentifier = key.parse().map_err(|e| {
+                    minijinja::Error::new(
+                        ErrorKind::InvalidOperation,
+                        format!("unable to parse key as language: {e:?}"),
+                    )
+                })?;
+
+                Ok(language)
+            })
+            .collect::<Result<_, minijinja::Error>>()?;
+
+        let requested_languages = i18n_negotiate_translation.current_languages();
+
+        let selected_languages = fluent_langneg::negotiate_languages(
+            &requested_languages,
+            &available_languages,
+            Some(translated_string_default),
+            fluent_langneg::NegotiationStrategy::Filtering,
+        );
+
+        let selected_language = selected_languages
+            .first()
+            .expect("Expected at least one language to be present due to default")
+            .to_string();
+        // Return Value because this value is optional.
+        translations.get_item(&Value::from(selected_language))
+    });
     // Render a fluent message.
     environment.add_function("fl", move |message_id: &str, args: Option<Value>| {
         Ok(if let Some(args) = args {
@@ -260,19 +304,47 @@ pub async fn middleware<B>(
         })
     });
     // Render fluent message as markdown.
+    //
+    // Available options:
+    // + use_isolating - sets the
+    //   https://docs.rs/fluent/latest/fluent/bundle/struct.FluentBundle.html#method.set_use_isolating
+    //   flag for this message. `true` by default.
+    // + strip_paragraph - An option to strip paragraph tags from the parsed markdown. `true` by
+    //   default.
     environment.add_function(
         "fl_md",
         move |message_id: &str, args: Option<Value>, options: Option<Value>| {
             let options = options.unwrap_or_default();
+
             let message = if let Some(args) = args {
-                i18n_fl_md.get_args(message_id, jinja_to_fluent_args(args)?)
+                let use_isolating = if let Ok(value) = options.get_attr("use_isolating") {
+                    match value.kind() {
+                        ValueKind::Bool => value.is_true(),
+                        ValueKind::Undefined => false,
+                        invalid => {
+                            return Err(minijinja::Error::new(
+                                ErrorKind::InvalidOperation,
+                                format!("Invalid value kind for option use_isolating: {invalid}"),
+                            ))
+                        }
+                    }
+                } else {
+                    true
+                };
+                if !use_isolating {
+                    i18n_fl_md.set_use_isolating(false);
+                }
+                let message = i18n_fl_md.get_args(message_id, jinja_to_fluent_args(args)?);
+                if !use_isolating {
+                    i18n_fl_md.set_use_isolating(true);
+                }
+                message
             } else {
                 i18n_fl_md.get(message_id)
             };
 
             let parser = pulldown_cmark::Parser::new(&message);
 
-            // An option to strip paragraph tags from the parsed markdown. `true` by default.
             let parser: Box<dyn Iterator<Item = Event>> = match options.get_attr("strip_paragraph")
             {
                 Ok(value) if !value.is_undefined() && !value.is_true() => {
@@ -280,24 +352,26 @@ pub async fn middleware<B>(
                 }
                 _ => Box::new(parser.filter_map(|event| match event {
                     Event::Start(Tag::Paragraph) => None,
-                    Event::End(Tag::Paragraph) => None,
+                    Event::End(TagEnd::Paragraph) => None,
                     _ => Some(event),
                 })),
             };
 
             let mut html = String::new();
             pulldown_cmark::html::push_html(&mut html, parser);
-            Ok(html)
+            Ok(Value::from_safe_string(html))
         },
     );
     environment.add_function("ansi_to_html", |ansi_string: &str| {
-        ansi_to_html::convert_escaped(ansi_string).map_err(|error| {
-            Error::new(
-                ErrorKind::InvalidOperation,
-                "Error while converting ANSI string to HTML".to_owned(),
-            )
-            .with_source(error)
-        })
+        ansi_to_html::convert_with_opts(ansi_string, &ansi_to_html::Opts::default()).map_err(
+            |error| {
+                Error::new(
+                    ErrorKind::InvalidOperation,
+                    "Error while converting ANSI string to HTML".to_owned(),
+                )
+                .with_source(error)
+            },
+        )
     });
     let uri = request.uri();
     let query_value: Value = uri
@@ -311,6 +385,19 @@ pub async fn middleware<B>(
         })
         .unwrap_or(().into());
     environment.add_function("uuid", || Uuid::new_v4().to_string());
+    environment.add_filter("md", |value: Value| {
+        if value.is_none() || value.is_undefined() {
+            return value;
+        }
+        if let Some(string) = value.as_str() {
+            let parser = pulldown_cmark::Parser::new(string);
+            let mut html = String::new();
+            pulldown_cmark::html::push_html(&mut html, parser);
+            Value::from_safe_string(html)
+        } else {
+            Value::from(())
+        }
+    });
     environment.add_filter("querystring", querystring);
     environment.add_filter("mapinsert", mapinsert);
     environment.add_filter("mapremove", mapremove);

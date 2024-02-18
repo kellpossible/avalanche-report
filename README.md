@@ -1,10 +1,14 @@
-# Avalanche Report
+# Avalanche Report [![Crowdin](https://badges.crowdin.net/avalanche-report/localized.svg)](https://crowdin.com/project/avalanche-report)
 
 A simple self-hosted web server for creating and managing an avalanche forecast for a region, along with accepting public observations.
 
 Currently it uses a Google Sheet [Avalanche Forecast Template](https://docs.google.com/spreadsheets/d/1vkav8SNr4uv1sOtc6mp2eTDa7nYTj5k852T1rD8F_8Y/edit?usp=sharing) for forecast data entry. Forecasts are placed in a specific google drive folder when they are ready to be published, and are automatically picked up by the server and rendered as HTML to users.
 
 There is a blog post which explains the inception, history and motivations for this project: [Introducing `avalanche-report`](https://lukefrisken.com/code/introducing-avalanche-report/).
+
+## Translations
+
+Translations for the project are happening over at <https://crowdin.com/project/avalanche-report>. Many thanks to [Crowdin](https://crowdin.com/) for supporting this project with an open source license! Contributions are very welcome. If you wish to contribute feel free to contact me <a href="mailto:l.frisken@gmail.com">l.frisken@gmail.com</a>, [Post an Issue](https://github.com/kellpossible/avalanche-report/issues) or [Create a discussion](https://github.com/kellpossible/avalanche-report/discussions). We will need to verify that you have the required technical avalanche knowledge (or close access to) needed to make accurate translations, as this is a safety critical product.
 
 ## Design Considerations
 
@@ -156,6 +160,15 @@ style="winter-v2"
 [AVALANCHE_REPORT.map.source.Tracestrack]
 # Beware that this key is sent to the client, so it's not really a secret.
 api_key="SECRET"
+
+# Enables the https://windy.com weather map.
+[AVALANCHE_REPORT.weather_maps.Windy]
+latitude=42.480
+longitude=44.480
+
+# Enables the https://meteoblue.com weather map.
+[AVALANCHE_REPORT.weather_maps.Meteoblue]
+location_id="gudauri_georgia_614410"
 ```
 
 Options can also be specified using the `AVALANCHE_REPORT` environment variable, with a multiline string containing all options specified in TOML format. See the [`fly.toml`](./fly.toml)'s `env.AVALANCHE_REPORT` key for an example of this in a deployment.

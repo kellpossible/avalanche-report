@@ -1,5 +1,4 @@
 use axum::{
-    body::{boxed, Full},
     handler::HandlerWithoutStateExt,
     http::{header, StatusCode, Uri},
     middleware,
@@ -7,8 +6,9 @@ use axum::{
     routing::{get, post},
     Extension, Router,
 };
+use bytes::Bytes;
 use error::map_std_error;
-use eyre::{Context, ContextCompat};
+use eyre::Context;
 use rust_embed::RustEmbed;
 use std::marker::PhantomData;
 use templates::TemplatesWithContext;
@@ -23,6 +23,7 @@ use crate::{
 mod admin;
 mod analytics;
 mod auth;
+mod cache_control;
 mod database;
 mod diagrams;
 mod disclaimer;
@@ -40,6 +41,9 @@ mod serde;
 mod state;
 mod templates;
 mod types;
+mod user_preferences;
+mod utilities;
+mod weather_forecast;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -108,26 +112,39 @@ async fn main() -> eyre::Result<()> {
 
     // build our application with a route
     let app = Router::new()
-        .route("/i18n", get(i18n::handler))
-        .route("/disclaimer", post(disclaimer::handler))
-        // These routes expose public forecast information and thus have the disclaimer middleware
-        // applied to them.
+        // All these pages are dynamic and should have the Cache-Control: no-store header set
+        // using the cache_control::no_store_middleware to help prevent browsers from caching them
+        // and preventing updates during refresh.
         .nest(
             "/",
             Router::new()
-                .route("/", get(index::handler))
-                .route("/forecasts/:file_name", get(forecasts::handler))
-                .nest("/observations", observations::router())
-                .layer(middleware::from_fn(disclaimer::middleware)),
+                // Using a GET request because this supports a redirect.
+                .route(
+                    "/user-preferences-redirect",
+                    get(user_preferences::query_set_redirect_handler),
+                )
+                .route("/disclaimer", post(disclaimer::handler))
+                .route("/weather-forecast", get(weather_forecast::handler))
+                // These routes expose public forecast information and thus have the disclaimer middleware
+                // applied to them.
+                .nest(
+                    "/",
+                    Router::new()
+                        .route("/", get(index::handler))
+                        .route("/forecasts/:file_name", get(forecasts::handler))
+                        .nest("/observations", observations::router())
+                        .layer(middleware::from_fn(disclaimer::middleware)),
+                )
+                .nest(
+                    "/admin",
+                    admin::router(reporting_options, &options.admin_password_hash),
+                )
+                .layer(middleware::from_fn(cache_control::no_store_middleware)),
         )
         .nest("/diagrams", diagrams::router())
         .nest("/forecast-areas", forecast_areas::router())
         .route_service("/dist/*file", dist_handler.into_service())
         .route_service("/static/*file", static_handler.into_service())
-        .nest(
-            "/admin",
-            admin::router(reporting_options, &options.admin_password_hash),
-        )
         .fallback(not_found_handler)
         .layer(middleware::from_fn_with_state(
             state.clone(),
@@ -137,6 +154,7 @@ async fn main() -> eyre::Result<()> {
             state.clone(),
             i18n::middleware,
         ))
+        .layer(middleware::from_fn(user_preferences::middleware))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             analytics::middleware,
@@ -151,9 +169,8 @@ async fn main() -> eyre::Result<()> {
 
     let url = &options.base_url();
     tracing::info!("listening on {url}");
-    axum::Server::bind(&options.listen_address)
-        .serve(app.into_make_service())
-        .await?;
+    let listener = tokio::net::TcpListener::bind(&options.listen_address).await?;
+    axum::serve(listener, app).await?;
 
     Ok(())
 }
@@ -227,7 +244,8 @@ where
         let path: &str = self.path.as_ref();
         match E::get(path) {
             Some(content) => {
-                let body = boxed(Full::from(content.data));
+                let bytes = Bytes::from(content.data.to_vec());
+                let body = axum::body::Body::from(bytes);
                 let mime = mime_guess::from_path(path).first_or_octet_stream();
                 Response::builder()
                     .header(header::CONTENT_TYPE, mime.as_ref())

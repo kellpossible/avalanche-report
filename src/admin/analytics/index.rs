@@ -17,7 +17,7 @@ use sea_query::{Alias, Expr, IntoIden, Order, SimpleExpr, SqliteQueryBuilder};
 use sea_query_rusqlite::RusqliteBinder;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
-use utils::serde::{duration_seconds_option, rfc3339_option};
+use utils::serde::rfc3339_option;
 
 use crate::{
     analytics::AnalyticsIden, error::map_eyre_error, state::AppState,
@@ -171,7 +171,7 @@ pub struct Query {
 pub async fn handler(
     Extension(templates): Extension<TemplatesWithContext>,
     axum::extract::Query(mut query): axum::extract::Query<Query>,
-    headers: axum::headers::HeaderMap,
+    headers: headers::HeaderMap,
     State(state): State<AppState>,
 ) -> axum::response::Result<Response> {
     let empty_uri_filter: bool = query

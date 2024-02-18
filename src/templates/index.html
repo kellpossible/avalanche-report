@@ -1,3 +1,4 @@
+{% from "macros/elements.html" import divider %}
 {% from "macros/language_select.html" import language_select %}
 {% from "macros/forecast_intro.html" import forecast_intro %}
 {% extends "base.html" %}
@@ -5,16 +6,18 @@
     <div class="py-4">
         {% if current_forecast %}
             <a href="/forecasts/{{ current_forecast.file.file.name | urlencode }}">
-                <h2 class="text-4xl font-bold text-blue-600">{{ fl("current-forecast") }}</h2>
+                <h2 class="text-4xl font-bold text-blue-600">{{ fl("current-forecast-heading") }}</h2>
             </a>
             {% with forecast = current_forecast.forecast %}
-                {{ forecast_intro(
-                overall_hazard=forecast.hazard_ratings.overall.value,
-                description=forecast.description,
-                formatted_time=forecast.formatted_time,
-                formatted_valid_until=forecast.formatted_valid_until,
-                forecaster_name=forecast.forecaster.name
-                ) }}
+                <div class="text-left">
+                    {{ forecast_intro(
+                    overall_hazard=forecast.hazard_ratings.overall.value,
+                    description=forecast.description,
+                    formatted_time=forecast.formatted_time,
+                    formatted_valid_until=forecast.formatted_valid_until,
+                    forecaster_name=forecast.forecaster.name
+                    ) }}
+                </div>
             {% endwith %}
             <div>
                 <a class="text-xl font-bold text-blue-600 hover:text-blue-800"
@@ -31,19 +34,21 @@
     </div>
 {% endmacro %}
 {% macro forecast_archive_block(forecast, emphasize=false) %}
-    <p>
-        <a class="text-xl font-bold text-blue-600 hover:text-blue-800 visited:text-purple-600 {% if emphasize %}text-xl font-bold{% endif %}"
-           href="/forecasts/{{ forecast.file.file.name | urlencode }}">
-            <span class="inline-flex items-baseline">
-                {% if forecast.forecast %}
-                    {% set hazard_rating = forecast.forecast.hazard_ratings.overall.value %}
-                    <img src="/static/images/icons/hazard-rating/{{ hazard_rating }}.png"
-                         class="self-center w-8 h-8 mx-1"/>
-                {% endif %}
-                <span>{{ forecast.details.formatted_time }}</span>
-            </span>
-        </a>
-    </p>
+    <tr>
+        <td>
+            {% if forecast.forecast %}
+                {% set hazard_rating = forecast.forecast.hazard_ratings.overall.value %}
+                <img src="/static/images/icons/hazard-rating/{{ hazard_rating }}.png"
+                     class="self-center h-8 mx-1"/>
+            {% endif %}
+        </td>
+        <td>
+            <a class="text-xl font-bold text-blue-600 hover:text-blue-800 visited:text-purple-600 {% if emphasize %}text-xl font-bold{% endif %}"
+               href="/forecasts/{{ forecast.file.file.name | urlencode }}">
+                {{ forecast.details.formatted_time }}
+            </a>
+        </td>
+    </tr>
 {% endmacro %}
 {% set page_title = fl("gudauri-avalanche-forecast-heading") %}
 {% block title %}
@@ -53,41 +58,57 @@
     <h1 class="text-5xl font-bold text-center">{{ page_title }}</h1>
     <div class="flex items-center justify-center w-screen">
         <div class="p-2 w-full md:min-w-3xl md:max-w-3xl text-center">
-            <div class="pb-2">
-                <span>
-                    <label for="language-select">Language:</label>
-                    {{ language_select() }}
-                </span>
-            </div>
-            <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
+            <div class="pb-2">{{ language_select() }}</div>
+            {{ divider() }}
             {% if (forecasts | length) == 0 %}
                 <p class="text-2xl font-bold text-rose-600">{{ fl("no-forecasts-available-message") }}</p>
             {% else %}
                 <div class="py-5">{{ current_forecast_block(current_forecast=current_forecast) }}</div>
-                <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
+                {{ divider() }}
                 <div class="py-5">
-                    <p class="md:text-justify">{{ fl("disclaimer-message") }}</p>
-                    <p class="prose max-w-none">
-                        {% autoescape false %}
-                            {{ fl_md("see-facebook-page-message", {"url": "https://www.facebook.com/groups/830534093958221"} ) }}
-                        {% endautoescape %}
+                    <h2 class="text-2xl font-bold py-2">{{ fl("about-title") }}</h2>
+                    <div class="prose leading-normal max-w-full text-black md:text-justify text-left">
+                        {{ fl_md("about-description", {}, { "strip_paragraph": false }) }}
+                    </div>
+                    <p class="md:text-justify text-left pt-4">{{ fl("disclaimer-message") }}</p>
+                    <div class="prose leading-normal max-w-full text-black md:text-justify text-left pt-4">
+                        {{ fl_md("see-facebook-page-message", {"url": "https://www.facebook.com/groups/830534093958221"}, { "use_isolating": false} ) }}
+                    </div>
+                </div>
+                {{ divider() }}
+                <div class="py-5">
+                    <h2 class="text-2xl font-bold py-2">{{ fl("sponsors-title") }}</h2>
+                    <div class="grid md:grid-cols-5 sm:grid-cols-1 pb-2 pt-4">
+                        <div class="md:col-span-1 flex justify-center items-center">
+                            <a href="https://vagabondadventures.ge/">
+                                <img class="py-4 max-h-32"
+                                     src="/static/images/logos/vagabond_logo.png"
+                                     alt="Vagabond Logo"/>
+                            </a>
+                        </div>
+                        <div class="md:col-span-4 md:text-justify pl-4 prose leading-normal">
+                            <a href="https://vagabondadventures.ge/">Vagabond Adventures</a> are the premier English-speaking (& German, Czech, French et al!) provider of ski/snowboard lessons, ski holiday packages & off-piste guiding at Gudauri, Georgia. With their intimate local knowledge, they also organise fantastic ski safari tours throughout the country, combining resort, off-piste & snowcat skiing with the incredible Georgian culture.
+                        </div>
                     </p>
                 </div>
-                <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
-                <div class="py-5 text-slate-500">
-                    <h2 class="text-2xl font-bold py-2">{{ fl("forecast-archive-heading") }}</h2>
-                    {% for forecast in forecasts %}{{ forecast_archive_block(forecast=forecast) }}{% endfor %}
+            </div>
+            {{ divider() }}
+            <div class="py-5 text-slate-500">
+                <h2 class="text-2xl font-bold py-2">{{ fl("forecast-archive-heading") }}</h2>
+                <div class="flex justify-center">
+                    <table>
+                        {% for forecast in forecasts %}{{ forecast_archive_block(forecast=forecast) }}{% endfor %}
+                    </table>
                 </div>
-            {% endif %}
-            {% if (errors | length) != 0 %}
-                <h2 class="text-2xl font-bold text-rose-600">Errors Reading Forecast Files</h2>
-                {% for error in errors %}
-                    <h3 class="text-xl font-bold text-rose-600">Error {{ loop.index }}</h3>
-                    {% autoescape false %}
-                        <pre>{{ ansi_to_html(error) }}</pre>
-                    {% endautoescape %}
-                {% endfor %}
-            {% endif %}
-        </div>
+            </div>
+        {% endif %}
+        {% if (errors | length) != 0 %}
+            <h2 class="text-2xl font-bold text-rose-600">Errors Reading Forecast Files</h2>
+            {% for error in errors %}
+                <h3 class="text-xl font-bold text-rose-600">Error {{ loop.index }}</h3>
+                <pre>{{ ansi_to_html(error) }}</pre>
+            {% endfor %}
+        {% endif %}
     </div>
+</div>
 {% endblock body %}

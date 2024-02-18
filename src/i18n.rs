@@ -1,32 +1,24 @@
 use axum::{
-    extract::State,
-    http::{HeaderMap, HeaderValue, Request},
+    extract::{Request, State},
+    http::{HeaderMap, HeaderValue},
     middleware::Next,
-    response::{IntoResponse, Redirect, Response},
+    response::Response,
 };
-use axum_extra::extract::CookieJar;
-use eyre::{Context, ContextCompat};
-use http::{header::SET_COOKIE, StatusCode};
 use i18n_embed::{
     fluent::{fluent_language_loader, FluentLanguageLoader, NegotiationStrategy},
     LanguageLoader,
 };
 use rust_embed::RustEmbed;
-use serde::Deserialize;
-use std::{str::FromStr, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 use time::OffsetDateTime;
 
-use crate::{
-    error::{map_eyre_error, map_std_error},
-    serde::string,
-    state::AppState,
-    types::Uri,
-};
+use crate::{state::AppState, user_preferences::UserPreferences};
 
 #[derive(RustEmbed)]
 #[folder = "i18n/"]
 struct Localizations;
 
+#[derive(Clone)]
 pub struct RequestedLanguages(pub Vec<unic_langid::LanguageIdentifier>);
 
 impl std::fmt::Display for RequestedLanguages {
@@ -56,13 +48,26 @@ fn parse_accept_language(accept_language: &HeaderValue) -> RequestedLanguages {
     )
 }
 
-pub type I18nLoader = Arc<FluentLanguageLoader>;
+/// Negotiate which translated string ot use based on the user's requested languages.
+pub fn negotiate_translated_string<'a>(
+    requested_languages: &[unic_langid::LanguageIdentifier],
+    default_language: &'a unic_langid::LanguageIdentifier,
+    text: &'a HashMap<unic_langid::LanguageIdentifier, String>,
+) -> Option<(&'a unic_langid::LanguageIdentifier, &'a str)> {
+    let available_languages: Vec<_> = text.keys().collect();
+    let selected = fluent_langneg::negotiate_languages(
+        requested_languages,
+        &available_languages,
+        Some(&default_language),
+        fluent_langneg::NegotiationStrategy::Filtering,
+    );
 
-// impl FromRef<AppState> for I18nLoader {
-//     fn from_ref(state: &AppState) -> Self {
-//         state.i18n
-//     }
-// }
+    let first = selected.first();
+
+    first.and_then(|first| text.get(first).map(|text| (**first, text.as_str())))
+}
+
+pub type I18nLoader = Arc<FluentLanguageLoader>;
 
 pub fn initialize() -> I18nLoader {
     Arc::new(fluent_language_loader!())
@@ -75,64 +80,23 @@ pub fn load_languages(loader: &I18nLoader) -> eyre::Result<()> {
     Ok(())
 }
 
-#[derive(Deserialize)]
-pub struct Query {
-    lang: unic_langid::LanguageIdentifier,
-}
-
-/// The name of the cookie used to store the user selected language.
-const LANG_COOKIE_NAME: &str = "lang";
-/// The Max-Age property for the cookie (in seconds).
-const LANG_COOKIE_MAX_AGE_SECONDS: u64 = 365 * 24 * 60 * 60;
-
-/// Handler to select a language by setting the [`LANG_COOKIE_NAME`] cookie.
-pub async fn handler(
-    axum::extract::Query(query): axum::extract::Query<Query>,
-    headers: HeaderMap,
-) -> axum::response::Result<impl IntoResponse> {
-    let referer_str = headers
-        .get("Referer")
-        .wrap_err("No referer headers")
-        .map_err(map_eyre_error)?
-        .to_str()
-        .wrap_err("Referer is not a valid string")
-        .map_err(map_eyre_error)?;
-    let mut response = Redirect::to(referer_str).into_response();
-    let lang = query.lang;
-    let value = HeaderValue::from_str(&format!(
-        "{LANG_COOKIE_NAME}={lang}; Max-Age={LANG_COOKIE_MAX_AGE_SECONDS}"
-    ))
-    .map_err(map_std_error)?;
-    response.headers_mut().insert(SET_COOKIE, value);
-    Ok(response)
-}
-
-pub async fn middleware<B>(
+pub async fn middleware(
     State(state): State<AppState>,
     headers: HeaderMap,
-    mut request: Request<B>,
-    next: Next<B>,
+    mut request: Request,
+    next: Next,
 ) -> Response {
-    let cookies = CookieJar::from_headers(request.headers());
-    let cookie_lang = match Option::transpose(
-        cookies
-            .get(LANG_COOKIE_NAME)
-            .map(|cookie| unic_langid::LanguageIdentifier::from_str(cookie.value())),
-    ) {
-        Ok(cookie_lang) => cookie_lang,
-        Err(error) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Unable to parse lang cookie: {error}"),
-            )
-                .into_response()
-        }
-    };
+    let preferences: &UserPreferences = request
+        .extensions()
+        .get()
+        .expect("Expected user_preferences middleware to be installed before this middleware");
 
     let accept_language = headers.get("Accept-Language").map(parse_accept_language);
-    let requested_languages = cookie_lang
+    let requested_languages = preferences
+        .lang
+        .as_ref()
         .map(|lang| {
-            let mut requested_languages = RequestedLanguages(vec![lang]);
+            let mut requested_languages = RequestedLanguages(vec![lang.clone()]);
             if let Some(accept_language) = &accept_language {
                 requested_languages
                     .0

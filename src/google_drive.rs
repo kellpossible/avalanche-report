@@ -1,8 +1,14 @@
+use std::borrow::Cow;
+
 use bytes::Bytes;
+use futures::TryStreamExt;
+use page_turner::{PageTurner, PagesStream, TurnedPage, TurnedPageResult};
 use reqwest::Url;
 use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
+
+use crate::utilities::assert_send_stream;
 
 /// Truncated version of <https://developers.google.com/drive/api/reference/rest/v3/files#File>
 /// that appears to be returned while listing files with [list_files].
@@ -36,18 +42,16 @@ impl ListFileMetadata {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-enum ListFilesResult {
-    Files(Vec<ListFileMetadata>),
-    Error(GoogleDriveError),
+struct ListFilesFiles {
+    next_page_token: Option<String>,
+    files: Vec<ListFileMetadata>,
 }
 
-impl From<ListFilesResult> for Result<Vec<ListFileMetadata>, GoogleDriveError> {
-    fn from(value: ListFilesResult) -> Self {
-        match value {
-            ListFilesResult::Files(files) => Ok(files),
-            ListFilesResult::Error(error) => Err(error),
-        }
-    }
+#[derive(Deserialize)]
+#[serde(untagged, rename_all = "camelCase")]
+enum ListFilesResponse {
+    Files(ListFilesFiles),
+    Error(GoogleDriveError),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -72,6 +76,39 @@ struct ListFilesQuery<'a> {
     q: &'a str,
     key: &'a str,
     fields: &'a str,
+    page_token: Option<Cow<'a, str>>,
+}
+
+struct ListFilesPages<'a> {
+    client: &'a reqwest::Client,
+}
+
+impl<'a> PageTurner<ListFilesQuery<'a>> for ListFilesPages<'a> {
+    type PageItems = Vec<ListFileMetadata>;
+    type PageError = eyre::Error;
+
+    #[tracing::instrument(name = "list_files_pages", skip_all, fields(page = request.page_token.as_ref().map(|s| s.to_string())))]
+    async fn turn_page(
+        &self,
+        mut request: ListFilesQuery<'a>,
+    ) -> TurnedPageResult<Self, ListFilesQuery<'a>> {
+        let query_string = serde_urlencoded::to_string(&request)?;
+        let url: Url =
+            format!("https://www.googleapis.com/drive/v3/files?{query_string}").parse()?;
+        let response: ListFilesResponse = self.client.get(url).send().await?.json().await?;
+
+        match response {
+            ListFilesResponse::Files(files) => {
+                if let Some(next_page_token) = files.next_page_token {
+                    request.page_token = Some(Cow::Owned(next_page_token));
+                    Ok(TurnedPage::next(files.files, request))
+                } else {
+                    Ok(TurnedPage::last(files.files))
+                }
+            }
+            ListFilesResponse::Error(error) => return Err(error.into()),
+        }
+    }
 }
 
 /// As per
@@ -88,11 +125,12 @@ pub async fn list_files(
         q: &q,
         key: api_key.expose_secret(),
         fields: "files(mimeType, id, name, modifiedTime)",
+        page_token: None,
     };
-    let query_string = serde_urlencoded::to_string(query)?;
-    let url: Url = format!("https://www.googleapis.com/drive/v3/files?{query_string}").parse()?;
-    let response = client.get(url).send().await?;
-    let files = Result::from(response.json::<ListFilesResult>().await?)?;
+    let files = assert_send_stream(ListFilesPages { client }.pages(query))
+        .items()
+        .try_collect()
+        .await?;
     Ok(files)
 }
 
@@ -214,4 +252,58 @@ pub async fn export_file(
             .parse()?;
     let response = client.get(url).send().await?;
     Ok(File { response })
+}
+
+#[cfg(test)]
+mod test {
+    use super::ListFilesResponse;
+    use serde_json::json;
+
+    #[test]
+    fn parse_list_files_response() {
+        let body = json!({
+            "kind": "drive#fileList",
+            "incompleteSearch": false,
+            "files": []
+        });
+        let response: ListFilesResponse = serde_json::from_value(body).unwrap();
+        assert!(matches!(response, ListFilesResponse::Files(_)));
+    }
+
+    #[test]
+    fn parse_list_files_response_next_page() {
+        let body = json!({
+            "nextPageToken": "TOKEN",
+            "kind": "drive#fileList",
+            "incompleteSearch": false,
+            "files": []
+        });
+        let response: ListFilesResponse = serde_json::from_value(body).unwrap();
+        match response {
+            ListFilesResponse::Files(files) => {
+                assert_eq!(
+                    files.next_page_token.as_ref().map(|s| s.as_str()),
+                    Some("TOKEN")
+                );
+            }
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn parse_list_files_response_error() {
+        let body = json!({
+            "code": 500,
+            "errors": [{}],
+            "message": "Some Error Message",
+        });
+        let response: ListFilesResponse = serde_json::from_value(body).unwrap();
+        match response {
+            ListFilesResponse::Error(error) => {
+                assert_eq!(&error.message, "Some Error Message");
+                assert_eq!(error.code, 500);
+            }
+            _ => panic!(),
+        }
+    }
 }

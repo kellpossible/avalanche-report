@@ -1,5 +1,7 @@
+{% from "macros/elements.html" import divider %}
 {% from "macros/language_select.html" import language_select %}
 {% from "macros/forecast_intro.html" import forecast_intro %}
+{% from "macros/weather_forecast.html" import weather_forecast_macro %}
 {% macro hazard_rating_number(hazard_value) -%}
     {%- if not hazard_value -%}
         ?
@@ -57,13 +59,8 @@
                     <h1 class="text-5xl text-center">{{ fl("forecast-area-" ~ area) }}</h1>
                     <div></div>
                 </div>
-                <div class="pt-2 pb-4 text-center">
-                    <span>
-                        <label for="language-select">Language:</label>
-                        {{ language_select() }}
-                    </span>
-                </div>
-                <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>
+                <div class="pt-2 pb-4 text-center">{{ language_select() }}</div>
+                {{ divider() }}
                 {{ forecast_intro(
                 overall_hazard=overall_hazard,
                 description=description,
@@ -71,7 +68,6 @@
                 formatted_valid_until=formatted_valid_until,
                 forecaster_name=forecaster.name
                 ) }}
-                <p class="md:text-justify pb-4">{{ fl("disclaimer-message") }}</p>
             </div>
             <figure>
                 <div id="map" class="h-[80vh]"></div>
@@ -114,7 +110,7 @@
                                 <p class="hyphens-auto md:text-left md:hyphens-none">{{ fl("avalanche-hazard-" ~ band_hazard ~ "-about") }}</p>
                             </div>
                         </div>
-                        {% if not loop.last %}<div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20"></div>{% endif %}
+                        {% if not loop.last %}{{ divider() }}{% endif %}
                     {% endfor %}
                 </div>
                 <h2 class="text-4xl text-center">{{ fl("avalanche-problems-heading") }}</h2>
@@ -162,10 +158,10 @@
                             {{ fl("avalanche-likelihood-heading") }}
                         </div>
                     </div>
-                    <p class="hyphens-auto md:hyphens-none md:text-justify py-2">
-                        <span class="italic">{{ fl("problem-type-" ~ problem.kind ~ "-about") }}</span>
-                        {{ problem.description }}
-                    </p>
+                    <div class="hyphens-auto md:hyphens-none md:text-justify pt-2 italic">
+                        {{ fl("problem-type-" ~ problem.kind ~ "-about") }}
+                    </div>
+                    <div class="prose leading-normal max-w-full text-black pb-2">{{ translated_string(problem.description) | md }}</div>
                     <div class="py-2">
                         <table class="w-full">
                             <tr class="odd:bg-gray-100">
@@ -176,14 +172,12 @@
                                 <td class="text-right font-bold p-2">{{ fl("distribution-heading") }}</td>
                                 <td class="p-2">{{ fl("distribution-" ~ problem.distribution ~ "-about") }}</td>
                             </tr>
-                            <tr class="odd:bg-gray-100">
-                                <td class="text-right font-bold p-2">
-                                    {{ fl("problem-time-of-day-heading") }}
-                                </td>
-                                <td class="p-2">
-                                    {{ fl("time-of-day-" ~ problem.time_of_day) }}
-                                </td>
-                            </tr>
+                            {% if problem.time_of_day %}
+                                <tr class="odd:bg-gray-100">
+                                    <td class="text-right font-bold p-2">{{ fl("problem-time-of-day-heading") }}</td>
+                                    <td class="p-2">{{ fl("time-of-day-" ~ problem.time_of_day) }}</td>
+                                </tr>
+                            {% endif %}
                             <tr class="odd:bg-gray-100">
                                 <td class="text-right font-bold p-2">
                                     {{ fl("trend-heading") }}
@@ -204,22 +198,33 @@
                             {% endif %}
                         </table>
                     </div>
-                    {% if not loop.last %}
-                        <div class="sticky bottom-0 h-px -mt-px bg-slate-200 dark:bg-slate-400/20">
-                        </div>
-                    {% endif %}
+                    {% if not loop.last %}{{ divider() }}{% endif %}
                 {% endfor %}
                 <h2 class="text-4xl text-center py-4">
                     {{ fl("recent-relevant-observations-heading") }}
                 </h2>
-                <p class="md:text-justify md:hyphens-none pb-2">
-                    {{ recent_observations }}
-                </p>
+                <div class="pb-2 prose max-w-full leading-normal text-black">
+                    {{ translated_string(recent_observations) | md }}
+                </div>
                 <h2 class="text-4xl text-center py-2">
-                    {{ fl("weather-forecast-heading") }}
+                    {{ fl("weather-heading") }}
                 </h2>
-                <p class="md:text-justify md:hyphens-none pb-2">
-                    {{ weather_forecast }}
+                <div class="pb-2 prose max-w-full leading-normal text-black">
+                    {{ translated_string(weather_forecast) | md }}
+                </div>
+                {% if is_current %}
+                    <h3 class="text-3xl text-center py-2">
+                        {{ fl("weather-forecast-heading") }}
+                    </h3>
+                    {{ weather_forecast_macro(external_weather_forecast.weather_maps, external_weather_forecast.wind_unit) }}
+                {% endif %}
+            </div>
+            <div class="pt-4">
+                <h2 class="text-4xl text-center">
+                    {{ fl("disclaimer-title") }}
+                </h2>
+                <p class="md:text-justify pb-4">
+                    {{ fl("disclaimer-message") }}
                 </p>
             </div>
         </div>
@@ -292,13 +297,13 @@
                     crossOrigin: true
                 }).addTo(map);
         {% elif "Tracestrack" in map.source %}
-        {% set source = map.source["Tracestrack"] %}
-        {% set map_lang_id = "_" %}
-        {% if LANGUAGE_SHORT in ["en", "ar", "de", "es", "fi", "fr", "he", "hu", "it", "ja", "ko", "nl", "pl", "pt", "ru", "uk", "sv", "th", "tr"] %}
-            {% set map_lang_id = LANGUAGE_SHORT %}
-        {% elif LANGUAGE in ["zh-hans", "zh-hant"] %}
-            {% set map_lang_id = LANGUAGE %}
-        {% endif %}
+            {% set source = map.source["Tracestrack"] %}
+            {% set map_lang_id = "en" %}
+            {% if LANGUAGE_SHORT in ["en", "ar", "de", "es", "fi", "fr", "he", "hu", "it", "ja", "ko", "nl", "pl", "pt", "ru", "uk", "sv", "th", "tr"] %}
+                {% set map_lang_id = LANGUAGE_SHORT %}
+            {% elif LANGUAGE in ["zh-hans", "zh-hant"] %}
+                {% set map_lang_id = LANGUAGE %}
+            {% endif %}
             const tiles = L.tileLayer(
                 "https://tile.tracestrack.com/topo_{{ map_lang_id }}/{z}/{x}/{y}.png?key={{ source.api_key }}",
                 {
@@ -308,8 +313,6 @@
                     minZoom: 1,
                     crossOrigin: true
                 }).addTo(map);
-            
-
         {% endif %}
 
         function onEachFeature(feature, layer) {

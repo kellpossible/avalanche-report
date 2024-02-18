@@ -1,7 +1,12 @@
 use async_trait::async_trait;
-use axum::{extract::FromRequestParts, middleware::Next, response::Response};
-use http::{header::USER_AGENT, request::Parts, HeaderMap, Request, StatusCode};
+use axum::{
+    extract::{FromRequestParts, Request},
+    middleware::Next,
+    response::Response,
+};
+use http::{header::USER_AGENT, request::Parts, HeaderMap, StatusCode};
 
+#[derive(Copy, Clone)]
 pub struct IsBot(bool);
 
 impl IsBot {
@@ -22,10 +27,10 @@ pub fn is_bot(headers: &HeaderMap) -> bool {
 }
 
 /// Middleware to detect whether the request is from a bot based on the [`USER_AGENT`] header.
-pub async fn middleware<B>(
+pub async fn middleware(
     is_bot: IsBot,
-    mut request: Request<B>,
-    next: Next<B>,
+    mut request: Request,
+    next: Next,
 ) -> Result<Response, StatusCode> {
     request.extensions_mut().insert(is_bot);
     Ok(next.run(request).await)
