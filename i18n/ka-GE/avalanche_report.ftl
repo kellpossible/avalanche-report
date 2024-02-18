@@ -9,7 +9,7 @@ view-full-forecast-button = სრული პროგნოზის ნა�
 check-forecast-archive-below = ამ არეალზე უახლესი ინფორმაციისთვის გთხოვთ, შეამოწმოთ ქვემოთ მოცემული პროგნოზების არქივი
 # Message on the index page
 # TODO: Remove and replace with user configured content in the database.
-see-facebook-page-message = თვალი ადევნეთ ჩვენს [Facebook გვერდზე]({$url}) დისკუსიებს და განახლებებს
+see-facebook-page-message = თვალი ადევნეთ ჩვენს [Facebook გვერდზე]({ $url }) დისკუსიებს და განახლებებს
 # Heading for the area that the forecast is about
 forecast-area-heading = პროგნოზის არეა
 # The Gudauri forecast area name
@@ -43,10 +43,10 @@ month-10 = ოქტომბერი
 month-11 = ნოემბერი
 # Month of the year
 month-12 = დეკემბერი
-# A short single-word heading for avalanche problem type.
+# A short single-word heading for avalanche problem type
 problem-type-heading-short = ტიპი
 # A heading for avalanche problem type.
-problem-type-heading = {problem-type-heading-short} 
+problem-type-heading = ზვავის პრობლემის ტიპი
 # Avalanche problem type. A type of loose snow avalanche composed of dry snow.
 problem-type-loose-dry = მშრალი ფხვიერი
 # Avalanche problem type. A type of loose snow avalanche composed of wet or moist snow.
@@ -70,7 +70,7 @@ problem-type-loose-dry-about = ზვავის ტიპი რომელ�
 # Helpful information about the "Loose Wet" avalanche problem type
 problem-type-loose-wet-about = ზვავის ტიპი რომელიც სველი, წყლიანი თოვლისგან შედგება
 # Helpful information about the "Storm Slab" avalanche problem type
-problem-type-storm-slab-about = ზვავის ტიპი: არამდგრადი ფენის თავზე უამინდობის შედეგად ერთი ან რამდენიმე შრე ჩამოყალიბდა თოვლის დაფად 
+problem-type-storm-slab-about = ზვავის ტიპი: არამდგრადი ფენის თავზე უამინდობის შედეგად ერთი ან რამდენიმე შრე ჩამოყალიბდა თოვლის დაფად
 # Helpful information about the "Wind Slab" avalanche problem type
 problem-type-wind-slab-about = ზვავის ტიპი. ქარის შედეგად ტრანსპორტირებული თოვლის მიერ, წარმოქმნილი თოვლის დაფის მოწყვეტა
 # Helpful information about the "Wet Slab" avalanche problem type
@@ -86,7 +86,9 @@ problem-type-glide-about = ზვავის ტიპი. თოვლის �
 # Field heading for the size of an avalanche if it were to occur
 avalanche-size-heading = ზვავის ზომა
 # Denotes a particular avalanche size, where $size is a number from 1 to 5.
-avalanche-size-n = ზომა {$size}
+avalanche-size-n = ზომა { $size }
+# Denotes an avalanche of size >= 4
+avalanche-size-4plus = მოცულობა 4+
 # Helpful description about size 1 avalanche
 avalanche-size-1-about = ადამიანებისთვის შედარებით უსაფრთხო
 # Helpful description about size 2 avalanche
@@ -143,7 +145,6 @@ avalanche-hazard-considerable-size-distribution = მცირე ზვავ�
 avalanche-hazard-high-size-distribution = დიდი ზვავები ბევრ ადგილას, ან ძალიან დიდი ზვავები  სპეციფიურ ადგილებში
 # Description of the size and distributions of avalanches to occur with "Extreme" avalanche danger
 avalanche-hazard-extreme-size-distribution = დიდი ან ძალიან დიდი ზვავები ბევრ ადგილას
-# Table heading for elevation bands (plural)
 # Description of the likelyhood for avalanches to occur with "Extreme" avalanche danger
 avalanche-hazard-extreme-likelihood = ბუნებრივი და ადამიანის ზემოქმედებით გამოწვეული ზვავების მოწყვეტა გარდაუვალია
 # Description of the likelyhood for avalanches to occur with "High" avalanche danger
@@ -151,7 +152,7 @@ avalanche-hazard-high-likelihood = ბუნებრივი ზვავე�
 # Description of the likelyhood for avalanches to occur with "Considerable" avalanche danger
 avalanche-hazard-considerable-likelihood = ბუნებრივი ზვავების მოწყვეტა შესაძლებელია და ადამიანის მიერ გამოწვეული ზვავის მოწყვეტის ალბათობა მაღალია
 # Description of the likelyhood for avalanches to occur with "Moderate" avalanche danger
-avalanche-hazard-moderate-likelihood = ბუნებრივი ზვავების მოწყვეტის ალბათობა დაბალია და ადამიანის მიერ გამოწვეული ზვავის მოწყვეტა  შესაძლებელია 
+avalanche-hazard-moderate-likelihood = ბუნებრივი ზვავების მოწყვეტის ალბათობა დაბალია და ადამიანის მიერ გამოწვეული ზვავის მოწყვეტა  შესაძლებელია
 # Description of the likelyhood for avalanches to occur with "Low" avalanche danger
 avalanche-hazard-low-likelihood = ბუნებრივი და ადამიანის ზემოქმედებით გამოწვეული ზვავების მოწყვეტის დაბალი ალბათობა
 # Field heading for the likelihood of an avalanche occurring
@@ -170,6 +171,8 @@ elevation-band-high-alpine = მაღალი ალპური
 recent-relevant-observations-heading = ახალი / რელევანტური დაკვირვებები
 # Heading for weather forecast
 weather-forecast-heading = ამინდის პროგნოზი
+# Heading for weather section of the forecast
+weather-heading = ამინდი
 # A heading for an individual avalanche problem type
 avalanche-problem-heading = ზვავის პრობლემა
 # A heading for all the different avalanche problem types
@@ -191,7 +194,7 @@ sensitivity-stubborn-about = სპეციფიური ზვავის �
 # Description about "Reactive" avalanche trigger sensitivity
 sensitivity-reactive-about = სპეციფიური ზვავის პრობლემა მგძნობიარეა ადამიანის ზემოქმედების მიმართ. ზვავის მოწყვეტა შესაძლებელია თხილამურებით დახტომით ზემოქმედებისას
 # Description about "Touchy" avalanche trigger sensitivity
-sensitivity-touchy-about = სპეციფიური ზვავის პრობლემა  არის ძალიან მგძნობიარე ადამიანის ზემოქმედების მიმართ. 
+sensitivity-touchy-about = სპეციფიური ზვავის პრობლემა  არის ძალიან მგძნობიარე ადამიანის ზემოქმედების მიმართ.
 # Heading for an avalanche type's spatial distribution
 distribution-heading = განაწილება
 # A term for when an avalanche problem type is distributed in a few, isolated locations.
@@ -214,10 +217,10 @@ time-of-day-all-day = მთელი დღე
 time-of-day-morning = დილა
 # Period of time that the forecast hazard is relevant for
 time-of-day-afternoon = ნაშუადღევს
-# A heading for the confidence about the conditions and forecast
-confidence-heading = სანდოობა
 # The forecaster's confidence level about this part of the forecast is low
 confidence-low = დაბალი
+# A heading for the confidence about the conditions and forecast
+confidence-heading = სანდოობა
 # The forecaster's confidence level about this part of the forecast is moderate
 confidence-moderate = საშუალო
 # The forecaster's confidence level about this part of the forecast is high
@@ -228,18 +231,19 @@ confidence-low-about = დამკვირვებელი არ არი�
 confidence-moderate-about = დამკვირვებელი ბოლომდე დარწმუნებული არ არის პროგნოზის ამ ნაწილში
 # Description for the confidence value, when the convidence is "High"
 confidence-high-about = დამკვირვებელი დარწმუნებულია პროგნოზის ამ ნაწილის სიზუსტეში
-# Message with disclaimer and information at the start of the printed page
+# Message with disclaimer and information at the start of the printed page.
+# REMINDER FOR PROGRAMMER: If this disclaimer message is updated, the DISCLAIMER_VERSION in disclaimer.rs should also be updated so the user needs to accept the updated disclaimer.
 disclaimer-message = ჩვენი ზვავის პროგნოზების სპეციალისტები არიან საერთაშორისო კვალიფიკაციისა და გამოცდილების მქონე პროფესიონალები და მონაცემები მოწოდებულია გამოცდილი დამკვირვებლების მიერ. ჩვენ გვინდა მოგიწოდოთ, რომ თავადაც აწარმოოთ საკუთარი დაკვირვებები და მიიღოთ გადაწყვეტილებები და არ დაეყრდნოთ მხოლოდ ჩვენს პროგნოზებს, რადგან ნებისმიერი პროგნოზი არის განზოგადებული "ვარაუდზე" და ზოგიერთ შემთხვევაში ეს შეიძლება იყოს არაზუსტი. ჩვენ ვერ ავიღებთ პასუხისმგებლობას თქვენს მიერ მთაზე განხორციელებულ ნებისმიერ ქმედებაზე,  რომელმაც შეიძლება გამოიწვიოს დაზიანება, დაკარგვა ან სიკვდილი.
 # Field on the forecast page that specifies the person who created the forecast.
-forecast-forecaster = **დამკვირვებელი** {$name}
+forecast-forecaster = **დამკვირვებელი** { $name }
 # Heading for the name of the person who created this forecast
 forecast-forecaster-heading = დამკვირვებელი
 # Heading for field on the forecast page that specifies the date and time that the
 # forecast was issued at
-forecast-issued-at = **პროგნოზი შედგენილია:** {$time}
+forecast-issued-at = **პროგნოზი შედგენილია:** { $time }
 # Field on the forecast page that specifies the date and time that the
 # forecast is valid until
-forecast-valid-until = **პროგნოზი ვალიდურია** {$time}-მდე
+forecast-valid-until = **პროგნოზი ვალიდურია** { $time }-მდე
 # Caption for the aspect/elevation chart.
 aspect-elevation-chart-caption = მხარე/სიმაღლე
 # Text inside the Back button.
@@ -261,3 +265,15 @@ avalanche-probability-low = დაბალი
 disclaimer-title = თანხმობა პასუხისმგებლობაზე
 accept-disclaimer-checkbox-label = ვეთანხმები
 continue-button-text = გაგრძელება
+about-title = ჩვენს შესახებ
+about-description =
+    პროექტს აწარმოებს არასამთავრობო ორგანიზაცია - "ზვავი საქართველო", რომელმაც დაიწყო ზვავის პროგნოზირების სერვისი საქართველოში.
+    ჩვენ გთავაზობთ უფასო, მაღალი ხარისხის ინფორმაციას და გამაფრთხილებელ შეტყობინებებს
+    გუდაურის რაიონში, რომელიც პოპულარული ლოკაციაა ფრირაიდისა და სკი ტურისთვის. ჩვენ ძალიან დიდ იმედს ვამყარებთ მოხალისეებისა და დონორების წვლილზე და მივესალმებით ყველას, ვინც დაინტერესებულია დაეხმაროს პროექტის შემდგომ განვითარებას.
+    შეგიძლიათ დაგვიკავშირდეთ ელექტრონული ფოსტის მეშვეობით: [zvavisaqartvelo@gmail.com](mailto:zvavisaqartvelo@gmail.com)
+    ან ეწვიოთ ჩვენს [ფეისბუქ გვერდს](https://www.facebook.com/avalanche.ge).
+    
+    ვებსაიტის სოფტი avalanche-report ღია წყაროა და ხელმისაწვდომია აქ <https://github.com/kellpossible/avalanche-report>, მივესალმებით ყველა ახალ თანამონაწილეს!
+    გთხოვთ დაგვიკავშირდეთ თუ გსურთ მსგავსი სერვისის მოწყობა თქვენს რეგიონში.
+wind-unit-label = ქარის სიჩქარის ერთეული:
+sponsors-title = სპონსორები
