@@ -267,11 +267,19 @@ accept-disclaimer-checkbox-label = Приемам
 continue-button-text = Продължи
 about-title = За нас
 about-description =
-    Лавинна служба Банско е проект на Българска Лавинна Асоциация (БЛА) и се оперира от доброволци, подкрепени от двама сертифицирани професионалисти по лавинна безопасност (Ниво 1) към Канадската Лавинна Асоциация. Целта ни е да предоставяме актуална информация и предупреждения за лавинните условия в района на Банско. Поради ограничените ресурси, разчитаме основно на дарения и приветстваме всеки, който има интерес да подкрепи каузата ни. 
-    Можете да се свържете с нас на [CONTACT@AVALANCHE.BG] (mailto:contact@avalanche.bg)
-    или във [Facebook](https://www.facebook.com/avalanchebulgaria).
+    This project is run by _Zvavi Saqartvelo - Avalanche Georgia_, a registered
+    non-profit NGO, which has started an avalanche forecasting service in the
+    Republic of Georgia. We provide free, high-quality information and warnings
+    about avalanche conditions in the Gudauri area, which is a popular location
+    for off-piste and backcountry freeriding and ski touring. We heavily rely
+    on the contributions of volunteers and donors, and welcome anyone who is
+    interested to help further the project. 
+    You can contact us via email [zvavisaqartvelo@gmail.com](mailto:zvavisaqartvelo@gmail.com)
+    or [Facebook](https://www.facebook.com/avalanche.ge).
     
-    Софтуерът за издаване на бюлетина `avalanche-report` е с отворен код на
-    <https://github.com/kellpossible/avalanche-report> и който иска да допринесе за разработването му е добре дошъл. Също така, може да се свържете с екипа, ако искате да интегрирате решението за вашия регион на опериране.
+    The website software `avalanche-report` is open source, available over at
+    <https://github.com/kellpossible/avalanche-report>, new contributors are
+    welcome! Feel free to contact the team there if you wish to deploy
+    something similar for your forecast region.
 wind-unit-label = Мерна ед. за вятъра
 sponsors-title = Спонсори
