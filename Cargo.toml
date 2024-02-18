@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-toml-env = "1.0"
+toml-env = "1.2.0"
 forecast-spreadsheet = { path = "./forecast-spreadsheet" }
 utils = { path = "./utils" }
 # geo = { path = "./geo" }

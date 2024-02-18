@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, num::NonZeroU32, path::PathBuf};
+use std::{collections::HashMap, net::SocketAddr, num::NonZeroU32, path::PathBuf};
 
 use crate::serde::hide_secret;
 use cronchik::CronSchedule;
@@ -52,8 +52,12 @@ pub struct Options {
     pub weather_maps: WeatherMaps,
     /// See [`WeatherStation`].
     #[serde(default)]
-    pub weather_stations: Vec<WeatherStation>,
+    pub weather_stations: HashMap<WeatherStationId, WeatherStation>,
 }
+
+#[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq)]
+#[serde(transparent)]
+pub struct WeatherStationId(String);
 
 /// Configuration for using Google Drive.
 #[derive(Debug, Serialize, Deserialize)]
@@ -77,6 +81,7 @@ impl From<WeatherMaps> for Vec<WeatherMap> {
 
 /// Include a current weather map on the forecast page.
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "snake_case")]
 pub enum WeatherMap {
     /// See [WindyWeather].
     Windy(WindyWeather),
@@ -190,6 +195,7 @@ impl Options {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, Default)]
+#[serde(rename_all = "snake_case")]
 pub enum MapTilerStyle {
     #[serde(rename = "topo-v2")]
     Topo,
@@ -212,6 +218,7 @@ pub struct TracestrackSource {
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone)]
+#[serde(rename_all = "snake_case")]
 pub enum MapSource {
     MapTiler(MapTilerSource),
     #[default]
@@ -270,6 +277,7 @@ impl Options {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum WeatherStationSource {
     /// See [`AmbientWeatherSource`].
     AmbientWeather(AmbientWeatherSource)
@@ -287,8 +295,6 @@ pub struct AmbientWeatherSource {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WeatherStation {
-    /// The id of the weather station.
-    pub id: String,
     /// Where the weather station data is pulled from.
     pub source: WeatherStationSource,
 }
