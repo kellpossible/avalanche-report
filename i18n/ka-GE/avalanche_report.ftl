@@ -46,7 +46,7 @@ month-12 = დეკემბერი
 # A short single-word heading for avalanche problem type
 problem-type-heading-short = ტიპი
 # A heading for avalanche problem type.
-problem-type-heading = Problem Type
+problem-type-heading = ზვავის პრობლემის ტიპი
 # Avalanche problem type. A type of loose snow avalanche composed of dry snow.
 problem-type-loose-dry = მშრალი ფხვიერი
 # Avalanche problem type. A type of loose snow avalanche composed of wet or moist snow.
@@ -88,7 +88,7 @@ avalanche-size-heading = ზვავის ზომა
 # Denotes a particular avalanche size, where $size is a number from 1 to 5.
 avalanche-size-n = ზომა { $size }
 # Denotes an avalanche of size >= 4
-avalanche-size-4plus = Size 4+
+avalanche-size-4plus = მოცულობა 4+
 # Helpful description about size 1 avalanche
 avalanche-size-1-about = ადამიანებისთვის შედარებით უსაფრთხო
 # Helpful description about size 2 avalanche
@@ -172,7 +172,7 @@ recent-relevant-observations-heading = ახალი / რელევან�
 # Heading for weather forecast
 weather-forecast-heading = ამინდის პროგნოზი
 # Heading for weather section of the forecast
-weather-heading = Weather
+weather-heading = ამინდი
 # A heading for an individual avalanche problem type
 avalanche-problem-heading = ზვავის პრობლემა
 # A heading for all the different avalanche problem types
@@ -265,21 +265,17 @@ avalanche-probability-low = დაბალი
 disclaimer-title = თანხმობა პასუხისმგებლობაზე
 accept-disclaimer-checkbox-label = ვეთანხმები
 continue-button-text = გაგრძელება
-about-title = About
+about-title = ჩვენს შესახებ
 about-description =
     This project is run by _Zvavi Saqartvelo - Avalanche Georgia_, a registered
     non-profit NGO, which has started an avalanche forecasting service in the
     Republic of Georgia. We provide free, high-quality information and warnings
     about avalanche conditions in the Gudauri area, which is a popular location
-    for off-piste and backcountry freeriding and ski touring. We heavily rely
-    on the contributions of volunteers and donors, and welcome anyone who is
-    interested to help further the project. 
-    You can contact us via email [zvavisaqartvelo@gmail.com](mailto:zvavisaqartvelo@gmail.com)
-    or [Facebook](https://www.facebook.com/avalanche.ge).
+    for off-piste and backcountry freeriding and ski touring.
     
     The website software `avalanche-report` is open source, available over at
     <https://github.com/kellpossible/avalanche-report>, new contributors are
-    welcome! Feel free to contact the team there if you wish to deploy
-    something similar for your forecast region.
-wind-unit-label = Wind Unit:
-sponsors-title = Sponsors
+    welcome! Feel free to contact us if you wish to deploy something similar
+    for your forecast region.
+wind-unit-label = ქარის სიჩქარის ერთეული:
+sponsors-title = სპონსორები
