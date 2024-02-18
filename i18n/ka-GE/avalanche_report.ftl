@@ -267,15 +267,13 @@ accept-disclaimer-checkbox-label = ვეთანხმები
 continue-button-text = გაგრძელება
 about-title = ჩვენს შესახებ
 about-description =
-    This project is run by _Zvavi Saqartvelo - Avalanche Georgia_, a registered
-    non-profit NGO, which has started an avalanche forecasting service in the
-    Republic of Georgia. We provide free, high-quality information and warnings
-    about avalanche conditions in the Gudauri area, which is a popular location
-    for off-piste and backcountry freeriding and ski touring.
+    პროექტს აწარმოებს არასამთავრობო ორგანიზაცია - "ზვავი საქართველო", რომელმაც დაიწყო ზვავის პროგნოზირების სერვისი საქართველოში.
+    ჩვენ გთავაზობთ უფასო, მაღალი ხარისხის ინფორმაციას და გამაფრთხილებელ შეტყობინებებს
+    გუდაურის რაიონში, რომელიც პოპულარული ლოკაციაა ფრირაიდისა და სკი ტურისთვის. ჩვენ ძალიან დიდ იმედს ვამყარებთ მოხალისეებისა და დონორების წვლილზე და მივესალმებით ყველას, ვინც დაინტერესებულია დაეხმაროს პროექტის შემდგომ განვითარებას.
+    შეგიძლიათ დაგვიკავშირდეთ ელექტრონული ფოსტის მეშვეობით: [zvavisaqartvelo@gmail.com](mailto:zvavisaqartvelo@gmail.com)
+    ან ეწვიოთ ჩვენს [ფეისბუქ გვერდს](https://www.facebook.com/avalanche.ge).
     
-    The website software `avalanche-report` is open source, available over at
-    <https://github.com/kellpossible/avalanche-report>, new contributors are
-    welcome! Feel free to contact us if you wish to deploy something similar
-    for your forecast region.
+    ვებსაიტის სოფტი avalanche-report ღია წყაროა და ხელმისაწვდომია აქ <https://github.com/kellpossible/avalanche-report>, მივესალმებით ყველა ახალ თანამონაწილეს!
+    გთხოვთ დაგვიკავშირდეთ თუ გსურთ მსგავსი სერვისის მოწყობა თქვენს რეგიონში.
 wind-unit-label = ქარის სიჩქარის ერთეული:
 sponsors-title = სპონსორები
