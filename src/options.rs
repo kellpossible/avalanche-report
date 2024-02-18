@@ -47,9 +47,12 @@ pub struct Options {
     #[serde(serialize_with = "hide_secret::serialize")]
     /// (REQUIRED) Hash of the `admin` user password, used to access `/admin/*` routes.
     pub admin_password_hash: SecretString,
-    /// See [WeatherMap].
+    /// See [`WeatherMap`].
     #[serde(default)]
     pub weather_maps: WeatherMaps,
+    /// See [`WeatherStation`].
+    #[serde(default)]
+    pub weather_stations: Vec<WeatherStation>,
 }
 
 /// Configuration for using Google Drive.
@@ -264,6 +267,30 @@ impl Options {
         })?
         .wrap_err("No configuration specified")
     }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum WeatherStationSource {
+    /// See [`AmbientWeatherSource`].
+    AmbientWeather(AmbientWeatherSource)
+}
+
+/// Weather source from <https://ambientweather.net>
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AmbientWeatherSource {
+    pub device_mac_address: String,
+    #[serde(serialize_with = "hide_secret::serialize")]
+    pub api_key: SecretString,
+    #[serde(serialize_with = "hide_secret::serialize")]
+    pub application_key: SecretString,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WeatherStation {
+    /// The id of the weather station.
+    pub id: String,
+    /// Where the weather station data is pulled from.
+    pub source: WeatherStationSource,
 }
 
 #[cfg(test)]

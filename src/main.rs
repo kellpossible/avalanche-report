@@ -24,6 +24,7 @@ mod admin;
 mod analytics;
 mod auth;
 mod cache_control;
+mod current_weather;
 mod database;
 mod diagrams;
 mod disclaimer;
