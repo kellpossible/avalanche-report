@@ -81,10 +81,11 @@ impl From<WeatherMaps> for Vec<WeatherMap> {
 
 /// Include a current weather map on the forecast page.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "snake_case")]
 pub enum WeatherMap {
     /// See [WindyWeather].
+    #[serde(alias = "windy")]
     Windy(WindyWeather),
+    #[serde(alias = "meteoblue")]
     Meteoblue(MeteoblueWeather),
 }
 
@@ -195,11 +196,10 @@ impl Options {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, Default)]
-#[serde(rename_all = "snake_case")]
 pub enum MapTilerStyle {
-    #[serde(rename = "topo-v2")]
+    #[serde(alias = "topo", alias = "topo-v2")]
     Topo,
-    #[serde(rename = "winter-v2")]
+    #[serde(alias = "winter", alias = "winter-v2")]
     #[default]
     Winter,
 }
@@ -218,12 +218,15 @@ pub struct TracestrackSource {
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone)]
-#[serde(rename_all = "snake_case")]
 pub enum MapSource {
+    #[serde(alias = "map_tiler")]
     MapTiler(MapTilerSource),
     #[default]
+    #[serde(alias = "open_topo_map")]
     OpenTopoMap,
+    #[serde(alias = "ersi")]
     Ersi,
+    #[serde(alias = "tracestrack")]
     Tracestrack(TracestrackSource),
 }
 
@@ -277,10 +280,10 @@ impl Options {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
 pub enum WeatherStationSource {
     /// See [`AmbientWeatherSource`].
-    AmbientWeather(AmbientWeatherSource)
+    #[serde(alias = "ambient_weather")]
+    AmbientWeather(AmbientWeatherSource),
 }
 
 /// Weather source from <https://ambientweather.net>
