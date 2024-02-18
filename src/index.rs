@@ -16,6 +16,7 @@ use crate::{
     },
     google_drive::{self, ListFileMetadata},
     i18n::{self, I18nLoader},
+    isbot::is_bot,
     state::AppState,
     templates::{render, TemplatesWithContext},
     user_preferences::UserPreferences,
@@ -157,26 +158,25 @@ pub async fn handler(
     let mut forecasts: Vec<IndexForecast> = stream::iter(forecasts)
         .map::<eyre::Result<ForecastAccumulator>, _>(eyre::Result::Ok)
         .and_then(|forecast_acc| async {
-            let file: ForecastFile = if forecast_acc.files.len() > 1 {
-                forecast_acc
-                    .files
-                    .into_iter()
-                    .filter(|file| {
-                        if let Some(language) = &file.details.language {
-                            return language.language == i18n.current_language().language;
-                        }
-                        true
-                    })
-                    .next()
-            } else {
-                forecast_acc.files.into_iter().next()
-            }
-            .wrap_err_with(|| {
-                format!(
-                    "Expected there to be at least one forecast file for this forecast {:#?}",
-                    forecast_acc.details
-                )
-            })?;
+            tracing::debug!("forecast_acc.files {:?}", forecast_acc.files);
+            let file: ForecastFile = forecast_acc
+                .files
+                .iter()
+                .filter(|file| {
+                    if let Some(language) = &file.details.language {
+                        return language.language == i18n.current_language().language;
+                    }
+                    true
+                })
+                .cloned()
+                .next()
+                .or_else(|| forecast_acc.files.into_iter().next())
+                .wrap_err_with(|| {
+                    format!(
+                        "Expected there to be at least one forecast file for this forecast {:#?}",
+                        forecast_acc.details
+                    )
+                })?;
 
             let forecast = if file.file.is_google_sheet() {
                 match get_forecast_data(
