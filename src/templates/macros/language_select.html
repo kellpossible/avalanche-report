@@ -5,18 +5,12 @@
                 autocomplete="off"
                 class="p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 onchange="window.location.replace(`/user-preferences-redirect?lang=${this.value}`)">
-            <option value="ka-GE"
-                    {% if LANGUAGE == "ka-GE" %}selected="selected"{% endif %}>
-                🌍 ქართული
-            </option>
-            <option value="en-UK"
-                    {% if LANGUAGE == "en-UK" %}selected="selected"{% endif %}>
-                🌍 English
-            </option>
-            <option value="bg-BG"
-                    {% if LANGUAGE == "bg-BG" %}selected="selected"{% endif %}>
-                🌍 българин
-            </option>
+            {% for (id, name) in LANGUAGE_DISPLAY_NAMES %}
+                <option value="{{ id }}"
+                        {% if LANGUAGE == id %}selected="selected"{% endif %}>
+                    🌍 {{ name }}
+                </option>
+            {% endfor %}
         </select>
     </span>
 {%- endmacro %}

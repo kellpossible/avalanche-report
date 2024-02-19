@@ -333,9 +333,9 @@ pub async fn png_handler(
 
 #[cfg(test)]
 mod test {
-    use std::{collections::HashSet, sync::Arc};
+    use std::collections::HashSet;
 
-    use crate::i18n::{self, load_languages, I18nLoader};
+    use crate::i18n::{self, load_available_languages, I18nLoader};
 
     use super::{generate_svg, Aspect, AspectElevation};
 
@@ -344,8 +344,9 @@ mod test {
 
     static LOADER: Lazy<I18nLoader> = Lazy::new(|| {
         let loader = i18n::initialize();
-        load_languages(&loader).unwrap();
-        Arc::new(loader.select_languages(&["en-UK".parse::<LanguageIdentifier>().unwrap()]))
+        load_available_languages(&loader, &["en-UK".parse::<LanguageIdentifier>().unwrap()])
+            .unwrap();
+        loader
     });
 
     #[test]
