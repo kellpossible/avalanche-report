@@ -2,7 +2,8 @@ use axum::extract::FromRef;
 use tokio::sync::mpsc;
 
 use crate::{
-    analytics, database::Database, i18n::I18nLoader, options::Options, templates::Templates,
+    analytics, current_weather::CurrentWeatherService, database::Database, i18n::I18nLoader,
+    options::Options, templates::Templates,
 };
 
 /// App state is designed to be cheap to clone.
@@ -14,6 +15,13 @@ pub struct AppState {
     pub templates: Templates,
     pub database: Database,
     pub analytics_sx: mpsc::Sender<analytics::Event>,
+    pub current_weather: std::sync::Arc<CurrentWeatherService>,
+}
+
+impl FromRef<AppState> for std::sync::Arc<CurrentWeatherService> {
+    fn from_ref(state: &AppState) -> Self {
+        state.current_weather.clone()
+    }
 }
 
 impl FromRef<AppState> for Templates {

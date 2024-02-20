@@ -55,9 +55,15 @@ pub struct Options {
     pub weather_stations: HashMap<WeatherStationId, WeatherStation>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone)]
 #[serde(transparent)]
 pub struct WeatherStationId(String);
+
+impl std::fmt::Display for WeatherStationId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 /// Configuration for using Google Drive.
 #[derive(Debug, Serialize, Deserialize)]
@@ -279,7 +285,7 @@ impl Options {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum WeatherStationSource {
     /// See [`AmbientWeatherSource`].
     #[serde(alias = "ambient_weather")]
@@ -287,7 +293,7 @@ pub enum WeatherStationSource {
 }
 
 /// Weather source from <https://ambientweather.net>
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AmbientWeatherSource {
     pub device_mac_address: String,
     #[serde(serialize_with = "hide_secret::serialize")]
@@ -296,7 +302,7 @@ pub struct AmbientWeatherSource {
     pub application_key: SecretString,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WeatherStation {
     /// Where the weather station data is pulled from.
     pub source: WeatherStationSource,

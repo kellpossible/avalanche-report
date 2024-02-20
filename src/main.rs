@@ -16,8 +16,8 @@ use tower_http::trace::TraceLayer;
 use tracing_appender::rolling::Rotation;
 
 use crate::{
-    analytics::CompactionConfig, database::backup, options::Options, state::AppState,
-    templates::Templates,
+    analytics::CompactionConfig, current_weather::CurrentWeatherService, database::backup,
+    options::Options, state::AppState, templates::Templates,
 };
 
 mod admin;
@@ -103,6 +103,11 @@ async fn main() -> eyre::Result<()> {
         .await
     });
 
+    let current_weather = std::sync::Arc::new(CurrentWeatherService::new(
+        client.clone(),
+        options.weather_stations.clone(),
+    ));
+
     let state = AppState {
         options,
         client: client.clone(),
@@ -110,6 +115,7 @@ async fn main() -> eyre::Result<()> {
         templates,
         database,
         analytics_sx,
+        current_weather,
     };
 
     // build our application with a route
@@ -143,6 +149,7 @@ async fn main() -> eyre::Result<()> {
                 )
                 .layer(middleware::from_fn(cache_control::no_store_middleware)),
         )
+        .nest("/current-weather", current_weather::router())
         .nest("/diagrams", diagrams::router())
         .nest("/forecast-areas", forecast_areas::router())
         .route_service("/dist/*file", dist_handler.into_service())

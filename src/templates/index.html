@@ -65,6 +65,11 @@
             {% else %}
                 <div class="py-5">{{ current_forecast_block(current_forecast=current_forecast) }}</div>
                 {{ divider() }}
+                <div class="py-2">
+                    <h2 class="text-2xl font-bold py-2">Kudebi Weather Station (3000 m)</h2>
+                    <iframe class="w-full" height="700" src="/current-weather"></iframe>
+                </div>
+                {{ divider() }}
                 <div class="py-5">
                     <h2 class="text-2xl font-bold py-2">{{ fl("about-title") }}</h2>
                     <div class="prose leading-normal max-w-full text-black md:text-justify text-left">

@@ -126,7 +126,7 @@ pub fn load_available_languages<'a>(
     loader.load_languages(&Localizations, &languages_ref)?;
 
     let languages_display: String = display_languages(&languages);
-    tracing::info!("Localizations loaded, languages: {languages_display}");
+    tracing::debug!("Localizations loaded, languages: {languages_display}");
     Ok(())
 }
 
@@ -140,8 +140,6 @@ pub async fn middleware(
         .extensions()
         .get()
         .expect("Expected user_preferences middleware to be installed before this middleware");
-
-    tracing::info!("preferences: {preferences:?}");
 
     let accept_language = headers.get("Accept-Language").map(parse_accept_language);
     let requested_languages = preferences
@@ -157,8 +155,6 @@ pub async fn middleware(
             requested_languages
         })
         .or(accept_language);
-
-    tracing::info!("requested_languages: {requested_languages:?}");
 
     let loader: I18nLoader = if let Some(requested_languages) = requested_languages {
         let loader = Arc::new(

@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block head %}
+    <link rel="stylesheet" href="/dist/uPlot.css">
+    <script src="/dist/uPlot.js"></script>
+{% endblock head %}
+{% block body %}
+    {% for id in current_weather %}
+        {% set data = current_weather[id] %}
+        {% set temperature_humidity_chart_id = uuid() %}
+        <div id="{{ temperature_humidity_chart_id }}"></div>
+        {% set wind_chart_id = uuid() %}
+        <div id="{{ wind_chart_id }}"></div>
+        <script>
+    const originalData = {{ data | tojson}};
+    let currentWeatherSync = uPlot.sync("currentWeather");
+    const matchSyncKeys = (own, ext) => own == ext;
+    const cursorOpts = {
+        lock: true,
+        sync: {
+            key: currentWeatherSync.key,
+            setSeries: true,
+            match: [matchSyncKeys, matchSyncKeys],
+        },
+    };
+    function plotTemperatureHumidity(data, node, cursorOpts) {
+        const timeData = [];
+        const temperatureData = [];
+        const humidityData = [];
+        const mapData = (item) => {
+            timeData.push(Math.floor((new Date(item.time)).getTime() / 1000));
+            temperatureData.push(item.temperature_celcius);
+            humidityData.push(item.humidity_percent);
+        };
+        data.map(mapData);
+        const axisData = [timeData.reverse(), temperatureData.reverse(), humidityData.reverse()];
+        let width = node.clientWidth;
+        let opts = {
+            cursor: cursorOpts,
+          width,
+            height: 300,
+            scales: {
+                "x": {
+                    time: true
+                }
+            },
+          series: [
+            {},
+            {
+                label: "Temperature",
+                scale: "°C",
+              value: (self, v) => v == null ? null : `${v.toFixed(2)} °C`,
+              // series style
+              stroke: "red",
+              width: 2/devicePixelRatio
+            },
+            {
+                label: "Humidty",
+                scale: "%",
+              value: (self, v) => v == null ? null : `${v.toFixed(0)}%`,
+              // series style
+              stroke: "green",
+              width: 2/devicePixelRatio
+            },
+          ],
+        axes: [
+            {},
+            {
+                scale: "°C",
+                values: (u, vals, space) => vals.map(v => +v.toFixed(2) + " °C"),
+                  stroke: "red",
+                grid: {show: false},
+            },
+            {
+                side: 1,
+                scale: "%",
+                  stroke: "green",
+                values: (u, vals, space) => vals.map(v => +v.toFixed(0) + "%"),
+                grid: {show: false},
+            },
+        ],
+        };
+        return new uPlot(opts, axisData, node);
+    }
+    function approxEq(v1, v2, epsilon) {
+      return Math.abs(v1 - v2) < epsilon;
+    }
+    function plotWindSpeedDirection(data, node, cursorOpts) {
+        const timeData = [];
+        const speedData = [];
+        const directionData = [];
+        const mapData = (item) => {
+            timeData.push(Math.floor((new Date(item.time)).getTime() / 1000));
+            speedData.push(item.wind_speed_ms);
+            directionData.push(item.wind_direction_degrees);
+        };
+        data.map(mapData);
+        const axisData = [timeData.reverse(), speedData.reverse(), directionData.reverse()];
+        let width = node.clientWidth;
+        let opts = {
+            cursor: cursorOpts,
+              width,
+            height: 300,
+            scales: {
+                "x": {
+                    time: true
+                }
+            },
+          series: [
+            {},
+            {
+                label: "Wind Speed",
+                scale: "m/s",
+              value: (self, v) => v == null ? null : `${v.toFixed(2)} m/s`,
+              // series style
+              stroke: "blue",
+              width: 2/devicePixelRatio
+            },
+            {
+                label: "Wind Direction",
+                scale: "°",
+              value: (self, v) => v == null ? null : `${v.toFixed(0)}°`,
+              // series style
+              stroke: "black",
+              width: 2/devicePixelRatio
+            },
+          ],
+        axes: [
+            {},
+            {
+                scale: "m/s",
+                values: (u, vals, space) => vals.map(v => +v.toFixed(2) + " m/s"),
+                  stroke: "blue",
+                grid: {show: false},
+            },
+            {
+                side: 1,
+                scale: "°",
+                  stroke: "black",
+                values: (u, vals, space) => vals.map(v => {
+                    if (approxEq(v, 0.0, 1.0) || approxEq(v, 360.0, 1.0)) {
+                        return "N";
+                    }
+                    if (approxEq(v, 90.0, 1.0)) {
+                        return "E";
+                    }
+                    if (approxEq(v, 180.0, 1.0)) {
+                        return "S";
+                    }
+                    if (approxEq(v, 270.0, 1.0)) {
+                        return "W";
+                    }
+                    return "null";
+                }),
+                grid: {show: false},
+                incrs: [
+                    90
+                ],
+            },
+        ],
+            scales: {
+                "°": {
+                    auto: false,
+                    range: [0, 360],
+                }
+            },
+        };
+        return new uPlot(opts, axisData, node);
+    }
+    function plotWithResize(plot, node) {
+        const chart = plot();
+        const observer = new ResizeObserver(() => {
+            chart.setSize({ width: node.clientWidth, height: 300 });
+        });
+        observer.observe(node.parentElement);
+    }
+    const tempertureHumidityChartNode = document.getElementById("{{temperature_humidity_chart_id}}")
+    plotWithResize(() => plotTemperatureHumidity(originalData, tempertureHumidityChartNode, cursorOpts), tempertureHumidityChartNode);
+    const windChartNode = document.getElementById("{{wind_chart_id}}")
+    plotWithResize(() => plotWindSpeedDirection(originalData, windChartNode, cursorOpts), windChartNode);
+        </script>
+    {% endfor %}
+{% endblock body %}

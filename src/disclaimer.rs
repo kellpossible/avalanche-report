@@ -54,6 +54,7 @@ pub async fn middleware(request: Request, next: Next) -> Response {
 
     let templates: &TemplatesWithContext = request.extensions().get().unwrap();
     render(&templates.environment, "disclaimer.html", &())
-        .unwrap()
+        .wrap_err("Error rendering disclaimer template")
+        .map_err(map_eyre_error)
         .into_response()
 }

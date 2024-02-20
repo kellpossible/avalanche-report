@@ -35,6 +35,9 @@ kill_timeout = "5s"
 
     [weather_maps.Meteoblue]
     location_id="gudauri_georgia_614410"
+
+    [weather_stations.kudebi_top.source.ambient_weather]
+    device_mac_address="54:32:04:4B:E5:94"
   """
 
 [[mounts]]

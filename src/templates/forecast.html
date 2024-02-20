@@ -214,6 +214,10 @@
                 </div>
                 {% if is_current %}
                     <h3 class="text-3xl text-center py-2">
+                        Kudebi Weather Station (3000 m)
+                    </h3>
+                    <iframe class="w-full" height="700" src="/current-weather"></iframe>
+                    <h3 class="text-3xl text-center py-2">
                         {{ fl("weather-forecast-heading") }}
                     </h3>
                     {{ weather_forecast_macro(external_weather_forecast.weather_maps, external_weather_forecast.wind_unit) }}
