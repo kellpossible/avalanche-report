@@ -8,6 +8,7 @@ use i18n_embed::{
     fluent::{fluent_language_loader, FluentLanguageLoader, NegotiationStrategy},
     LanguageLoader,
 };
+use once_cell::sync::Lazy;
 use rust_embed::RustEmbed;
 use std::{collections::HashMap, sync::Arc};
 use time::OffsetDateTime;
@@ -18,7 +19,19 @@ use crate::{state::AppState, user_preferences::UserPreferences};
 #[folder = "i18n/"]
 struct Localizations;
 
-#[derive(Clone)]
+pub static LANGUAGE_DISPLAY_NAMES: Lazy<HashMap<unic_langid::LanguageIdentifier, String>> =
+    Lazy::new(|| {
+        vec![
+            ("en-UK", "English"),
+            ("ka-GE", "ქართული"),
+            ("bg-BG", "български"),
+        ]
+        .into_iter()
+        .map(|(id, name)| (id.parse().unwrap(), name.to_owned()))
+        .collect()
+    });
+
+#[derive(Clone, Debug)]
 pub struct RequestedLanguages(pub Vec<unic_langid::LanguageIdentifier>);
 
 impl std::fmt::Display for RequestedLanguages {
@@ -73,10 +86,47 @@ pub fn initialize() -> I18nLoader {
     Arc::new(fluent_language_loader!())
 }
 
-pub fn load_languages(loader: &I18nLoader) -> eyre::Result<()> {
-    let languages: String = display_languages(&loader.available_languages(&Localizations)?);
-    loader.load_available_languages(&Localizations)?;
-    tracing::info!("Localizations loaded. Available languages: {languages}");
+/// Create an ordered version of [`LANGUAGE_DISPLAY_NAMES`].
+pub fn ordered_language_display_names(
+    language_order: &[unic_langid::LanguageIdentifier],
+) -> Vec<(unic_langid::LanguageIdentifier, String)> {
+    order_languages(
+        LANGUAGE_DISPLAY_NAMES.clone().into_iter().collect(),
+        language_order,
+        |(id, _), order_id| id == order_id,
+    )
+}
+
+/// Order a vec of items according to the order specified in `language_order`, using the `eq` function to
+/// match elements in `unordered` to those in `language_order`. Any items which have no match will
+/// retain their original order, after any ordered items.
+pub fn order_languages<T>(
+    mut unordered: Vec<T>,
+    language_order: &[unic_langid::LanguageIdentifier],
+    eq: impl Fn(&T, &unic_langid::LanguageIdentifier) -> bool,
+) -> Vec<T> {
+    let mut ordered = Vec::new();
+    for l in language_order {
+        if let Some(i) = unordered.iter().position(|t| eq(t, l)) {
+            ordered.push(unordered.remove(i));
+        }
+    }
+    ordered.extend(unordered.into_iter());
+    ordered
+}
+
+pub fn load_available_languages<'a>(
+    loader: &I18nLoader,
+    language_order: &[unic_langid::LanguageIdentifier],
+) -> eyre::Result<()> {
+    let available_languages = loader.available_languages(&Localizations)?;
+    let languages = order_languages(available_languages, language_order, |al, l| al == l);
+    let languages_ref: Vec<&unic_langid::LanguageIdentifier> = languages.iter().collect();
+
+    loader.load_languages(&Localizations, &languages_ref)?;
+
+    let languages_display: String = display_languages(&languages);
+    tracing::info!("Localizations loaded, languages: {languages_display}");
     Ok(())
 }
 
@@ -90,6 +140,8 @@ pub async fn middleware(
         .extensions()
         .get()
         .expect("Expected user_preferences middleware to be installed before this middleware");
+
+    tracing::info!("preferences: {preferences:?}");
 
     let accept_language = headers.get("Accept-Language").map(parse_accept_language);
     let requested_languages = preferences
@@ -105,6 +157,8 @@ pub async fn middleware(
             requested_languages
         })
         .or(accept_language);
+
+    tracing::info!("requested_languages: {requested_languages:?}");
 
     let loader: I18nLoader = if let Some(requested_languages) = requested_languages {
         let loader = Arc::new(

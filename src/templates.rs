@@ -23,7 +23,11 @@ use pulldown_cmark::{Event, Tag, TagEnd};
 use rust_embed::{EmbeddedFile, RustEmbed};
 use uuid::Uuid;
 
-use crate::{error::map_eyre_error, i18n::I18nLoader, AppState};
+use crate::{
+    error::map_eyre_error,
+    i18n::{ordered_language_display_names, I18nLoader},
+    AppState,
+};
 
 #[derive(RustEmbed)]
 #[folder = "src/templates"]
@@ -253,7 +257,10 @@ pub async fn middleware(
     let i18n_fl_md = i18n.clone();
     let i18n_negotiate_translation = i18n.clone();
 
-    let translated_string_default = &state.options.default_language;
+    let language_display_names = minijinja::value::Value::from_serializable(
+        &ordered_language_display_names(&state.options.default_language_order),
+    );
+
     environment.add_function("translated_string", move |translations: Value| {
         let available_languages: Vec<unic_langid::LanguageIdentifier> = translations
             .try_iter()?
@@ -284,7 +291,7 @@ pub async fn middleware(
         let selected_languages = fluent_langneg::negotiate_languages(
             &requested_languages,
             &available_languages,
-            Some(translated_string_default),
+            None,
             fluent_langneg::NegotiationStrategy::Filtering,
         );
 
@@ -403,6 +410,7 @@ pub async fn middleware(
     environment.add_filter("mapremove", mapremove);
     environment.add_global("LANGUAGE_SHORT", language_short);
     environment.add_global("LANGUAGE", language_full);
+    environment.add_global("LANGUAGE_DISPLAY_NAMES", language_display_names);
     environment.add_global("URI", uri.to_string());
     environment.add_global("PATH", uri.path().to_string());
     environment.add_global("QUERY", query_value);

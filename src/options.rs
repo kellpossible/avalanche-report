@@ -31,8 +31,8 @@ pub struct Options {
     pub listen_address: SocketAddr,
     /// The default selected langauge for the page (used when the user has not yet set a language
     /// or when their browser does not provide an Accept-Language header).
-    #[serde(default = "default_default_language")]
-    pub default_language: unic_langid::LanguageIdentifier,
+    #[serde(default = "default_default_language_order")]
+    pub default_language_order: Vec<unic_langid::LanguageIdentifier>,
     /// See [`Map`].
     #[serde(default)]
     pub map: Map,
@@ -250,10 +250,10 @@ fn default_analytics_batch_rate() -> NonZeroU32 {
     nonzero!(60u32)
 }
 
-fn default_default_language() -> unic_langid::LanguageIdentifier {
-    "en-UK"
+fn default_default_language_order() -> Vec<unic_langid::LanguageIdentifier> {
+    vec!["en-UK"
         .parse()
-        .expect("Unable to parse language identifier")
+        .expect("Unable to parse language identifier")]
 }
 
 impl std::fmt::Display for Options {

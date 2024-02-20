@@ -69,7 +69,8 @@ async fn main() -> eyre::Result<()> {
     let client = reqwest::Client::new();
 
     let i18n = i18n::initialize();
-    crate::i18n::load_languages(&i18n).wrap_err("Error loading languages")?;
+    crate::i18n::load_available_languages(&i18n, &options.default_language_order)
+        .wrap_err("Error loading languages")?;
 
     let templates = Templates::initialize()?;
 

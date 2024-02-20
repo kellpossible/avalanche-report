@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::map_eyre_error;
 
-#[derive(Serialize, Deserialize, Default, Clone)]
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
 #[serde(default)]
 pub struct UserPreferences {
     /// What language to display the pages in.

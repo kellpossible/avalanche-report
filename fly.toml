@@ -13,7 +13,7 @@ kill_timeout = "5s"
     data_dir="/data-volume"
     listen_address="[::]:8080"
     base_url="https://avalanche.ge/"
-    default_language="ka-GE"
+    default_language="en-UK"
 
     [backup]
     schedule="0 0 * * *"
