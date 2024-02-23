@@ -235,15 +235,15 @@ confidence-high-about = Увереността в прогнозата е вис
 # REMINDER FOR PROGRAMMER: If this disclaimer message is updated, the DISCLAIMER_VERSION in disclaimer.rs should also be updated so the user needs to accept the updated disclaimer.
 disclaimer-message = Нашите лавинни прогностици за международно сертифицирани професионалисти и данните се събират от опитни наблюдатели. Апелираме да се правят лични наблюдения и да не се разчита изцяло и само на тази информация, тъй като всяка прогноза е генерализирана и в определени случаи може да бъде неточна или непълна. Не носим отговорност за действия в планините, които могат да доведат до вреди и щети или смърт в следствие на лавинни инциденти.
 # Field on the forecast page that specifies the person who created the forecast.
-forecast-forecaster = **Прогнозата е издадена от:** { $name }
+forecast-forecaster = **Издадена от:** { $name }
 # Heading for the name of the person who created this forecast
 forecast-forecaster-heading = Прогностик
 # Heading for field on the forecast page that specifies the date and time that the
 # forecast was issued at
-forecast-issued-at = **Прогнозата е издадена на::** { $time }
+forecast-issued-at = **Издадена на:** { $time }
 # Field on the forecast page that specifies the date and time that the
 # forecast is valid until
-forecast-valid-until = **Прогнозата е валидна до::** { $time }
+forecast-valid-until = **Валидна до::** { $time }
 # Caption for the aspect/elevation chart.
 aspect-elevation-chart-caption = Изложение/пояс
 # Text inside the Back button.
@@ -281,5 +281,5 @@ about-description =
     <https://github.com/kellpossible/avalanche-report>, new contributors are
     welcome! Feel free to contact the team there if you wish to deploy
     something similar for your forecast region.
-wind-unit-label = Мерна ед. за вятъра
+wind-unit-label = мерна ед.
 sponsors-title = Спонсори
