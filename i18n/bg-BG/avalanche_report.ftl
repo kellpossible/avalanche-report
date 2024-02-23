@@ -138,7 +138,7 @@ avalanche-hazard-extreme-about = Извънредно опасни лавинн�
 # Description of the size and distributions of avalanches to occur with "Low" avalanche danger
 avalanche-hazard-low-size-distribution = Малки лавини на изолирани локации или в екстремен терен.
 # Description of the size and distributions of avalanches to occur with "Moderate" avalanche danger
-avalanche-hazard-moderate-size-distribution = Малки лавини на специфични локации; или размер големи лавини на изолирани локации.
+avalanche-hazard-moderate-size-distribution = Малки лавини на специфични локации; или големи лавини на изолирани локации.
 # Description of the size and distributions of avalanches to occur with "Considerable" avalanche danger
 avalanche-hazard-considerable-size-distribution = Малки лавини са широко разпространени; или големи лавини на специфични локации; или много големи лавини на изолирани локации.
 # Description of the size and distributions of avalanches to occur with "High" avalanche danger
@@ -152,7 +152,7 @@ avalanche-hazard-high-likelihood = Спонтанни лавини са веро
 # Description of the likelyhood for avalanches to occur with "Considerable" avalanche danger
 avalanche-hazard-considerable-likelihood = Спонтанни лавини са възможни; лавини, предизвикани от човешко натоварване са вероятни.
 # Description of the likelyhood for avalanches to occur with "Moderate" avalanche danger
-avalanche-hazard-moderate-likelihood = Спонтанни лавини са слабо вероятни; изкуствено предизвикани лавини са възможни.
+avalanche-hazard-moderate-likelihood = Спонтанни лавини са слабо вероятни; лавини, предизвикани от човешко натоварване са възможни.
 # Description of the likelyhood for avalanches to occur with "Low" avalanche danger
 avalanche-hazard-low-likelihood = Спонтанни лавини и лавини, предизвикани от човешко натоварване са слабо вероятни.
 # Field heading for the likelihood of an avalanche occurring
