@@ -228,7 +228,7 @@ pub struct FormattedForecast {
     pub formatted_valid_until: String,
     pub map: Map,
     pub is_current: bool,
-    pub external_weather_forecast: crate::weather_forecast::Context,
+    pub external_weather: crate::weather::Context,
 }
 
 impl FormattedForecast {
@@ -249,7 +249,7 @@ impl FormattedForecast {
             formatted_valid_until,
             map: options.map.clone(),
             is_current,
-            external_weather_forecast: crate::weather_forecast::Context::new(options, preferences),
+            external_weather: crate::weather::Context::new(options, preferences),
         }
     }
 }

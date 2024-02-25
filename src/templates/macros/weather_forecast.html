@@ -1,23 +1,5 @@
-{% macro weather_forecast_macro(weather_maps, wind_unit) %}
+{% macro weather_forecast(weather_maps, wind_unit) %}
     <div id="weather-forecast">
-        <span>
-            <label for="wind-unit-select">{{ fl("wind-unit-label") }}</label>
-            <select id="wind-unit-select"
-                    name="wind_unit"
-                    autocomplete="off"
-                    class="p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    hx-get="/weather-forecast"
-                    hx-target="#weather-forecast">
-                <option value="KilometersPerHour"
-                        {% if wind_unit == "KilometersPerHour" %}selected="selected"{% endif %}>
-                    km/h
-                </option>
-                <option value="MetersPerSecond"
-                        {% if wind_unit == "MetersPerSecond" %}selected="selected"{% endif %}>
-                    m/s
-                </option>
-            </select>
-        </span>
         {% if "Windy" in weather_maps %}
             {% with weather_map = weather_maps.Windy %}
                 {% if wind_unit == "KilometersPerHour" %}

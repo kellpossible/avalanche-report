@@ -43,8 +43,8 @@ pub async fn handler(
         user_preferences::set_preferences_cookie(set_preferences, current_preferences)
             .map_err(map_eyre_error)?;
     let context = Context::new(state.options, &set_preferences_cookie.new_preferences);
-    let mut response = render(&templates.environment, "weather_forecast.html", &context)
-        .map_err(map_eyre_error)?;
+    let mut response =
+        render(&templates.environment, "weather.html", &context).map_err(map_eyre_error)?;
 
     set_preferences_cookie.set_cookie(response.headers_mut());
     Ok(response)

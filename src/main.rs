@@ -44,7 +44,7 @@ mod templates;
 mod types;
 mod user_preferences;
 mod utilities;
-mod weather_forecast;
+mod weather;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -132,7 +132,7 @@ async fn main() -> eyre::Result<()> {
                     get(user_preferences::query_set_redirect_handler),
                 )
                 .route("/disclaimer", post(disclaimer::handler))
-                .route("/weather-forecast", get(weather_forecast::handler))
+                .route("/weather", get(weather::handler))
                 // These routes expose public forecast information and thus have the disclaimer middleware
                 // applied to them.
                 .nest(

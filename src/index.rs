@@ -19,7 +19,7 @@ use crate::{
     isbot::is_bot,
     state::AppState,
     templates::{render, TemplatesWithContext},
-    user_preferences::UserPreferences,
+    user_preferences::{UserPreferences, WindUnit},
 };
 
 #[derive(Clone, Serialize, Debug)]
@@ -87,10 +87,11 @@ pub struct ForecastAccumulator {
 }
 
 #[derive(Serialize, Debug)]
-struct Index {
+struct IndexContext {
     current_forecast: Option<IndexForecast>,
     forecasts: Vec<IndexForecast>,
     errors: Vec<String>,
+    wind_unit: WindUnit,
 }
 
 pub async fn handler(
@@ -228,10 +229,11 @@ pub async fn handler(
         }
     });
 
-    let index = Index {
+    let index = IndexContext {
         current_forecast,
         forecasts,
         errors,
+        wind_unit: preferences.wind_unit.unwrap_or_default(),
     };
     let mut response = render(&templates.environment, "index.html", &index)
         .map_err(map_eyre_error)?

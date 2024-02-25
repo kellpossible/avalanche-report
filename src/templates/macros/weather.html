@@ -1,0 +1,14 @@
+{% from "macros/weather_forecast.html" import weather_forecast %}
+{% from "macros/wind_unit_select.html" import wind_unit_select %}
+{% macro weather(weather_maps, wind_unit, show_wind_unit_select=false, show_forecast=true) %}
+    {% set weather_id = "weather-" ~ uuid() %}
+    {% if show_wind_unit_select %}
+        {{ wind_unit_select(wind_unit, hx_get="/weather", hx_target=("#" ~ weather_id)) }}
+    {% endif %}
+    <div id="{{ weather_id }}">
+        <h3 class="text-3xl text-center py-2">{{ fl("weather-station-kudebi_top-label") }}</h3>
+        <iframe class="w-full" height="700" src="/current-weather"></iframe>
+        <h3 class="text-3xl text-center py-2">{{ fl("weather-forecast-heading") }}</h3>
+        {{ weather_forecast(weather_maps, wind_unit) }}
+    </div>
+{% endmacro %}

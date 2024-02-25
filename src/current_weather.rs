@@ -203,7 +203,7 @@ pub fn router() -> Router<AppState> {
 
 #[derive(Serialize)]
 struct CurrentWeatherContext {
-    current_weather: HashMap<WeatherStationId, Vec<WeatherDataItem>>,
+    weather_stations: HashMap<WeatherStationId, Vec<WeatherDataItem>>,
     wind_unit: WindUnit,
 }
 
@@ -220,13 +220,13 @@ pub async fn handler(
     Extension(templates): Extension<TemplatesWithContext>,
 ) -> Response {
     tracing::info!("Getting current weather");
-    let mut current_weather = HashMap::new();
+    let mut weather_stations = HashMap::new();
     for id in service.available_weather_stations() {
         let data = service.current_weather(&id).await.unwrap();
-        current_weather.insert(id, data);
+        weather_stations.insert(id, data);
     }
     let context = CurrentWeatherContext {
-        current_weather,
+        weather_stations,
         wind_unit: query
             .wind_unit
             .or(preferences.wind_unit)
