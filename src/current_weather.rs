@@ -17,6 +17,7 @@ use crate::{
     options::{AmbientWeatherSource, WeatherStation, WeatherStationId},
     state::AppState,
     templates::{render, TemplatesWithContext},
+    user_preferences::{UserPreferences, WindUnit},
 };
 
 #[derive(Clone, Debug, Deserialize)]
@@ -203,10 +204,19 @@ pub fn router() -> Router<AppState> {
 #[derive(Serialize)]
 struct CurrentWeatherContext {
     current_weather: HashMap<WeatherStationId, Vec<WeatherDataItem>>,
+    wind_unit: WindUnit,
+}
+
+#[derive(Deserialize, Default, Clone, Debug)]
+#[serde(default)]
+pub struct Query {
+    wind_unit: Option<WindUnit>,
 }
 
 pub async fn handler(
+    axum::extract::Query(query): axum::extract::Query<Query>,
     State(service): State<std::sync::Arc<CurrentWeatherService>>,
+    Extension(preferences): Extension<UserPreferences>,
     Extension(templates): Extension<TemplatesWithContext>,
 ) -> Response {
     tracing::info!("Getting current weather");
@@ -215,7 +225,13 @@ pub async fn handler(
         let data = service.current_weather(&id).await.unwrap();
         current_weather.insert(id, data);
     }
-    let context = CurrentWeatherContext { current_weather };
+    let context = CurrentWeatherContext {
+        current_weather,
+        wind_unit: query
+            .wind_unit
+            .or(preferences.wind_unit)
+            .unwrap_or_default(),
+    };
     render(&templates.environment, "current_weather.html", &context)
         .wrap_err("Error rendering current weather template")
         .map_err(map_eyre_error)

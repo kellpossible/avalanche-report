@@ -46,7 +46,7 @@
           series: [
             {},
             {
-                label: "Temperature",
+                label: "{{ fl("atmospheric-temperature-label") }}",
                 scale: "°C",
               value: (self, v) => v == null ? null : `${v.toFixed(2)} °C`,
               // series style
@@ -54,7 +54,7 @@
               width: 2/devicePixelRatio
             },
             {
-                label: "Humidty",
+                label: "{{ fl("atmospheric-humidity-label") }}",
                 scale: "%",
               value: (self, v) => v == null ? null : `${v.toFixed(0)}%`,
               // series style
@@ -84,6 +84,7 @@
     function approxEq(v1, v2, epsilon) {
       return Math.abs(v1 - v2) < epsilon;
     }
+    const windUnit = "{% if wind_unit == "MetersPerSecond" %}m/s{% elif wind_unit == "KilometersPerHour" %}km/h{% else %}Unknown Wind Unit{% endif %}"
     function plotWindSpeedDirection(data, node, cursorOpts) {
         const timeData = [];
         const speedData = [];
@@ -108,26 +109,31 @@
           series: [
             {},
             {
-                label: "Wind Speed",
-                scale: "m/s",
-              value: (self, v) => v == null ? null : `${v.toFixed(2)} m/s`,
+              label: "{{ fl("wind-speed-label") }}",
+                scale: windUnit,
+                value: (self, v) => v == null ? null : `${v.toFixed(2)} ${windUnit}`,
               // series style
               stroke: "blue",
               width: 2/devicePixelRatio
             },
             {
-                label: "Wind Direction",
-                scale: "°",
+                label: "{{ fl("wind-direction-label") }}",
+              scale: "°",
               value: (self, v) => v == null ? null : `${v.toFixed(0)}°`,
               // series style
               stroke: "black",
+              paths: u => null,
+              points: {
+                  show: true,
+                  // fill: "#ffffff00"
+              },
               width: 2/devicePixelRatio
             },
           ],
         axes: [
             {},
             {
-                scale: "m/s",
+                scale: windUnit,
                 values: (u, vals, space) => vals.map(v => +v.toFixed(2) + " m/s"),
                   stroke: "blue",
                 grid: {show: false},
@@ -135,7 +141,7 @@
             {
                 side: 1,
                 scale: "°",
-                  stroke: "black",
+                stroke: "black",
                 values: (u, vals, space) => vals.map(v => {
                     if (approxEq(v, 0.0, 1.0) || approxEq(v, 360.0, 1.0)) {
                         return "N";
