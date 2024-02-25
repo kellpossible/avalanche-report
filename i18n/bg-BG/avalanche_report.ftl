@@ -283,3 +283,13 @@ about-description =
     something similar for your forecast region.
 wind-unit-label = мерна ед.
 sponsors-title = Спонсори
+# Label for the speed of the wind
+wind-speed-label = Wind Speed
+# Label for the direction of the wind
+wind-direction-label = Wind Direction
+# Label for the current atmospheric temperature
+atmospheric-temperature-label = Temperature
+# Label for the current atmospheric humidity
+atmospheric-humidity-label = Humidity
+# Label for the weather station located on top of Kudebi at 3000 m
+weather-station-kudebi_top-label = Kudebi Weather Station (3000 m)
