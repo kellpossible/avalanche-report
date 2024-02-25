@@ -138,7 +138,7 @@ avalanche-hazard-extreme-about = Извънредно опасни лавинн�
 # Description of the size and distributions of avalanches to occur with "Low" avalanche danger
 avalanche-hazard-low-size-distribution = Малки лавини на изолирани локации или в екстремен терен.
 # Description of the size and distributions of avalanches to occur with "Moderate" avalanche danger
-avalanche-hazard-moderate-size-distribution = Малки лавини на специфични локации; или размер големи лавини на изолирани локации.
+avalanche-hazard-moderate-size-distribution = Малки лавини на специфични локации; или големи лавини на изолирани локации.
 # Description of the size and distributions of avalanches to occur with "Considerable" avalanche danger
 avalanche-hazard-considerable-size-distribution = Малки лавини са широко разпространени; или големи лавини на специфични локации; или много големи лавини на изолирани локации.
 # Description of the size and distributions of avalanches to occur with "High" avalanche danger
@@ -152,7 +152,7 @@ avalanche-hazard-high-likelihood = Спонтанни лавини са веро
 # Description of the likelyhood for avalanches to occur with "Considerable" avalanche danger
 avalanche-hazard-considerable-likelihood = Спонтанни лавини са възможни; лавини, предизвикани от човешко натоварване са вероятни.
 # Description of the likelyhood for avalanches to occur with "Moderate" avalanche danger
-avalanche-hazard-moderate-likelihood = Спонтанни лавини са слабо вероятни; изкуствено предизвикани лавини са възможни.
+avalanche-hazard-moderate-likelihood = Спонтанни лавини са слабо вероятни; лавини, предизвикани от човешко натоварване са възможни.
 # Description of the likelyhood for avalanches to occur with "Low" avalanche danger
 avalanche-hazard-low-likelihood = Спонтанни лавини и лавини, предизвикани от човешко натоварване са слабо вероятни.
 # Field heading for the likelihood of an avalanche occurring
@@ -235,15 +235,15 @@ confidence-high-about = Увереността в прогнозата е вис
 # REMINDER FOR PROGRAMMER: If this disclaimer message is updated, the DISCLAIMER_VERSION in disclaimer.rs should also be updated so the user needs to accept the updated disclaimer.
 disclaimer-message = Нашите лавинни прогностици за международно сертифицирани професионалисти и данните се събират от опитни наблюдатели. Апелираме да се правят лични наблюдения и да не се разчита изцяло и само на тази информация, тъй като всяка прогноза е генерализирана и в определени случаи може да бъде неточна или непълна. Не носим отговорност за действия в планините, които могат да доведат до вреди и щети или смърт в следствие на лавинни инциденти.
 # Field on the forecast page that specifies the person who created the forecast.
-forecast-forecaster = **Прогнозата е издадена от:** { $name }
+forecast-forecaster = **Издадена от:** { $name }
 # Heading for the name of the person who created this forecast
 forecast-forecaster-heading = Прогностик
 # Heading for field on the forecast page that specifies the date and time that the
 # forecast was issued at
-forecast-issued-at = **Прогнозата е издадена на::** { $time }
+forecast-issued-at = **Издадена на:** { $time }
 # Field on the forecast page that specifies the date and time that the
 # forecast is valid until
-forecast-valid-until = **Прогнозата е валидна до::** { $time }
+forecast-valid-until = **Валидна до::** { $time }
 # Caption for the aspect/elevation chart.
 aspect-elevation-chart-caption = Изложение/пояс
 # Text inside the Back button.
@@ -281,5 +281,15 @@ about-description =
     <https://github.com/kellpossible/avalanche-report>, new contributors are
     welcome! Feel free to contact the team there if you wish to deploy
     something similar for your forecast region.
-wind-unit-label = Мерна ед. за вятъра
+wind-unit-label = мерна ед.
 sponsors-title = Спонсори
+# Label for the speed of the wind
+wind-speed-label = Wind Speed
+# Label for the direction of the wind
+wind-direction-label = Wind Direction
+# Label for the current atmospheric temperature
+atmospheric-temperature-label = Temperature
+# Label for the current atmospheric humidity
+atmospheric-humidity-label = Humidity
+# Label for the weather station located on top of Kudebi at 3000 m
+weather-station-kudebi_top-label = Kudebi Weather Station (3000 m)
