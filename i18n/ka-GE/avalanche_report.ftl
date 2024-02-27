@@ -278,12 +278,12 @@ about-description =
 wind-unit-label = ქარის სიჩქარის ერთეული:
 sponsors-title = სპონსორები
 # Label for the speed of the wind
-wind-speed-label = Wind Speed
+wind-speed-label = ქარის სიჩქარე
 # Label for the direction of the wind
-wind-direction-label = Wind Direction
+wind-direction-label = ქარის მიმართულება
 # Label for the current atmospheric temperature
-atmospheric-temperature-label = Temperature
+atmospheric-temperature-label = ტემპერატურა
 # Label for the current atmospheric humidity
-atmospheric-humidity-label = Humidity
+atmospheric-humidity-label = ნესტიანობა
 # Label for the weather station located on top of Kudebi at 3000 m
-weather-station-kudebi_top-label = Kudebi Weather Station (3000 m)
+weather-station-kudebi_top-label = კუდების ამინდის სადგური (3000 მ)
