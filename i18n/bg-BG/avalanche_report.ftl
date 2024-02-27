@@ -168,11 +168,11 @@ elevation-band-alpine = Преходен пояс
 # Elevation band far above the tree level (above Alpine)
 elevation-band-high-alpine = Алпийски пояс
 # Heading for recent observations
-recent-relevant-observations-heading = Наблюдения на снежната покривка и лавинна активност
+recent-relevant-observations-heading = Снежната покривка и лавинна активност
 # Heading for weather forecast
 weather-forecast-heading = Прогноза за времето
 # Heading for weather section of the forecast
-weather-heading = Метеорологични наблюдения
+weather-heading = Времето
 # A heading for an individual avalanche problem type
 avalanche-problem-heading = Лавинен проблем
 # A heading for all the different avalanche problem types
@@ -284,12 +284,12 @@ about-description =
 wind-unit-label = мерна ед.
 sponsors-title = Спонсори
 # Label for the speed of the wind
-wind-speed-label = Wind Speed
+wind-speed-label = Скорост на вятъра
 # Label for the direction of the wind
-wind-direction-label = Wind Direction
+wind-direction-label = Посока на вятъра
 # Label for the current atmospheric temperature
-atmospheric-temperature-label = Temperature
+atmospheric-temperature-label = Температура
 # Label for the current atmospheric humidity
-atmospheric-humidity-label = Humidity
+atmospheric-humidity-label = Влажност на въздуха
 # Label for the weather station located on top of Kudebi at 3000 m
-weather-station-kudebi_top-label = Kudebi Weather Station (3000 m)
+weather-station-kudebi_top-label = Метеостанция Кудеби (3000 м н.в.)
