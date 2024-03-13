@@ -92,6 +92,16 @@ function {{ function_name }}() {
 
     const paths = uPlot.paths.bars({size: [1, 50]});
     var first = true;
+    const timeValues =  [
+      // tick incr          default           year                             month    day                        hour     min                sec       mode
+        [3600 * 24 * 365,   "{YYYY}",         null,                            null,    null,                      null,    null,              null,        1],
+        [3600 * 24 * 28,    "{MMM}",          "\n{YYYY}",                      null,    null,                      null,    null,              null,        1],
+        [3600 * 24,         "{D}/{M}",        "\n{YYYY}",                      null,    null,                      null,    null,              null,        1],
+        [3600,              "{h}{aa}",        "\n{YYYY}-{M}-{D}",                null,    "\n{M}-{D}",               null,    null,              null,        1],
+        [60,                "{h}:{mm}{aa}",   "\n{YYYY}-{M}-{D}",                null,    "\n{M}-{D}",               null,    null,              null,        1],
+        [1,                 ":{ss}",          "\n{YYYY}-{M}-{D} {h}:{mm}{aa}",   null,    "\n{M}-{D} {h}:{mm}{aa}",  null,    "\n{h}:{mm}{aa}",  null,        1],
+        [0.001,             ":{ss}.{fff}",    "\n{YYYY}-{M}-{D} {h}:{mm}{aa}",   null,    "\n{M}-{D} {h}:{mm}{aa}",  null,    "\n{h}:{mm}{aa}",  null,        1],
+      ];
 
     const opts = {
         width: 800,
@@ -116,7 +126,9 @@ function {{ function_name }}() {
             }
         ],
         axes: [
-            {},
+            {
+                values: timeValues,
+            },
             {
                 show: true,
                 label: "Visits",

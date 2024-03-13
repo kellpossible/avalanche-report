@@ -8,10 +8,20 @@ use crate::{
     user_preferences::{self, UserPreferences, WindUnit},
 };
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 #[serde(default)]
 pub struct Query {
     wind_unit: Option<WindUnit>,
+    include_forecast: bool,
+}
+
+impl Default for Query {
+    fn default() -> Self {
+        Self {
+            wind_unit: None,
+            include_forecast: false,
+        }
+    }
 }
 
 #[derive(Serialize, Clone, Debug)]

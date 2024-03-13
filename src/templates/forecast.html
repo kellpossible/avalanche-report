@@ -45,6 +45,8 @@
     <link href="/dist/maptiler-sdk.css" rel="stylesheet"/>
     <!-- MapTiler SDK + Leaflet bindings -->
     <script src="/dist/leaflet-maptilersdk.js"></script>
+    <link rel="stylesheet" href="/dist/uPlot.css">
+    <script src="/dist/uPlot.js"></script>
 {% endblock head %}
 {% set overall_hazard = hazard_ratings["overall"].value %}
 {% block body %}
@@ -175,7 +177,9 @@
                             {% if problem.time_of_day %}
                                 <tr class="odd:bg-gray-100">
                                     <td class="text-right font-bold p-2">{{ fl("problem-time-of-day-heading") }}</td>
-                                    <td class="p-2">{{ fl("time-of-day-" ~ problem.time_of_day) }}</td>
+                                    <td class="p-2">
+                                        {{ fl("time-of-day-" ~ problem.time_of_day) }}
+                                    </td>
                                 </tr>
                             {% endif %}
                             <tr class="odd:bg-gray-100">
@@ -213,7 +217,7 @@
                     {{ translated_string(weather_forecast) | md }}
                 </div>
                 {% if is_current %}
-                    {{ weather(external_weather.weather_maps, external_weather.wind_unit, show_wind_unit_select=true) }}
+                    {{ weather(external_weather.wind_unit, show_wind_unit_select=true, weather_maps=external_weather.weather_maps) }}
                 {% endif %}
             </div>
             <div class="pt-4">

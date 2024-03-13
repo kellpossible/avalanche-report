@@ -1,9 +1,2 @@
-{% extends "base.html" %}
 {% from "macros/current_weather.html" import current_weather %}
-{% block head %}
-    <link rel="stylesheet" href="/dist/uPlot.css">
-    <script src="/dist/uPlot.js"></script>
-{% endblock head %}
-{% block body %}
-    {{ current_weather(weather_stations, wind_unit) }}
-{% endblock body %}
+{{ current_weather(weather_stations, wind_unit) }}
