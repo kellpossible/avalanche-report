@@ -4,20 +4,30 @@ use axum::{
     middleware::Next,
     response::Response,
 };
+use eyre::OptionExt;
 use i18n_embed::{
     fluent::{fluent_language_loader, FluentLanguageLoader, NegotiationStrategy},
-    LanguageLoader,
+    AssetsMultiplexor, FileSystemAssets, I18nAssets, LanguageLoader, RustEmbedNotifyAssets,
 };
 use once_cell::sync::Lazy;
+use once_cell::sync::OnceCell;
 use rust_embed::RustEmbed;
-use std::{collections::HashMap, sync::Arc};
+use std::{any::Any, collections::HashMap, path::PathBuf, sync::Arc};
 use time::OffsetDateTime;
 
 use crate::{state::AppState, user_preferences::UserPreferences};
 
 #[derive(RustEmbed)]
 #[folder = "i18n/"]
-struct Localizations;
+pub struct LocalizationsEmbed;
+
+pub static LOCALIZATIONS: OnceCell<AssetsMultiplexor> = OnceCell::new();
+
+pub fn try_get_localizations() -> eyre::Result<&'static AssetsMultiplexor> {
+    LOCALIZATIONS
+        .get()
+        .ok_or_eyre("LOCALIZATIONS have not yet been initialized")
+}
 
 pub static LANGUAGE_DISPLAY_NAMES: Lazy<HashMap<unic_langid::LanguageIdentifier, String>> =
     Lazy::new(|| {
@@ -82,8 +92,40 @@ pub fn negotiate_translated_string<'a>(
 
 pub type I18nLoader = Arc<FluentLanguageLoader>;
 
-pub fn initialize() -> I18nLoader {
-    Arc::new(fluent_language_loader!())
+/// Returns the loader, and a reload watcher (which we must hold for the duration of the program.
+pub fn initialize(options: &crate::options::I18n) -> eyre::Result<(I18nLoader, Box<dyn Any>)> {
+    let mut assets: Vec<Box<dyn I18nAssets + Send + Sync + 'static>> =
+        vec![Box::new(RustEmbedNotifyAssets::<LocalizationsEmbed>::new(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("i18n"),
+        ))];
+    if let Some(base_dir) = &options.override_base_dir {
+        if !base_dir.is_dir() {
+            tracing::warn!("Specified override_base_dir {base_dir:?} either does not exist or is not a directory");
+        }
+        assets.insert(
+            0,
+            Box::new(FileSystemAssets::try_new(base_dir)?.notify_changes_enabled(true)),
+        );
+    }
+    LOCALIZATIONS
+        .set(AssetsMultiplexor::new(assets))
+        .map_err(|_| eyre::eyre!("Unable to set LOCALIZATIONS because it has already been set"))?;
+    let localizations = try_get_localizations()?;
+
+    let loader = Arc::new(fluent_language_loader!());
+    let changed_loader = loader.clone();
+    let watcher = localizations.subscribe_changed(std::sync::Arc::new(move || {
+        if let eyre::Result::Err(error) = (|| {
+            tracing::debug!("Reloading localizations detected change");
+            changed_loader
+                .reload(localizations)
+                .map_err(eyre::Error::from)
+        })() {
+            tracing::error!("Error autoreloading localizations: {error:?}");
+        }
+    }))?;
+
+    Ok((loader, Box::new(watcher)))
 }
 
 /// Create an ordered version of [`LANGUAGE_DISPLAY_NAMES`].
@@ -119,11 +161,10 @@ pub fn load_available_languages<'a>(
     loader: &I18nLoader,
     language_order: &[unic_langid::LanguageIdentifier],
 ) -> eyre::Result<()> {
-    let available_languages = loader.available_languages(&Localizations)?;
+    let localizations = try_get_localizations()?;
+    let available_languages = loader.available_languages(&*localizations)?;
     let languages = order_languages(available_languages, language_order, |al, l| al == l);
-    let languages_ref: Vec<&unic_langid::LanguageIdentifier> = languages.iter().collect();
-
-    loader.load_languages(&Localizations, &languages_ref)?;
+    loader.load_languages(&*localizations, &languages)?;
 
     let languages_display: String = display_languages(&languages);
     tracing::debug!("Localizations loaded, languages: {languages_display}");

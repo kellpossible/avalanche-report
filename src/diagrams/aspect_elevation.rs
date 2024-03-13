@@ -343,7 +343,7 @@ mod test {
     use unic_langid::LanguageIdentifier;
 
     static LOADER: Lazy<I18nLoader> = Lazy::new(|| {
-        let loader = i18n::initialize();
+        let (loader, _) = i18n::initialize(&crate::options::I18n::default()).unwrap();
         load_available_languages(&loader, &["en-UK".parse::<LanguageIdentifier>().unwrap()])
             .unwrap();
         loader

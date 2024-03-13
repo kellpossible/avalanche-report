@@ -53,6 +53,16 @@ pub struct Options {
     /// See [`WeatherStation`].
     #[serde(default)]
     pub weather_stations: HashMap<WeatherStationId, WeatherStation>,
+    /// See [`I18n`].
+    #[serde(default)]
+    pub i18n: I18n,
+}
+
+/// Configuration for application localization.
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct I18n {
+    /// The path to the directory containing overrides for localization resources.
+    pub override_base_dir: Option<PathBuf>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone)]

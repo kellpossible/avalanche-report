@@ -2142,8 +2142,7 @@ dependencies = [
 [[package]]
 name = "i18n-config"
 version = "0.4.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c9ce3c48cbc21fd5b22b9331f32b5b51f6ad85d969b99e793427332e76e7640"
+source = "git+https://github.com/kellpossible/cargo-i18n?branch=autoreload#68d4f48a45d5060eed3c540a9397c4d50caed010"
 dependencies = [
  "log",
  "serde",
@@ -2156,8 +2155,7 @@ dependencies = [
 [[package]]
 name = "i18n-embed"
 version = "0.14.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94205d95764f5bb9db9ea98fa77f89653365ca748e27161f5bbea2ffd50e459c"
+source = "git+https://github.com/kellpossible/cargo-i18n?branch=autoreload#68d4f48a45d5060eed3c540a9397c4d50caed010"
 dependencies = [
  "arc-swap",
  "fluent",
@@ -2167,6 +2165,7 @@ dependencies = [
  "intl-memoizer",
  "lazy_static",
  "log",
+ "notify 6.1.1",
  "parking_lot",
  "rust-embed",
  "thiserror",
@@ -2177,8 +2176,7 @@ dependencies = [
 [[package]]
 name = "i18n-embed-fl"
 version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8241a781f49e923415e106fcd1f89c3fab92cc9f699a521c56e95dee273903d3"
+source = "git+https://github.com/kellpossible/cargo-i18n?branch=autoreload#68d4f48a45d5060eed3c540a9397c4d50caed010"
 dependencies = [
  "dashmap",
  "find-crate",
@@ -2198,8 +2196,7 @@ dependencies = [
 [[package]]
 name = "i18n-embed-impl"
 version = "0.8.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81093c4701672f59416582fe3145676126fd23ba5db910acad0793c1108aaa58"
+source = "git+https://github.com/kellpossible/cargo-i18n?branch=autoreload#68d4f48a45d5060eed3c540a9397c4d50caed010"
 dependencies = [
  "find-crate",
  "i18n-config",
@@ -2697,7 +2694,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fbcdb562798b8b49bdd5bc4f253a4e8fb71b3b0d1e290d05835d02e57f278c9b"
 dependencies = [
  "minijinja",
- "notify",
+ "notify 5.2.0",
 ]
 
 [[package]]
@@ -2882,6 +2879,25 @@ dependencies = [
  "mio",
  "walkdir",
  "windows-sys 0.45.0",
+]
+
+[[package]]
+name = "notify"
+version = "6.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6205bd8bb1e454ad2e27422015fb5e4f2bcc7e08fa8f27058670d208324a4d2d"
+dependencies = [
+ "bitflags 2.4.2",
+ "crossbeam-channel",
+ "filetime",
+ "fsevent-sys",
+ "inotify",
+ "kqueue",
+ "libc",
+ "log",
+ "mio",
+ "walkdir",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]

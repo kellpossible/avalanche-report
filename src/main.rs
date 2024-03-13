@@ -68,7 +68,8 @@ async fn main() -> eyre::Result<()> {
 
     let client = reqwest::Client::new();
 
-    let i18n = i18n::initialize();
+    let (i18n, _watcher_guard) =
+        i18n::initialize(&options.i18n).wrap_err("Error initializing i18n")?;
     crate::i18n::load_available_languages(&i18n, &options.default_language_order)
         .wrap_err("Error loading languages")?;
 
