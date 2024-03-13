@@ -73,7 +73,7 @@ async fn main() -> eyre::Result<()> {
     crate::i18n::load_available_languages(&i18n, &options.default_language_order)
         .wrap_err("Error loading languages")?;
 
-    let templates = Templates::initialize()?;
+    let templates = Templates::initialize(&options.templates)?;
 
     let database = database::initialize(&options.data_dir)
         .await

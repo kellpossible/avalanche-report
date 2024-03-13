@@ -98,13 +98,13 @@ pub fn initialize(options: &crate::options::I18n) -> eyre::Result<(I18nLoader, B
         vec![Box::new(RustEmbedNotifyAssets::<LocalizationsEmbed>::new(
             PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("i18n"),
         ))];
-    if let Some(base_dir) = &options.override_base_dir {
-        if !base_dir.is_dir() {
-            tracing::warn!("Specified override_base_dir {base_dir:?} either does not exist or is not a directory");
+    if let Some(directory) = &options.directory {
+        if !directory.is_dir() {
+            tracing::warn!("Specified i18n directory {directory:?} either does not exist or is not a valid directory");
         }
         assets.insert(
             0,
-            Box::new(FileSystemAssets::try_new(base_dir)?.notify_changes_enabled(true)),
+            Box::new(FileSystemAssets::try_new(directory)?.notify_changes_enabled(true)),
         );
     }
     LOCALIZATIONS

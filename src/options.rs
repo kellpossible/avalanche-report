@@ -56,13 +56,23 @@ pub struct Options {
     /// See [`I18n`].
     #[serde(default)]
     pub i18n: I18n,
+    /// See [`Templates`].
+    #[serde(default)]
+    pub templates: Templates,
+}
+
+/// Configuration for the HTML templates.
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct Templates {
+    /// The path to the directory containing overrides for templates.
+    pub directory: Option<PathBuf>,
 }
 
 /// Configuration for application localization.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct I18n {
     /// The path to the directory containing overrides for localization resources.
-    pub override_base_dir: Option<PathBuf>,
+    pub directory: Option<PathBuf>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone)]

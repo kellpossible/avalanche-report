@@ -1,8 +1,8 @@
 use std::{
     borrow::Cow,
     collections::{BTreeMap, HashMap},
-    future,
-    future::Future,
+    future::{self, Future},
+    path::PathBuf,
     pin::Pin,
     sync::Arc,
 };
@@ -46,10 +46,23 @@ pub struct TemplatesWithContext {
 }
 
 impl Templates {
-    pub fn initialize() -> eyre::Result<Self> {
+    pub fn initialize(options: &'static crate::options::Templates) -> eyre::Result<Self> {
         let reloader = minijinja_autoreload::AutoReloader::new(|notifier| {
             let mut environment = minijinja::Environment::new();
             environment.set_loader(|name: &str| {
+                if let Some(directory) = &options.directory {
+                    let name_sanitized = name.replace("..", "");
+                    let path = directory.join(name_sanitized);
+                    if path.exists() {
+                        return Ok(Some(std::fs::read_to_string(path).map_err(|error| {
+                            Error::new(
+                                ErrorKind::TemplateNotFound,
+                                format!("Error loading template {name}: {error}"),
+                            )
+                        })?));
+                    }
+                }
+
                 Option::transpose(EmbeddedTemplates::get(name).map(|file: EmbeddedFile| {
                     String::from_utf8(file.data.to_vec()).map_err(|error| {
                         Error::new(
@@ -65,6 +78,9 @@ impl Templates {
             #[cfg(debug_assertions)]
             {
                 notifier.watch_path("src/templates", true);
+            }
+            if let Some(path) = &options.directory {
+                notifier.watch_path(path, true);
             }
             Ok(environment)
         });
