@@ -13,6 +13,7 @@ use axum::{
     response::{IntoResponse, Response},
     Extension,
 };
+use eyre::Context;
 use fluent::{types::FluentNumber, FluentValue};
 use http::{header::CONTENT_TYPE, StatusCode};
 use minijinja::{
@@ -454,7 +455,13 @@ pub fn render<'env>(
         builder
     };
 
-    Ok(builder.body(template.render(ctx)?)?.into_response())
+    Ok(builder
+        .body(
+            template
+                .render(ctx)
+                .wrap_err_with(|| format!("Error rendering template {name:?}"))?,
+        )?
+        .into_response())
 }
 
 // TODO: this code might be useful in the future for /** routes we can have a handler selects the

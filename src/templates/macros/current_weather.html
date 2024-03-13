@@ -3,209 +3,212 @@
         {% set data = weather_stations[id] %}
         {% set temperature_humidity_chart_id = uuid() %}
         <div id="{{ temperature_humidity_chart_id }}"></div>
-        {% set wind_chart_id = uuid() %}
+        {% set wind_chart_id = uuid() | replace("-", "") %}
         <div id="{{ wind_chart_id }}"></div>
         <script>
-    const originalData = {{ data | tojson}};
-    let currentWeatherSync = uPlot.sync("currentWeather");
-    const matchSyncKeys = (own, ext) => own == ext;
-    const cursorOpts = {
-        lock: true,
-        sync: {
-            key: currentWeatherSync.key,
-            setSeries: true,
-            match: [matchSyncKeys, matchSyncKeys],
-        },
-    };
-    const timeValues =  [
-      // tick incr          default           year                             month    day                        hour     min                sec       mode
-        [3600 * 24 * 365,   "{YYYY}",         null,                            null,    null,                      null,    null,              null,        1],
-        [3600 * 24 * 28,    "{MMM}",          "\n{YYYY}",                      null,    null,                      null,    null,              null,        1],
-        [3600 * 24,         "{D}/{M}",        "\n{YYYY}",                      null,    null,                      null,    null,              null,        1],
-        [3600,              "{h}{aa}",        "\n{YYYY}-{M}-{D}",                null,    "\n{M}-{D}",               null,    null,              null,        1],
-        [60,                "{h}:{mm}{aa}",   "\n{YYYY}-{M}-{D}",                null,    "\n{M}-{D}",               null,    null,              null,        1],
-        [1,                 ":{ss}",          "\n{YYYY}-{M}-{D} {h}:{mm}{aa}",   null,    "\n{M}-{D} {h}:{mm}{aa}",  null,    "\n{h}:{mm}{aa}",  null,        1],
-        [0.001,             ":{ss}.{fff}",    "\n{YYYY}-{M}-{D} {h}:{mm}{aa}",   null,    "\n{M}-{D} {h}:{mm}{aa}",  null,    "\n{h}:{mm}{aa}",  null,        1],
-      ];
-    function plotTemperatureHumidity(data, node, cursorOpts) {
-        const timeData = [];
-        const temperatureData = [];
-        const humidityData = [];
-        const mapData = (item) => {
-            timeData.push(Math.floor((new Date(item.time)).getTime() / 1000));
-            temperatureData.push(item.temperature_celcius);
-            humidityData.push(item.humidity_percent);
-        };
-        data.map(mapData);
-        const axisData = [timeData.reverse(), temperatureData.reverse(), humidityData.reverse()];
-        let width = node.clientWidth;
-        let opts = {
-          cursor: cursorOpts,
-          width,
-          height: 300,
-          scales: {
-            x: {
-              time: true,
-            },
-          },
-          series: [
-            {},
-            {
-              label: '{{ fl("atmospheric-temperature-label") }}',
-              scale: "°C",
-              value: (self, v) => (v == null ? null : `${v.toFixed(2)} °C`),
-              // series style
-              stroke: "red",
-              width: 2 / devicePixelRatio,
-            },
-            {
-              label: '{{ fl("atmospheric-humidity-label") }}',
-              scale: "%",
-              value: (self, v) => (v == null ? null : `${v.toFixed(0)}%`),
-              // series style
-              stroke: "green",
-              width: 2 / devicePixelRatio,
-            },
-          ],
-          axes: [
-            {
-              values: timeValues,
-            },
-            {
-                scale: "°C",
-                size: 80,
-                values: (self, ticks) => ticks.map((v) => +v.toFixed(2) + " °C"),
-              // values: (self, ticks) => ticks.map((v) => {
-              //    return +v.toFixed(2) + " °C";
-              //}),
-              stroke: "red",
-              grid: { show: false },
-            },
-            {
-              side: 1,
-              scale: "%",
-              stroke: "green",
-              values: (self, ticks) => ticks.map((v) => +v.toFixed(0) + "%"),
-              grid: { show: false },
-            },
-          ],
-        };
-        return new uPlot(opts, axisData, node);
-    }
-    function approxEq(v1, v2, epsilon) {
-      return Math.abs(v1 - v2) < epsilon;
-    }
-    function plotWindSpeedDirection(data, node, cursorOpts, windUnit) {
-        var windUnitLabel;
-        if (windUnit === "KilometersPerHour") {
-            windUnitLabel = "km/h";
-        } else if (windUnit === "MetersPerSecond") {
-            windUnitLabel = "m/s";
-        } else {
-            console.error(`Unsupported wind unit ${windUnit}`);
-        }
-        const timeData = [];
-        const speedData = [];
-        const directionData = [];
-        const mapData = (item) => {
-            timeData.push(Math.floor((new Date(item.time)).getTime() / 1000));
-            speedData.push(item.wind_speed_ms);
-            directionData.push(item.wind_direction_degrees);
-        };
-        data.map(mapData);
-        const axisData = [timeData.reverse(), speedData.reverse(), directionData.reverse()];
-        let width = node.clientWidth;
-        let opts = {
-          cursor: cursorOpts,
-          width,
-          height: 300,
-          scales: {
-            x: {
-              time: true,
-            },
-          },
-          series: [
-            {},
-            {
-              label: '{{ fl("wind-speed-label") }}',
-              scale: windUnitLabel,
-              value: (self, v) =>
-                v == null ? null : `${v.toFixed(2)} ${windUnitLabel}`,
-              // series style
-              stroke: "blue",
-              width: 2 / devicePixelRatio,
-            },
-            {
-              label: '{{ fl("wind-direction-label") }}',
-              scale: "°",
-              value: (self, v) => (v == null ? null : `${v.toFixed(0)}°`),
-              // series style
-              stroke: "black",
-              paths: (u) => null,
-              points: {
-                show: true,
-                // fill: "#ffffff00"
-              },
-              width: 2 / devicePixelRatio,
-            },
-          ],
-          axes: [
-            {
-              values: timeValues,
-            },
-            {
-              scale: windUnitLabel,
-              size: 100,
-              values: (u, vals, space) =>
-                vals.map((v) => +v.toFixed(1) + " " + windUnitLabel),
-              stroke: "blue",
-              grid: { show: false },
-            },
-            {
-              side: 1,
-              scale: "°",
-              stroke: "black",
-              values: (u, vals, space) =>
-                vals.map((v) => {
-                  if (approxEq(v, 0.0, 1.0) || approxEq(v, 360.0, 1.0)) {
-                    return "N";
-                  }
-                  if (approxEq(v, 90.0, 1.0)) {
-                    return "E";
-                  }
-                  if (approxEq(v, 180.0, 1.0)) {
-                    return "S";
-                  }
-                  if (approxEq(v, 270.0, 1.0)) {
-                    return "W";
-                  }
-                  return "null";
-                }),
-              grid: { show: false },
-              incrs: [90],
-            },
-          ],
-          scales: {
-            "°": {
-              auto: false,
-              range: [0, 360],
-            },
-          },
-        };
-        return new uPlot(opts, axisData, node);
-    }
-    function plotWithResize(plot, node) {
-        const chart = plot();
-        const observer = new ResizeObserver(() => {
-            chart.setSize({ width: node.clientWidth, height: 300 });
-        });
-        observer.observe(node.parentElement);
-    }
-    const tempertureHumidityChartNode = document.getElementById("{{temperature_humidity_chart_id}}")
-    plotWithResize(() => plotTemperatureHumidity(originalData, tempertureHumidityChartNode, cursorOpts), tempertureHumidityChartNode);
-    const windChartNode = document.getElementById("{{wind_chart_id}}")
-    const windUnit = "{{ wind_unit }}";
-    plotWithResize(() => plotWindSpeedDirection(originalData, windChartNode, cursorOpts, windUnit), windChartNode);
+            function drawChart_{{ wind_chart_id }}() {
+                const originalData = {{ data | tojson}};
+                const currentWeatherSync = uPlot.sync("currentWeather");
+                const matchSyncKeys = (own, ext) => own == ext;
+                const cursorOpts = {
+                    lock: true,
+                    sync: {
+                        key: currentWeatherSync.key,
+                        setSeries: true,
+                        match: [matchSyncKeys, matchSyncKeys],
+                    },
+                };
+                const timeValues =  [
+                  // tick incr          default           year                             month    day                        hour     min                sec       mode
+                    [3600 * 24 * 365,   "{YYYY}",         null,                            null,    null,                      null,    null,              null,        1],
+                    [3600 * 24 * 28,    "{MMM}",          "\n{YYYY}",                      null,    null,                      null,    null,              null,        1],
+                    [3600 * 24,         "{D}/{M}",        "\n{YYYY}",                      null,    null,                      null,    null,              null,        1],
+                    [3600,              "{h}{aa}",        "\n{YYYY}-{M}-{D}",                null,    "\n{M}-{D}",               null,    null,              null,        1],
+                    [60,                "{h}:{mm}{aa}",   "\n{YYYY}-{M}-{D}",                null,    "\n{M}-{D}",               null,    null,              null,        1],
+                    [1,                 ":{ss}",          "\n{YYYY}-{M}-{D} {h}:{mm}{aa}",   null,    "\n{M}-{D} {h}:{mm}{aa}",  null,    "\n{h}:{mm}{aa}",  null,        1],
+                    [0.001,             ":{ss}.{fff}",    "\n{YYYY}-{M}-{D} {h}:{mm}{aa}",   null,    "\n{M}-{D} {h}:{mm}{aa}",  null,    "\n{h}:{mm}{aa}",  null,        1],
+                  ];
+                function plotTemperatureHumidity(data, node, cursorOpts) {
+                    const timeData = [];
+                    const temperatureData = [];
+                    const humidityData = [];
+                    const mapData = (item) => {
+                        timeData.push(Math.floor((new Date(item.time)).getTime() / 1000));
+                        temperatureData.push(item.temperature_celcius);
+                        humidityData.push(item.humidity_percent);
+                    };
+                    data.map(mapData);
+                    const axisData = [timeData.reverse(), temperatureData.reverse(), humidityData.reverse()];
+                    let width = node.clientWidth;
+                    let opts = {
+                      cursor: cursorOpts,
+                      width,
+                      height: 300,
+                      scales: {
+                        x: {
+                          time: true,
+                        },
+                      },
+                      series: [
+                        {},
+                        {
+                          label: '{{ fl("atmospheric-temperature-label") }}',
+                          scale: "°C",
+                          value: (self, v) => (v == null ? null : `${v.toFixed(2)} °C`),
+                          // series style
+                          stroke: "red",
+                          width: 2 / devicePixelRatio,
+                        },
+                        {
+                          label: '{{ fl("atmospheric-humidity-label") }}',
+                          scale: "%",
+                          value: (self, v) => (v == null ? null : `${v.toFixed(0)}%`),
+                          // series style
+                          stroke: "green",
+                          width: 2 / devicePixelRatio,
+                        },
+                      ],
+                      axes: [
+                        {
+                          values: timeValues,
+                        },
+                        {
+                            scale: "°C",
+                            size: 80,
+                            values: (self, ticks) => ticks.map((v) => +v.toFixed(2) + " °C"),
+                          // values: (self, ticks) => ticks.map((v) => {
+                          //    return +v.toFixed(2) + " °C";
+                          //}),
+                          stroke: "red",
+                          grid: { show: false },
+                        },
+                        {
+                          side: 1,
+                          scale: "%",
+                          stroke: "green",
+                          values: (self, ticks) => ticks.map((v) => +v.toFixed(0) + "%"),
+                          grid: { show: false },
+                        },
+                      ],
+                    };
+                    return new uPlot(opts, axisData, node);
+                }
+                function approxEq(v1, v2, epsilon) {
+                  return Math.abs(v1 - v2) < epsilon;
+                }
+                function plotWindSpeedDirection(data, node, cursorOpts, windUnit) {
+                    var windUnitLabel;
+                    if (windUnit === "KilometersPerHour") {
+                        windUnitLabel = "km/h";
+                    } else if (windUnit === "MetersPerSecond") {
+                        windUnitLabel = "m/s";
+                    } else {
+                        console.error(`Unsupported wind unit ${windUnit}`);
+                    }
+                    const timeData = [];
+                    const speedData = [];
+                    const directionData = [];
+                    const mapData = (item) => {
+                        timeData.push(Math.floor((new Date(item.time)).getTime() / 1000));
+                        speedData.push(item.wind_speed_ms);
+                        directionData.push(item.wind_direction_degrees);
+                    };
+                    data.map(mapData);
+                    const axisData = [timeData.reverse(), speedData.reverse(), directionData.reverse()];
+                    let width = node.clientWidth;
+                    let opts = {
+                      cursor: cursorOpts,
+                      width,
+                      height: 300,
+                      scales: {
+                        x: {
+                          time: true,
+                        },
+                      },
+                      series: [
+                        {},
+                        {
+                          label: '{{ fl("wind-speed-label") }}',
+                          scale: windUnitLabel,
+                          value: (self, v) =>
+                            v == null ? null : `${v.toFixed(2)} ${windUnitLabel}`,
+                          // series style
+                          stroke: "blue",
+                          width: 2 / devicePixelRatio,
+                        },
+                        {
+                          label: '{{ fl("wind-direction-label") }}',
+                          scale: "°",
+                          value: (self, v) => (v == null ? null : `${v.toFixed(0)}°`),
+                          // series style
+                          stroke: "black",
+                          paths: (u) => null,
+                          points: {
+                            show: true,
+                            // fill: "#ffffff00"
+                          },
+                          width: 2 / devicePixelRatio,
+                        },
+                      ],
+                      axes: [
+                        {
+                          values: timeValues,
+                        },
+                        {
+                          scale: windUnitLabel,
+                          size: 100,
+                          values: (u, vals, space) =>
+                            vals.map((v) => +v.toFixed(1) + " " + windUnitLabel),
+                          stroke: "blue",
+                          grid: { show: false },
+                        },
+                        {
+                          side: 1,
+                          scale: "°",
+                          stroke: "black",
+                          values: (u, vals, space) =>
+                            vals.map((v) => {
+                              if (approxEq(v, 0.0, 1.0) || approxEq(v, 360.0, 1.0)) {
+                                return "N";
+                              }
+                              if (approxEq(v, 90.0, 1.0)) {
+                                return "E";
+                              }
+                              if (approxEq(v, 180.0, 1.0)) {
+                                return "S";
+                              }
+                              if (approxEq(v, 270.0, 1.0)) {
+                                return "W";
+                              }
+                              return "null";
+                            }),
+                          grid: { show: false },
+                          incrs: [90],
+                        },
+                      ],
+                      scales: {
+                        "°": {
+                          auto: false,
+                          range: [0, 360],
+                        },
+                      },
+                    };
+                    return new uPlot(opts, axisData, node);
+                }
+                function plotWithResize(plot, node) {
+                    const chart = plot();
+                    const observer = new ResizeObserver(() => {
+                        chart.setSize({ width: node.clientWidth, height: 300 });
+                    });
+                    observer.observe(node.parentElement);
+                }
+                const tempertureHumidityChartNode = document.getElementById("{{temperature_humidity_chart_id}}")
+                plotWithResize(() => plotTemperatureHumidity(originalData, tempertureHumidityChartNode, cursorOpts), tempertureHumidityChartNode);
+                const windChartNode = document.getElementById("{{wind_chart_id}}")
+                const windUnit = "{{ wind_unit }}";
+                plotWithResize(() => plotWindSpeedDirection(originalData, windChartNode, cursorOpts, windUnit), windChartNode);
+            }
+            drawChart_{{ wind_chart_id }}();
         </script>
     {% endfor %}
 {% endmacro %}

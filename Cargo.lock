@@ -2142,7 +2142,7 @@ dependencies = [
 [[package]]
 name = "i18n-config"
 version = "0.4.6"
-source = "git+https://github.com/kellpossible/cargo-i18n?branch=autoreload#68d4f48a45d5060eed3c540a9397c4d50caed010"
+source = "git+https://github.com/kellpossible/cargo-i18n?branch=autoreload#3e2321300971e15ac3e909c5eebd423c85a52dd9"
 dependencies = [
  "log",
  "serde",
@@ -2155,7 +2155,7 @@ dependencies = [
 [[package]]
 name = "i18n-embed"
 version = "0.14.1"
-source = "git+https://github.com/kellpossible/cargo-i18n?branch=autoreload#68d4f48a45d5060eed3c540a9397c4d50caed010"
+source = "git+https://github.com/kellpossible/cargo-i18n?branch=autoreload#3e2321300971e15ac3e909c5eebd423c85a52dd9"
 dependencies = [
  "arc-swap",
  "fluent",
@@ -2176,7 +2176,7 @@ dependencies = [
 [[package]]
 name = "i18n-embed-fl"
 version = "0.8.0"
-source = "git+https://github.com/kellpossible/cargo-i18n?branch=autoreload#68d4f48a45d5060eed3c540a9397c4d50caed010"
+source = "git+https://github.com/kellpossible/cargo-i18n?branch=autoreload#3e2321300971e15ac3e909c5eebd423c85a52dd9"
 dependencies = [
  "dashmap",
  "find-crate",
@@ -2196,7 +2196,7 @@ dependencies = [
 [[package]]
 name = "i18n-embed-impl"
 version = "0.8.3"
-source = "git+https://github.com/kellpossible/cargo-i18n?branch=autoreload#68d4f48a45d5060eed3c540a9397c4d50caed010"
+source = "git+https://github.com/kellpossible/cargo-i18n?branch=autoreload#3e2321300971e15ac3e909c5eebd423c85a52dd9"
 dependencies = [
  "find-crate",
  "i18n-config",

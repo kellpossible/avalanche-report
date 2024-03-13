@@ -1,16 +1,17 @@
-{% macro weather(wind_unit, show_wind_unit_select=false, weather_maps=[]) %}
+{% macro weather(wind_unit, show_wind_unit_select=false, weather_maps=[], weather_stations=[]) %}
     {% set weather_id = "weather-" ~ uuid() %}
     {% if show_wind_unit_select %}
         {{ wind_unit_select(wind_unit, hx_get="/weather", hx_target=("#" ~ weather_id)) }}
     {% endif %}
-    <div id="{{ weather_id }}">
-        <h3 class="text-3xl text-center py-2">{{ fl("weather-station-kudebi_top-label") }}</h3>
-        <div hx-get="/current-weather" hx-trigger="load"></div>
-        {% if weather_maps %}
-            <h3 class="text-3xl text-center py-2">{{ fl("weather-forecast-heading") }}</h3>
-            {{ weather_forecast(weather_maps, wind_unit) }}
-        {% endif %}
-    </div>
+    <div id="{{ weather_id }}">{{ weather_data(wind_unit, weather_maps, weather_stations ) }}</div>
+{% endmacro %}
+{% macro weather_data(wind_unit, weather_maps=[], weather_stations=[]) %}
+    <h3 class="text-3xl text-center py-2">{{ fl("weather-station-kudebi_top-label") }}</h3>
+    <div hx-get="/current-weather" hx-trigger="load"></div>
+    {% if weather_maps %}
+        <h3 class="text-3xl text-center py-2">{{ fl("weather-forecast-heading") }}</h3>
+        {{ weather_forecast(weather_maps, wind_unit) }}
+    {% endif %}
 {% endmacro %}
 {% macro weather_forecast(weather_maps, wind_unit) %}
     <div id="weather-forecast">

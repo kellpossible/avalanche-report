@@ -4,7 +4,7 @@ use axum::{
     middleware::Next,
     response::Response,
 };
-use eyre::OptionExt;
+use eyre::{Context, OptionExt};
 use i18n_embed::{
     fluent::{fluent_language_loader, FluentLanguageLoader, NegotiationStrategy},
     AssetsMultiplexor, FileSystemAssets, I18nAssets, LanguageLoader, RustEmbedNotifyAssets,
@@ -114,16 +114,18 @@ pub fn initialize(options: &crate::options::I18n) -> eyre::Result<(I18nLoader, B
 
     let loader = Arc::new(fluent_language_loader!());
     let changed_loader = loader.clone();
-    let watcher = localizations.subscribe_changed(std::sync::Arc::new(move || {
-        if let eyre::Result::Err(error) = (|| {
-            tracing::debug!("Reloading localizations detected change");
-            changed_loader
-                .reload(localizations)
-                .map_err(eyre::Error::from)
-        })() {
-            tracing::error!("Error autoreloading localizations: {error:?}");
-        }
-    }))?;
+    let watcher = localizations
+        .subscribe_changed(std::sync::Arc::new(move || {
+            if let eyre::Result::Err(error) = (|| {
+                tracing::debug!("Reloading localizations detected change");
+                changed_loader
+                    .reload(localizations)
+                    .wrap_err("Error reloading localizations")
+            })() {
+                tracing::error!("Error autoreloading localizations: {error:?}");
+            }
+        }))
+        .wrap_err("Error subscribing to changed localizations")?;
 
     Ok((loader, Box::new(watcher)))
 }
