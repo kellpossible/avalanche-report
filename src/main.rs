@@ -16,8 +16,14 @@ use tower_http::trace::TraceLayer;
 use tracing_appender::rolling::Rotation;
 
 use crate::{
-    analytics::CompactionConfig, current_weather::CurrentWeatherService, database::backup,
-    options::Options, state::AppState, templates::Templates,
+    analytics::CompactionConfig,
+    current_weather::{
+        CurrentWeatherCacheService, CurrentWeatherCacheServiceConfig, CurrentWeatherService,
+    },
+    database::backup,
+    options::Options,
+    state::AppState,
+    templates::Templates,
 };
 
 mod admin;
@@ -105,9 +111,18 @@ async fn main() -> eyre::Result<()> {
     });
 
     let current_weather = std::sync::Arc::new(CurrentWeatherService::new(
-        client.clone(),
+        database.clone(),
         options.weather_stations.clone(),
     ));
+
+    CurrentWeatherCacheService::new(CurrentWeatherCacheServiceConfig {
+        interval: std::time::Duration::from_secs(60),
+        each_station_interval: std::time::Duration::from_secs(1),
+        weather_stations: &options.weather_stations,
+        client: client.clone(),
+        database: database.clone(),
+    })
+    .spawn();
 
     let state = AppState {
         options,

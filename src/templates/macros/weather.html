@@ -1,3 +1,4 @@
+{# A user interface for displaying weather information and provides controls for customizing the display (such as selecting units) #}
 {% macro weather(wind_unit, show_wind_unit_select=false, weather_maps=[], weather_stations=[]) %}
     {% set weather_id = "weather-" ~ uuid() %}
     {% if show_wind_unit_select %}
@@ -5,8 +6,9 @@
     {% endif %}
     <div id="{{ weather_id }}">{{ weather_data(wind_unit, weather_maps, weather_stations ) }}</div>
 {% endmacro %}
+
+{# A panel to display weather information, both current and forecast. #}
 {% macro weather_data(wind_unit, weather_maps=[], weather_stations=[]) %}
-    <h3 class="text-3xl text-center py-2">{{ fl("weather-station-kudebi_top-label") }}</h3>
     <div hx-get="/current-weather" hx-trigger="load"></div>
     {% if weather_maps %}
         <h3 class="text-3xl text-center py-2">{{ fl("weather-forecast-heading") }}</h3>

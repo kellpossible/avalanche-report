@@ -9,10 +9,15 @@ use axum::{
     Extension, Json, Router,
 };
 use eyre::{Context, ContextCompat};
+use rusqlite::{types::Type, Row};
+use sea_query::{Expr, OnConflict, SimpleExpr, SqliteQueryBuilder};
+use sea_query_rusqlite::RusqliteBinder;
 use secrecy::ExposeSecret;
 use serde::{Deserialize, Serialize};
+use tracing::Instrument;
 
 use crate::{
+    database::Database,
     error::map_eyre_error,
     options::{AmbientWeatherSource, WeatherStation, WeatherStationId},
     state::AppState,
@@ -74,7 +79,7 @@ pub struct QueryDeviceDataResponseItem {
     pub yearlyrainin: Option<f64>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct WeatherDataItem {
     #[serde(with = "time::serde::rfc3339")]
     pub time: time::OffsetDateTime,
@@ -117,17 +122,17 @@ pub struct DeviceDataQuery<'a> {
 }
 
 pub struct CurrentWeatherService {
-    client: reqwest::Client,
+    database: Database,
     weather_stations: HashMap<WeatherStationId, WeatherStation>,
 }
 
 impl CurrentWeatherService {
     pub fn new(
-        client: reqwest::Client,
+        database: Database,
         weather_stations: HashMap<WeatherStationId, WeatherStation>,
     ) -> Self {
         Self {
-            client,
+            database,
             weather_stations,
         }
     }
@@ -137,49 +142,40 @@ impl CurrentWeatherService {
     pub fn available_weather_stations(&self) -> Vec<WeatherStationId> {
         self.weather_stations.keys().cloned().collect()
     }
+
     pub async fn current_weather(
         &self,
         id: &WeatherStationId,
     ) -> eyre::Result<Vec<WeatherDataItem>> {
-        let station = self
-            .weather_stations
-            .get(id)
-            .wrap_err_with(|| format!("No weather station with id {id} available"))?;
-        match &station.source {
-            crate::options::WeatherStationSource::AmbientWeather(source) => self
-                .ambient_weather_query_device_data(source)
-                .await
-                .wrap_err("Error querying ambient weather device data"),
-        }
-    }
+        let database = self.database.get().await?;
+        let id = id.clone();
+        database
+            .interact(move |conn| {
+                let id_clone = id.clone();
+                let mut query = sea_query::Query::select();
+                query
+                    .columns(CurrentWeatherCache::COLUMNS)
+                    .from(CurrentWeatherCache::TABLE)
+                    .and_where(Expr::col(CurrentWeatherCacheIden::WeatherStationId).eq(id));
+                let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
+                let mut statement = conn.prepare_cached(&sql)?;
+                let data: Vec<WeatherDataItem> = Option::transpose(
+                    statement
+                        .query_map(&*values.as_params(), |row| {
+                            CurrentWeatherCache::try_from(row)
+                        })
+                        .wrap_err("Error performing query to obtain `ForecastFiles`")?
+                        .next(),
+                )?
+                .map(|cache_item| cache_item.data)
+                .unwrap_or_else(|| {
+                    tracing::warn!("No cached weather data can be found for {id_clone}");
+                    Default::default()
+                });
 
-    async fn ambient_weather_query_device_data(
-        &self,
-        source: &AmbientWeatherSource,
-    ) -> eyre::Result<Vec<WeatherDataItem>> {
-        let now = time::OffsetDateTime::now_utc();
-        let query = DeviceDataQuery {
-            api_key: source.api_key.expose_secret(),
-            application_key: source.application_key.expose_secret(),
-            end_date: Some(now),
-            limit: None,
-        };
-        let mac_address = &source.device_mac_address;
-        self.client
-            .get(format!(
-                "https://rt.ambientweather.net/v1/devices/{mac_address}"
-            ))
-            .query(&query)
-            .send()
+                eyre::Ok(data)
+            })
             .await?
-            .error_for_status()
-            .wrap_err("Status code of response is an error")?
-            .json::<Vec<QueryDeviceDataResponseItem>>()
-            .await
-            .wrap_err("Error deserializing response body")?
-            .into_iter()
-            .map(WeatherDataItem::try_from)
-            .collect()
     }
 }
 
@@ -199,6 +195,188 @@ pub fn router() -> Router<AppState> {
             "/available-weather-stations",
             get(available_weather_stations_handler),
         )
+}
+
+pub struct CurrentWeatherCacheServiceConfig {
+    pub interval: std::time::Duration,
+    pub each_station_interval: std::time::Duration,
+    pub weather_stations: &'static HashMap<WeatherStationId, WeatherStation>,
+    pub client: reqwest::Client,
+    pub database: Database,
+}
+
+/// Service for fetching and caching current weather data to avoid API limits and improve
+/// durability.
+pub struct CurrentWeatherCacheService {
+    config: CurrentWeatherCacheServiceConfig,
+}
+
+#[sea_query::enum_def]
+pub struct CurrentWeatherCache {
+    pub weather_station_id: WeatherStationId,
+    pub data: Vec<WeatherDataItem>,
+}
+
+impl AsRef<str> for CurrentWeatherCacheIden {
+    fn as_ref(&self) -> &str {
+        match self {
+            Self::Table => "current_weather_cache",
+            Self::WeatherStationId => "weather_station_id",
+            Self::Data => "data",
+        }
+    }
+}
+
+impl CurrentWeatherCache {
+    pub const COLUMNS: [CurrentWeatherCacheIden; 2] = [
+        CurrentWeatherCacheIden::WeatherStationId,
+        CurrentWeatherCacheIden::Data,
+    ];
+    pub const TABLE: CurrentWeatherCacheIden = CurrentWeatherCacheIden::Table;
+
+    pub fn values(self) -> eyre::Result<[SimpleExpr; 2]> {
+        Ok([
+            self.weather_station_id.into(),
+            serde_json::to_string(&self.data)?.into(),
+        ])
+    }
+}
+
+impl TryFrom<&Row<'_>> for CurrentWeatherCache {
+    type Error = rusqlite::Error;
+
+    fn try_from(row: &Row<'_>) -> Result<Self, Self::Error> {
+        let weather_station_id = row.get(CurrentWeatherCacheIden::WeatherStationId.as_ref())?;
+        let data: serde_json::Value = row.get(CurrentWeatherCacheIden::Data.as_ref())?;
+        let data = serde_json::from_value(data)
+            .map_err(|e| rusqlite::Error::FromSqlConversionFailure(2, Type::Text, Box::new(e)))?;
+
+        Ok(CurrentWeatherCache {
+            weather_station_id,
+            data,
+        })
+    }
+}
+
+impl CurrentWeatherCacheService {
+    pub fn new(config: CurrentWeatherCacheServiceConfig) -> Self {
+        Self { config }
+    }
+
+    async fn fetch_and_update_station(
+        &self,
+        id: &WeatherStationId,
+        station: &WeatherStation,
+    ) -> eyre::Result<()> {
+        let weather_data = match &station.source {
+            crate::options::WeatherStationSource::AmbientWeather(source) => self
+                .ambient_weather_query_device_data(source)
+                .await
+                .wrap_err("Error querying ambient weather device data")?,
+        };
+        let current_weather = CurrentWeatherCache {
+            weather_station_id: id.clone(),
+            data: weather_data,
+        };
+        let database = self.config.database.get().await?;
+        database
+            .interact(move |conn| {
+                let mut query = sea_query::Query::insert();
+                let values = current_weather.values()?;
+                query
+                    .into_table(CurrentWeatherCache::TABLE)
+                    .columns(CurrentWeatherCache::COLUMNS)
+                    .values(values.clone())?;
+                query.on_conflict(
+                    OnConflict::column(CurrentWeatherCacheIden::WeatherStationId)
+                        .values(
+                            CurrentWeatherCache::COLUMNS[1..]
+                                .into_iter()
+                                .zip(values[1..].into_iter())
+                                .map(|(c, v)| (*c, v.clone())),
+                        )
+                        .to_owned(),
+                );
+                let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
+                conn.execute(&sql, &*values.as_params())?;
+                eyre::Ok(())
+            })
+            .await??;
+        Ok(())
+    }
+
+    async fn fetch_and_cache_current_weather(&self) -> eyre::Result<()> {
+        loop {
+            let before_requests_time = std::time::Instant::now();
+            for (id, station) in self.config.weather_stations {
+                if let Err(error) = self.fetch_and_update_station(id, station).await {
+                    tracing::error!(
+                        "Error fetching and updating weather data for station {id}: {error:?}"
+                    );
+                }
+                tokio::time::sleep(self.config.each_station_interval).await;
+            }
+            let after_requests_time = std::time::Instant::now();
+            let requests_duration = after_requests_time - before_requests_time;
+            tokio::time::sleep(std::time::Duration::max(
+                self.config.interval - requests_duration,
+                self.config.each_station_interval,
+            ))
+            .await;
+        }
+    }
+
+    async fn ambient_weather_query_device_data(
+        &self,
+        source: &AmbientWeatherSource,
+    ) -> eyre::Result<Vec<WeatherDataItem>> {
+        let now = time::OffsetDateTime::now_utc();
+        let query = DeviceDataQuery {
+            api_key: source.api_key.expose_secret(),
+            application_key: source.application_key.expose_secret(),
+            end_date: Some(now),
+            limit: None,
+        };
+        let mac_address = &source.device_mac_address;
+        self.config
+            .client
+            .get(format!(
+                "https://rt.ambientweather.net/v1/devices/{mac_address}"
+            ))
+            .query(&query)
+            .send()
+            .await?
+            .error_for_status()
+            .wrap_err("Status code of response is an error")?
+            .json::<Vec<QueryDeviceDataResponseItem>>()
+            .await
+            .wrap_err("Error deserializing response body")?
+            .into_iter()
+            .map(WeatherDataItem::try_from)
+            .collect()
+    }
+
+    pub fn spawn(self) {
+        tokio::spawn(
+            async move {
+                tracing::info!("Spawned current weather cache service");
+                loop {
+                    let before_requests_time = std::time::Instant::now();
+                    if let Err(error) = self.fetch_and_cache_current_weather().await {
+                        tracing::error!("Error fetching and caching current weather: {error:?}")
+                    };
+                    let after_requests_time = std::time::Instant::now();
+                    let requests_duration = after_requests_time - before_requests_time;
+                    tokio::time::sleep(std::time::Duration::max(
+                        self.config.interval - requests_duration,
+                        self.config.each_station_interval,
+                    ))
+                    .await;
+                }
+            }
+            .instrument(tracing::error_span!("current_weather_cache")),
+        );
+    }
 }
 
 #[derive(Serialize)]

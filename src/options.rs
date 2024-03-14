@@ -4,6 +4,8 @@ use crate::serde::hide_secret;
 use cronchik::CronSchedule;
 use eyre::ContextCompat;
 use nonzero_ext::nonzero;
+use rusqlite::types::FromSql;
+use sea_query::SimpleExpr;
 use secrecy::SecretString;
 use serde::{ser::Error, Deserialize, Serialize};
 use serde_with::{serde_as, EnumMap};
@@ -78,6 +80,18 @@ pub struct I18n {
 #[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone)]
 #[serde(transparent)]
 pub struct WeatherStationId(String);
+
+impl FromSql for WeatherStationId {
+    fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
+        String::column_result(value).map(Self)
+    }
+}
+
+impl From<WeatherStationId> for SimpleExpr {
+    fn from(id: WeatherStationId) -> Self {
+        id.0.into()
+    }
+}
 
 impl std::fmt::Display for WeatherStationId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

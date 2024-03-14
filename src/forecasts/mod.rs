@@ -33,10 +33,10 @@ use crate::{
     google_drive::{self, ListFileMetadata},
     i18n::{self, I18nLoader},
     index::ForecastFileView,
-    options::{Map, WeatherMaps},
+    options::Map,
     state::AppState,
     templates::{render, TemplatesWithContext},
-    user_preferences::{UserPreferences, WindUnit},
+    user_preferences::UserPreferences,
 };
 
 use self::files::{ForecastFiles, ForecastFilesIden};
