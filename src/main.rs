@@ -115,13 +115,14 @@ async fn main() -> eyre::Result<()> {
         options.weather_stations.clone(),
     ));
 
-    CurrentWeatherCacheService::new(CurrentWeatherCacheServiceConfig {
+    CurrentWeatherCacheService::try_new(CurrentWeatherCacheServiceConfig {
         interval: std::time::Duration::from_secs(60),
-        each_station_interval: std::time::Duration::from_secs(1),
+        each_station_interval: std::time::Duration::from_secs(2),
         weather_stations: &options.weather_stations,
         client: client.clone(),
         database: database.clone(),
     })
+    .wrap_err("Unable to create CurrentWeatherCacheService")?
     .spawn();
 
     let state = AppState {
@@ -161,7 +162,10 @@ async fn main() -> eyre::Result<()> {
                 )
                 .nest(
                     "/admin",
-                    admin::router(reporting_options, &options.admin_password_hash),
+                    admin::router(admin::Config {
+                        reporting: reporting_options,
+                        admin_password_hash: &options.admin_password_hash,
+                    }),
                 )
                 .layer(middleware::from_fn(cache_control::no_store_middleware)),
         )

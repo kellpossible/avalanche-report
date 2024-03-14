@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}
+    Forecast Areas
+{% endblock title %}
+{% block body %}
+<ul>
+    {% for area in areas %}
+    <li>{{ area.name }}</li>
+    {% endfor %}
+</ul>
+{% endblock body %}

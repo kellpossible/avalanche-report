@@ -38,6 +38,9 @@ kill_timeout = "5s"
 
     [weather_stations.kudebi_top.source.ambient_weather]
     device_mac_address="54:32:04:4B:E5:94"
+    
+    [weather_stations.lower_gudauri.source.ambient_weather]
+    device_mac_address="54:32:04:49:71:D4"
   """
 
 [[mounts]]

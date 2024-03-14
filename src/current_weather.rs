@@ -8,7 +8,7 @@ use axum::{
     routing::get,
     Extension, Json, Router,
 };
-use eyre::{Context, ContextCompat};
+use eyre::{bail, Context, ContextCompat};
 use rusqlite::{types::Type, Row};
 use sea_query::{Expr, OnConflict, SimpleExpr, SqliteQueryBuilder};
 use sea_query_rusqlite::RusqliteBinder;
@@ -259,8 +259,20 @@ impl TryFrom<&Row<'_>> for CurrentWeatherCache {
 }
 
 impl CurrentWeatherCacheService {
-    pub fn new(config: CurrentWeatherCacheServiceConfig) -> Self {
-        Self { config }
+    pub fn try_new(config: CurrentWeatherCacheServiceConfig) -> eyre::Result<Self> {
+        if config
+            .each_station_interval
+            .saturating_mul(config.weather_stations.len().try_into()?)
+            > config.interval
+        {
+            bail!(
+                "Cannot create CurrentWeatherCacheService, invalid config, not enough time to complete requests {} per each {} weather stations within {}", 
+                humantime::format_duration(config.each_station_interval),
+                config.weather_stations.len(),
+                humantime::format_duration(config.interval)
+            )
+        }
+        Ok(Self { config })
     }
 
     async fn fetch_and_update_station(
@@ -307,7 +319,7 @@ impl CurrentWeatherCacheService {
 
     async fn fetch_and_cache_current_weather(&self) -> eyre::Result<()> {
         loop {
-            let before_requests_time = std::time::Instant::now();
+            let before_requests_time = tokio::time::Instant::now();
             for (id, station) in self.config.weather_stations {
                 if let Err(error) = self.fetch_and_update_station(id, station).await {
                     tracing::error!(
@@ -316,10 +328,10 @@ impl CurrentWeatherCacheService {
                 }
                 tokio::time::sleep(self.config.each_station_interval).await;
             }
-            let after_requests_time = std::time::Instant::now();
+            let after_requests_time = tokio::time::Instant::now();
             let requests_duration = after_requests_time - before_requests_time;
             tokio::time::sleep(std::time::Duration::max(
-                self.config.interval - requests_duration,
+                self.config.interval.saturating_sub(requests_duration),
                 self.config.each_station_interval,
             ))
             .await;
@@ -397,7 +409,7 @@ pub async fn handler(
     Extension(preferences): Extension<UserPreferences>,
     Extension(templates): Extension<TemplatesWithContext>,
 ) -> Response {
-    tracing::info!("Getting current weather");
+    tracing::debug!("Getting current weather");
     let mut weather_stations = HashMap::new();
     for id in service.available_weather_stations() {
         let data = service.current_weather(&id).await.unwrap();

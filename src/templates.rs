@@ -46,6 +46,13 @@ pub struct TemplatesWithContext {
     pub environment: Arc<minijinja::Environment<'static>>,
 }
 
+impl TemplatesWithContext {
+    pub fn render(&self, name: &str, context: &dyn erased_serde::Serialize) -> eyre::Result<Response> {
+        render(&self.environment, name, context)
+    }
+
+}
+
 impl Templates {
     pub fn initialize(options: &'static crate::options::Templates) -> eyre::Result<Self> {
         let reloader = minijinja_autoreload::AutoReloader::new(|notifier| {
@@ -546,7 +553,7 @@ pub fn create_handler(
         templates: &TemplatesWithContext,
         template_key: &str,
     ) -> axum::response::Result<Response> {
-        render(&templates.environment, template_key, &()).map_err(map_eyre_error)
+        templates.render(template_key, &()).map_err(map_eyre_error)
     }
     let template_key: String = template_key.to_owned();
     move |Extension(templates): Extension<TemplatesWithContext>| {

@@ -1,20 +1,27 @@
-use axum::Router;
+use axum::{routing::get, Router};
 use secrecy::SecretString;
 use tower_http::auth::AsyncRequireAuthorizationLayer;
 
-use crate::{auth::MyBasicAuth, state::AppState};
+use crate::{auth::MyBasicAuth, state::AppState, templates};
 
 mod analytics;
+mod forecast_areas;
 mod logs;
 
+pub struct Config {
+    pub reporting: &'static axum_reporting::Options,
+    pub admin_password_hash: &'static SecretString,
+}
+
 pub fn router(
-    reporting_options: &'static axum_reporting::Options,
-    admin_password_hash: &'static SecretString,
+    config: Config
 ) -> Router<AppState> {
     Router::new()
+        .route("/", get(templates::create_handler("admin/index.html")))
         .nest("/analytics", analytics::router())
-        .nest("/logs", logs::router(reporting_options))
+        .nest("/logs", logs::router(config.reporting))
+        .nest("/forecast-areas", forecast_areas::router())
         .layer(AsyncRequireAuthorizationLayer::new(MyBasicAuth::new(
-            admin_password_hash,
+            config.admin_password_hash,
         )))
 }
