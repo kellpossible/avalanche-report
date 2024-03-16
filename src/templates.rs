@@ -47,10 +47,13 @@ pub struct TemplatesWithContext {
 }
 
 impl TemplatesWithContext {
-    pub fn render(&self, name: &str, context: &dyn erased_serde::Serialize) -> eyre::Result<Response> {
+    pub fn render(
+        &self,
+        name: &str,
+        context: &dyn erased_serde::Serialize,
+    ) -> eyre::Result<Response> {
         render(&self.environment, name, context)
     }
-
 }
 
 impl Templates {

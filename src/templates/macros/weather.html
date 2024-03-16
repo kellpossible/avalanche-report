@@ -6,7 +6,6 @@
     {% endif %}
     <div id="{{ weather_id }}">{{ weather_data(wind_unit, weather_maps, weather_stations ) }}</div>
 {% endmacro %}
-
 {# A panel to display weather information, both current and forecast. #}
 {% macro weather_data(wind_unit, weather_maps=[], weather_stations=[]) %}
     <div hx-get="/current-weather" hx-trigger="load"></div>

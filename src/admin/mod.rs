@@ -13,9 +13,7 @@ pub struct Config {
     pub admin_password_hash: &'static SecretString,
 }
 
-pub fn router(
-    config: Config
-) -> Router<AppState> {
+pub fn router(config: Config) -> Router<AppState> {
     Router::new()
         .route("/", get(templates::create_handler("admin/index.html")))
         .nest("/analytics", analytics::router())
