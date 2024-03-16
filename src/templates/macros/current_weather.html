@@ -92,7 +92,13 @@
             const directionData = [];
             const mapData = (item) => {
                 timeData.push(Math.floor((new Date(item.time)).getTime() / 1000));
-                speedData.push(item.wind_speed_ms);
+                if (windUnit === "MetersPerSecond") {
+                    speedData.push(item.wind_speed_ms);
+                } else if (windUnit === "KilometersPerHour") {
+                    speedData.push(item.wind_speed_ms * 3.6);
+                } else {
+                    console.error(`Unsupported wind unit ${windUnit}`);
+                }
                 directionData.push(item.wind_direction_degrees);
             };
             data.map(mapData);
