@@ -13,16 +13,11 @@ use axum::{
 };
 use eyre::Context;
 use http::{header::CONTENT_TYPE, Uri};
-use sea_query::{Alias, Expr, IntoIden, Order, SimpleExpr, SqliteQueryBuilder};
-use sea_query_rusqlite::RusqliteBinder;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use utils::serde::rfc3339_option;
 
-use crate::{
-    analytics::AnalyticsIden, error::map_eyre_error, state::AppState,
-    templates::TemplatesWithContext,
-};
+use crate::{error::map_eyre_error, state::AppState, templates::TemplatesWithContext};
 
 mod serde_duration_secons {}
 

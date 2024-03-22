@@ -8,7 +8,7 @@ use axum::{
 };
 use cronchik::CronSchedule;
 use eyre::{Context, ContextCompat};
-use futures::{lock::Mutex, StreamExt};
+use futures::{lock::Mutex, StreamExt, TryStreamExt};
 use governor::{state::StreamRateLimitExt, Quota, RateLimiter};
 use http::StatusCode;
 use nonzero_ext::nonzero;
@@ -20,7 +20,7 @@ use tracing::Instrument;
 use uuid::Uuid;
 
 use crate::{
-    database::{Database, DATETIME_FORMAT},
+    database::Database,
     isbot::IsBot,
     state::AppState,
     types::{self, Uri},
@@ -138,8 +138,11 @@ pub async fn compact(database: &Database, window: Duration, keep: Duration) -> e
 
     let last = match sqlx::query_as!(
         Analytics,
-        "SELECT id, uri, visits, time FROM analytics ORDER BY time DESC LIMIT 1",
-    ).fetch_optional(database).await? {
+        "SELECT * FROM analytics ORDER BY analytics.time DESC LIMIT 1",
+    )
+    .fetch_optional(database)
+    .await?
+    {
         Some(last) => last,
         None => {
             tracing::debug!("No analytics found to compact");
@@ -162,33 +165,16 @@ pub async fn compact(database: &Database, window: Duration, keep: Duration) -> e
             to_time.format(&Rfc3339)?
         );
 
-        let (sql, values) = Query::select()
-            .from(AnalyticsIden::Table)
-            .columns(Analytics::COLUMNS)
-            .and_where(Expr::col(AnalyticsIden::Time).gte(from_time))
-            .and_where(Expr::col(AnalyticsIden::Time).lt(to_time))
-            .order_by(AnalyticsIden::Time, Order::Asc)
-            .build_rusqlite(SqliteQueryBuilder);
-
-        let map = database
-            .get()
-            .await?
-            .interact::<_, eyre::Result<_>>(move |conn| {
-                let mut statement = conn.prepare_cached(&sql)?;
-                let mut map: HashMap<String, Vec<Analytics>> = HashMap::new();
-
-                for result in statement
-                    .query_map(&*values.as_params(), |row| Analytics::try_from(row))
-                    .wrap_err("Error performing query")?
-                {
-                    let item = result?;
-                    let entries = map.entry(item.uri.clone()).or_insert_with(|| Vec::new());
-                    entries.push(item);
-                }
-
-                Ok(map)
-            })
-            .await??;
+        let map: HashMap<String, Vec<Analytics>> = sqlx::query_as!(
+            Analytics,
+            "SELECT * from analytics WHERE analytics.time >= $1 AND analytics.time < $2 ORDER BY analytics.time ASC",
+            from_time,
+            to_time
+        ).fetch(database).try_fold(HashMap::<String, Vec<Analytics>>::new(), |mut acc, item| {
+            let entries = acc.entry(item.uri.clone()).or_insert_with(|| Vec::new());
+            entries.push(item);
+            Ok(acc)
+        }).await?;
 
         let operations = compact_operations(map)?;
         tracing::debug!("{} operations", operations.len());
