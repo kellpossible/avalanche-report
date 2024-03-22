@@ -48,9 +48,9 @@ problem-type-heading-short = ტიპი
 # A heading for avalanche problem type.
 problem-type-heading = ზვავის პრობლემის ტიპი
 # Avalanche problem type. A type of loose snow avalanche composed of dry snow.
-problem-type-loose-dry = მშრალი ფხვიერი
+problem-type-loose-dry = მშრალი წერტილოვანი
 # Avalanche problem type. A type of loose snow avalanche composed of wet or moist snow.
-problem-type-loose-wet = მოშვებული სველი
+problem-type-loose-wet = სველი წერტილოვანი
 # Avalanche problem type. One or more layers of recent storm snow that has consolidated into a slab above a weak layer.
 problem-type-storm-slab = შტორმის დაფა
 # Avalanche problem type. Release of a cohesive layer of snow (a slab) formed by the wind drifted snow. 
@@ -96,9 +96,9 @@ avalanche-size-2-about = შეიძლება დამარხოს, დ�
 # Helpful description about size 3 avalanche
 avalanche-size-3-about = შეიძლება დაამტვრიოს და დამარხოს მანქანა, დააზიანოს სატვირთო მანქანა, დაანგრიოს ხის შენობა, ან მოტეხოს რამდენიმე ხე
 # Helpful description about size 4 avalanche
-avalanche-size-4-about = შეიძლება დაამტვრიოს სატვირთო მანქანა და მატარებლის ვაგონი, რამდენიმე შენობა ან 4 ჰექტარი ტყე
+avalanche-size-4-about = შეიძლება დაამტვრიოს სატვირთო მანქანა და მატარებლის ვაგონი, რამდენიმე შენობა ან 4 ჰექტარამდე ტყე
 # Helpful description about size 5 avalanche
-avalanche-size-5-about = ჩვენთვის ცნობილი უდიდესი თოვლის ზვავი. შეუძლია გაანადგუროს სოფელი ან 40 ჰექტარი ტყე
+avalanche-size-5-about = ჩვენთვის ცნობილი ყველაზე დიდი თოვლის ზვავი. შეუძლია გაანადგუროს სოფელი ან 40 ჰექტარამდე ტყე
 # A heading for the the trend of the forecast/conditions, will it improve or get worse?
 trend-heading = ტრენდი
 # Heading for "Trend" column
@@ -122,7 +122,7 @@ avalanche-hazard-considerable = მნიშვნელოვანი
 # High (level 4) avalanche hazard rating
 avalanche-hazard-high = მაღალი
 # Extreme (level 5) avalanche hazard rating
-avalanche-hazard-extreme = უმაღლესი
+avalanche-hazard-extreme = ძალიან მაღალი
 # Helpful description about "No Rating" avalanche hazard rating
 avalanche-hazard-no-rating-about = ამ მომენტისთვის ზვავის საფრთხის შეფასება არ არის შესაძლებელი არასაკმარისი ინფორმაციისა და შეფასების შესაძლებლობის არქონის გამო
 # Helpful description about "Low" avalanche hazard rating
@@ -132,7 +132,7 @@ avalanche-hazard-moderate-about = მომატებული ზვავს
 # Helpful description about "Considerable" avalanche hazard rating
 avalanche-hazard-considerable-about = მაღალი ზვავსაშიშროება. კარგად შეაფასეთ თოვლის აგებულება, იყავით ფრთხილად მარშრუტის არჩევისას და კონსერვატიულები გადაწყვეტილების მიღებისას
 # Helpful description about "High" avalanche hazard rating
-avalanche-hazard-high-about = ძალიან მაღალი ზვავსაშიშროება. შვავსაშიშ რელიეფზე გადაადგილება არ არის რეკომენდებული
+avalanche-hazard-high-about = ძალიან მაღალი ზვავსაშიშროება. ზვავსაშიშ რელიეფზე გადაადგილება არ არის რეკომენდებული
 # Helpful description about "Extreme" avalanche hazard rating
 avalanche-hazard-extreme-about = თავი აარიდეთ ზვავსაშის რელეფს
 # Description of the size and distributions of avalanches to occur with "Low" avalanche danger
