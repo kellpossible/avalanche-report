@@ -9,7 +9,7 @@ mod serde;
 
 use ::serde::{Deserialize, Serialize};
 use calamine::{open_workbook_auto_from_rs, DataType, Reader, Sheets};
-use eyre::{Context, ContextCompat};
+use eyre::{Context, ContextCompat, OptionExt};
 use indexmap::{IndexMap, IndexSet};
 use once_cell::sync::Lazy;
 use options::{HazardRatingInput, Options, TranslatedString};
@@ -722,25 +722,35 @@ fn unable_to_map_value<V: std::fmt::Display, M: std::fmt::Display>(
 fn map_translated_string<RS: std::io::Seek + std::io::Read>(
     sheets: &mut Sheets<RS>,
     translated_string: &TranslatedString,
+    form_langauge: &unic_langid::LanguageIdentifier,
 ) -> Result<HashMap<unic_langid::LanguageIdentifier, String>, ParseCellError> {
-    translated_string
-        .translations
-        .iter()
-        .flat_map(|(language, relative_position)| {
-            let position = translated_string.root.clone() + *relative_position;
-            let value = get_cell_value_string::<String, RS>(sheets, &position);
-            Result::transpose(value)
-                .into_iter()
-                .map(|result| result.map(|value| (language.clone(), value)))
-        })
-        .filter(|result| {
-            if let Ok((_language, value)) = &result {
-                !value.is_empty()
-            } else {
-                true
+    let mut translations = HashMap::with_capacity(translated_string.translations.len());
+    for (language, translation) in &translated_string.translations {
+        if language != form_langauge {
+            if let Some(enabled_position) = translation.enabled {
+                let position = translated_string.root.clone() + enabled_position;
+                let value = get_cell_value_bool(sheets, &position)?;
+                if !value {
+                    continue;
+                }
             }
-        })
-        .collect()
+        }
+
+        let position = translated_string.root.clone() + translation.position;
+        let value = if let Some(value) = get_cell_value_string::<String, RS>(sheets, &position)? {
+            if value.is_empty() {
+                continue;
+            } else {
+                value
+            }
+        } else {
+            continue;
+        };
+
+        translations.insert(language.clone(), value);
+    }
+
+    Ok(translations)
 }
 
 pub fn parse_excel_spreadsheet(
@@ -755,6 +765,18 @@ pub fn parse_excel_spreadsheet(
         .ok_or_else(|| {
             required_value_missing("template_version", options.template_version.clone())
         })?;
+
+    let form_language_name: String =
+        get_cell_value_string(&mut sheets, &options.form_language.position)?.ok_or_else(|| {
+            required_value_missing("form_language", options.form_language.position.clone())
+        })?;
+    let form_language = options
+        .form_language
+        .language_map
+        .get(&form_language_name)
+        .ok_or_eyre(format!(
+            "form_language.language_map is missing mapping for language {form_language_name}"
+        ))?;
 
     let area_name: String = get_cell_value_string(&mut sheets, &options.area.position)?
         .ok_or_else(|| required_value_missing("area", options.area.position.clone()))?;
@@ -800,25 +822,23 @@ pub fn parse_excel_spreadsheet(
         options
             .recent_observations
             .as_ref()
-            .map(|translated_string| map_translated_string(&mut sheets, translated_string)),
+            .map(|translated_string| {
+                map_translated_string(&mut sheets, translated_string, &form_language)
+            }),
     )?
     .unwrap_or_default();
 
-    let forecast_changes: HashMap<unic_langid::LanguageIdentifier, String> = Option::transpose(
-        options
-            .forecast_changes
-            .as_ref()
-            .map(|translated_string| map_translated_string(&mut sheets, translated_string)),
-    )?
-    .unwrap_or_default();
+    let forecast_changes: HashMap<unic_langid::LanguageIdentifier, String> =
+        Option::transpose(options.forecast_changes.as_ref().map(|translated_string| {
+            map_translated_string(&mut sheets, translated_string, &form_language)
+        }))?
+        .unwrap_or_default();
 
-    let weather_forecast: HashMap<unic_langid::LanguageIdentifier, String> = Option::transpose(
-        options
-            .weather_forecast
-            .as_ref()
-            .map(|translated_string| map_translated_string(&mut sheets, translated_string)),
-    )?
-    .unwrap_or_default();
+    let weather_forecast: HashMap<unic_langid::LanguageIdentifier, String> =
+        Option::transpose(options.weather_forecast.as_ref().map(|translated_string| {
+            map_translated_string(&mut sheets, translated_string, &form_language)
+        }))?
+        .unwrap_or_default();
 
     let valid_for = {
         let value = get_cell_value(&mut sheets, &options.valid_for)?;
@@ -843,13 +863,11 @@ pub fn parse_excel_spreadsheet(
         time::Duration::milliseconds(ms as i64)
     };
 
-    let description: HashMap<unic_langid::LanguageIdentifier, String> = Option::transpose(
-        options
-            .description
-            .as_ref()
-            .map(|translated_string| map_translated_string(&mut sheets, translated_string)),
-    )?
-    .unwrap_or_default();
+    let description: HashMap<unic_langid::LanguageIdentifier, String> =
+        Option::transpose(options.description.as_ref().map(|translated_string| {
+            map_translated_string(&mut sheets, translated_string, &form_language)
+        }))?
+        .unwrap_or_default();
 
     let hazard_ratings = options
         .hazard_ratings
@@ -870,7 +888,7 @@ pub fn parse_excel_spreadsheet(
         .iter()
         .enumerate()
         .map(|(i, problem)| {
-            extract_avalanch_problem(problem, options, &mut sheets)
+            extract_avalanch_problem(problem, options, &mut sheets, &form_language)
                 .wrap_err_with(|| format!("Avalanche problem {i}"))
         })
         .filter_map(std::result::Result::transpose)
@@ -937,6 +955,7 @@ fn extract_avalanch_problem<RS>(
     problem: &options::AvalancheProblem,
     options: &Options,
     sheets: &mut Sheets<RS>,
+    form_langauge: &unic_langid::LanguageIdentifier,
 ) -> eyre::Result<Option<AvalancheProblem>>
 where
     RS: std::io::Read + std::io::Seek,
@@ -1094,14 +1113,12 @@ where
     .context("size")?
     .flatten();
 
-    let description: HashMap<unic_langid::LanguageIdentifier, String> = Option::transpose(
-        problem
-            .description
-            .as_ref()
-            .map(|translated_string| map_translated_string(sheets, translated_string)),
-    )
-    .context("description")?
-    .unwrap_or_default();
+    let description: HashMap<unic_langid::LanguageIdentifier, String> =
+        Option::transpose(problem.description.as_ref().map(|translated_string| {
+            map_translated_string(sheets, translated_string, form_langauge)
+        }))
+        .context("description")?
+        .unwrap_or_default();
 
     Result::Ok(Some(AvalancheProblem {
         kind,
@@ -1203,7 +1220,7 @@ mod tests {
         let spreadsheet_bytes =
             std::fs::read(fixtures.join("forecasts/Gudauri_2023_02_07T19 00_LS.xlsx")).unwrap();
         let options: Options = serde_json::from_str(
-            &std::fs::read_to_string(fixtures.join("options/options.0.3.0.json")).unwrap(),
+            &std::fs::read_to_string(fixtures.join("options/options.0.3.1.json")).unwrap(),
         )
         .unwrap();
         let forecast = parse_excel_spreadsheet(&spreadsheet_bytes, &options).unwrap();

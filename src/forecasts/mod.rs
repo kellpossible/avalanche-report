@@ -47,7 +47,7 @@ pub mod probability;
 use probability::Probability;
 
 pub static FORECAST_SCHEMA: Lazy<forecast_spreadsheet::options::Options> =
-    Lazy::new(|| serde_json::from_str(include_str!("./schemas/0.3.0.json")).unwrap());
+    Lazy::new(|| serde_json::from_str(include_str!("./schemas/0.3.1.json")).unwrap());
 
 #[derive(Serialize, PartialEq, Eq, Clone)]
 pub struct ForecastDetails {

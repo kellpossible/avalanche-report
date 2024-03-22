@@ -80,7 +80,9 @@ expression: "&forecast"
       "distribution": "widespread",
       "time_of_day": "afternoon",
       "sensitivity": "reactive",
-      "description": "With temperatures rising and sunny days, snow starts to melt and the snowpack becomes saturated with free water what makes wet loose avalanches possible. Widespread wind and solar crusts that formed before the recent snowfall are a weak interface that the surface snow can slide on. This hazard increases during the day, and is usually at its worst by mid-afternoon.  "
+      "description": {
+        "en-UK": "With temperatures rising and sunny days, snow starts to melt and the snowpack becomes saturated with free water what makes wet loose avalanches possible. Widespread wind and solar crusts that formed before the recent snowfall are a weak interface that the surface snow can slide on. This hazard increases during the day, and is usually at its worst by mid-afternoon.  "
+      }
     },
     {
       "kind": "deep-slab",
@@ -101,7 +103,9 @@ expression: "&forecast"
       "distribution": "isolated",
       "time_of_day": "all-day",
       "sensitivity": "stubborn",
-      "description": "The persistent weak basal layer might still be triggered in high alpine areas, particularly in steep areas with a shallow (thin) snowpack or around rocks, where the weight of one or more riders, a hard turn or jump, or a small avalanche could break the slab above."
+      "description": {
+        "en-UK": "The persistent weak basal layer might still be triggered in high alpine areas, particularly in steep areas with a shallow (thin) snowpack or around rocks, where the weight of one or more riders, a hard turn or jump, or a small avalanche could break the slab above."
+      }
     },
     {
       "kind": "wind-slab",
@@ -121,7 +125,9 @@ expression: "&forecast"
       "distribution": "specific",
       "time_of_day": "all-day",
       "sensitivity": "reactive",
-      "description": "N and NW winds will have formed small slabs on S and SE areas at ridgelines in the high alpine. Watch out for areas that look 'fat', or where the snow feels harder, hollow and drum-like. By the end of the forecast period, slabs will start building on the N again."
+      "description": {
+        "en-UK": "N and NW winds will have formed small slabs on S and SE areas at ridgelines in the high alpine. Watch out for areas that look 'fat', or where the snow feels harder, hollow and drum-like. By the end of the forecast period, slabs will start building on the N again."
+      }
     }
   ],
   "elevation_bands": {

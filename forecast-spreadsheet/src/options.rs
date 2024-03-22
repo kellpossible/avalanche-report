@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use indexmap::{IndexMap, IndexSet};
 use serde::Deserialize;
+use unic_langid::LanguageIdentifier;
 
 use crate::{
     position::CellPosition, serde::string, AreaId, Confidence, Distribution, ElevationBandId,
@@ -10,10 +11,25 @@ use crate::{
 };
 
 #[derive(Deserialize)]
+pub struct Translation {
+    /// Position of the translated string.
+    pub position: CellPosition,
+    /// If the value of the `enabled` cell is `FALSE` then the translation value at `position` will be ignored.
+    pub enabled: Option<CellPosition>,
+}
+
+#[derive(Deserialize)]
 pub struct TranslatedString {
     pub root: SheetCellPosition,
     #[serde(default)]
-    pub translations: HashMap<unic_langid::LanguageIdentifier, CellPosition>,
+    pub translations: HashMap<unic_langid::LanguageIdentifier, Translation>,
+}
+
+#[derive(Deserialize)]
+pub struct FormLanguage {
+    pub position: SheetCellPosition,
+    /// Maps the form language value to a language identifier
+    pub language_map: HashMap<String, LanguageIdentifier>,
 }
 
 #[derive(Deserialize)]
@@ -21,6 +37,7 @@ pub struct Options {
     /// What version of the spreadsheet this schema applies to.
     #[serde(with = "string")]
     pub schema_version: Version,
+    pub form_language: FormLanguage,
     pub template_version: SheetCellPosition,
     pub area: Area,
     pub area_definitions: IndexMap<AreaId, AreaDefinition>,

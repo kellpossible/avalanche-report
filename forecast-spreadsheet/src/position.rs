@@ -267,7 +267,6 @@ mod tests {
         let cases = vec!["1A", "A", "1", "a", "AB", "A1B", "", " ", "A 1", "A1%"];
 
         for input in cases {
-            dbg!(input);
             let result = input.parse::<CellPosition>();
             assert!(result.is_err());
         }
