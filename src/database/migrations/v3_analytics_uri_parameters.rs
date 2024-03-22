@@ -1,29 +1,31 @@
 use http::Uri;
-use rusqlite::ToSql;
+use sqlx::Row;
 use uuid::Uuid;
 
-pub fn run(conn: &rusqlite::Connection) -> eyre::Result<()> {
-    let mut statement = conn.prepare(
+pub async fn run(conn: &sqlx::SqliteConnection) -> eyre::Result<()> {
+    for (id, uri) in sqlx::query(
         r#"
         SELECT id, uri FROM analytics;
         "#,
-    )?;
-
-    for analytics in statement.query_map((), |row| {
-        let id: Uuid = row.get("id")?;
-        let uri_string: String = row.get("uri")?;
+    )
+    .fetch_all(conn)
+    .await?
+    .into_iter()
+    .map(|row| {
+        let id: Uuid = row.get("id");
+        let uri_string: String = row.get("uri");
         let uri: Uri = uri_string.parse().unwrap();
-
-        Ok((id, uri))
-    })? {
-        let analytics = analytics?;
-        let new_uri: String = analytics.1.path().to_owned();
-        conn.execute(
+    }) {
+        let new_uri: String = uri.path().to_owned();
+        sqlx::query(
             r#"
-            UPDATE analytics SET uri = ? WHERE id = ?;
-            "#,
-            [new_uri.to_sql()?, analytics.0.to_sql()?],
-        )?;
+                UPDATE analytics SET uri = ? WHERE id = ?;
+                "#,
+        )
+        .bind(new_uri)
+        .bind(id)
+        .execute(conn)
+        .await?;
     }
     Ok(())
 }

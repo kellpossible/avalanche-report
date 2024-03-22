@@ -4,6 +4,7 @@ use axum::response::{IntoResponse, Response};
 use deadpool_sqlite::PoolError;
 use http::StatusCode;
 use nonzero_ext::nonzero;
+use sqlx::Acquire;
 use std::path::Path;
 use std::sync::Arc;
 use thiserror::Error;
@@ -35,70 +36,23 @@ pub async fn initialize(data_dir: &Path) -> eyre::Result<Database> {
         tracing::info!("No existing database found, initializing new one: {path:?}");
     }
 
-    let config = deadpool_sqlite::Config::new(path);
-    let pool = config.create_pool(deadpool_sqlite::Runtime::Tokio1)?;
+    let pool =
+        sqlx::SqlitePool::connect_with(sqlx::sqlite::SqliteConnectOptions::new().filename(path))
+            .await?;
+
+    let conn = pool.acquire().await?.acquire().await?;
+    migrations::run(conn)?;
 
     pool.get()
-        .await?
+        .awit?
         .interact(|conn| migrations::run(conn))
         .await
         .map_err(|err| eyre::eyre!("{err}"))??;
 
-    Ok(Database {
-        pool: Arc::new(pool),
-    })
+    Ok(pool)
 }
 
-#[derive(Clone)]
-pub struct Database {
-    pool: Arc<deadpool_sqlite::Pool>,
-}
-
-#[derive(Debug, Error)]
-pub enum Error {
-    #[error(transparent)]
-    Pool(#[from] deadpool_sqlite::PoolError),
-    #[error("Error while interacting with the database")]
-    Interact(String),
-}
-
-impl From<deadpool_sqlite::InteractError> for Error {
-    fn from(error: deadpool_sqlite::InteractError) -> Self {
-        Self::Interact(error.to_string())
-    }
-}
-
-impl IntoResponse for Error {
-    fn into_response(self) -> axum::response::Response {
-        match self {
-            Error::Pool(PoolError::Timeout(_)) => {
-                (StatusCode::SERVICE_UNAVAILABLE, self.to_string())
-            }
-            _ => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
-        }
-        .into_response()
-    }
-}
-
-impl Database {
-    /// See [Pool::get()].
-    pub async fn get(&self) -> Result<DatabaseInstance, Error> {
-        Ok(DatabaseInstance(Arc::new(self.pool.get().await?)))
-    }
-}
-
-#[derive(Clone)]
-pub struct DatabaseInstance(Arc<deadpool_sqlite::Object>);
-
-impl DatabaseInstance {
-    pub async fn interact<F, R>(&self, f: F) -> Result<R, Error>
-    where
-        F: FnOnce(&mut rusqlite::Connection) -> R + Send + 'static,
-        R: Send + 'static,
-    {
-        self.0.interact(f).await.map_err(Error::from)
-    }
-}
+pub type Database = sqlx::SqlitePool;
 
 #[tracing::instrument(skip_all)]
 pub async fn middleware(state: State<AppState>, mut request: Request, next: Next) -> Response {

@@ -6,12 +6,8 @@ use std::{
 };
 
 use http::uri::InvalidUri;
-use rusqlite::{
-    types::{FromSql, FromSqlError},
-    ToSql,
-};
-use sea_query::SimpleExpr;
 use serde::{Deserialize, Serialize};
+use sqlx::{TypeInfo, Value, ValueRef};
 use time::{serde::iso8601, OffsetDateTime};
 
 use crate::{
@@ -42,21 +38,12 @@ impl Time {
     }
 }
 
-impl Into<SimpleExpr> for Time {
-    fn into(self) -> SimpleExpr {
-        self.format(&DATETIME_FORMAT)
-            .expect("Error formatting time")
-            .into()
-    }
-}
-
-impl ToSql for Time {
-    fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
-        let time_string: String = self
-            .0
-            .format(&database::DATETIME_FORMAT)
-            .map_err(|error| rusqlite::Error::ToSqlConversionFailure(Box::new(error)))?;
-        Ok(time_string.into())
+impl sqlx::Encode<'_, sqlx::Sqlite> for Time {
+    fn encode_by_ref(
+        &self,
+        buf: &mut Vec<sqlx::sqlite::SqliteArgumentValue<'_>>,
+    ) -> sqlx::encode::IsNull {
+        sqlx::Encode::<sqlx::Sqlite>::encode(self.format(&DATETIME_FORMAT), buf)
     }
 }
 
@@ -68,11 +55,17 @@ impl FromStr for Time {
     }
 }
 
-impl FromSql for Time {
-    fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
-        OffsetDateTime::parse(value.as_str()?, &database::DATETIME_FORMAT)
-            .map_err(|error| FromSqlError::Other(Box::new(error)))
-            .map(Time)
+impl sqlx::Decode<'_, sqlx::Sqlite> for Time {
+    fn decode(value: sqlx::sqlite::SqliteValueRef<'_>) -> Result<Self, sqlx::error::BoxDynError> {
+        match value.type_info().name() {
+            "TEXT" => {
+                let s: &str = value.to_owned().try_decode()?;
+                s.parse::<Time>().map_err(Into::into)
+            }
+            unsupported_type => {
+                Err(format!("Unsupported column type for Time: {unsupported_type}").into())
+            }
+        }
     }
 }
 
@@ -93,15 +86,6 @@ impl Deref for Time {
 
     fn deref(&self) -> &Self::Target {
         &self.0
-    }
-}
-
-impl TryFrom<Time> for sea_query::Value {
-    type Error = time::Error;
-
-    fn try_from(value: Time) -> Result<Self, Self::Error> {
-        let time_string: String = value.format(&database::DATETIME_FORMAT)?;
-        Ok(sea_query::Value::String(Some(Box::new(time_string))))
     }
 }
 
@@ -154,19 +138,25 @@ impl Deref for Uri {
     }
 }
 
-impl ToSql for Uri {
-    fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
-        let uri_string = self.0.to_string();
-        Ok(uri_string.into())
+impl sqlx::Encode<'_, sqlx::Sqlite> for Uri {
+    fn encode_by_ref(
+        &self,
+        buf: &mut Vec<sqlx::sqlite::SqliteArgumentValue<'_>>,
+    ) -> sqlx::encode::IsNull {
+        sqlx::Encode::<sqlx::Sqlite>::encode(self.0.to_string(), buf)
     }
 }
 
-impl FromSql for Uri {
-    fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
-        value
-            .as_str()?
-            .parse()
-            .map_err(|error| FromSqlError::Other(Box::new(error)))
-            .map(Self)
+impl sqlx::Decode<'_, sqlx::Sqlite> for Uri {
+    fn decode(value: sqlx::sqlite::SqliteValueRef<'_>) -> Result<Self, sqlx::error::BoxDynError> {
+        match value.type_info().name() {
+            "TEXT" => {
+                let s: &str = value.to_owned().try_decode()?;
+                s.parse::<Uri>().map_err(Into::into)
+            }
+            unsupported_type => {
+                Err(format!("Unsupported column type for Uri: {unsupported_type}").into())
+            }
+        }
     }
 }

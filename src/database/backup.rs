@@ -54,24 +54,17 @@ async fn perform_backup(config: &Config) -> eyre::Result<BackupInfo> {
         bail!("Unable to perform backup, the bucket {s3_bucket_name} does not exist in the region {s3_bucket_region}")
     }
 
-    let instance = database
-        .get()
-        .await
-        .wrap_err("Error obtaining database instance from pool")?;
     let backup_dir = tokio::task::spawn_blocking(|| {
         tempfile::tempdir().wrap_err("Error creating temporary directory")
     })
     .await??;
     let backup_file = backup_dir.path().join(DB_FILE_NAME);
     let backup_file_query = backup_file.clone();
-    instance
-        .interact::<_, eyre::Result<()>>(move |conn: &mut rusqlite::Connection| {
-            conn.execute("VACUUM main INTO ?1", [backup_file_query.to_str()])
-                .wrap_err("Error performing VACUUM query")?;
-            Ok(())
-        })
+    sqlx::query("VACUUM main INTO ?1")
+        .bind(backup_file_query)
+        .execute(database)
         .await
-        .wrap_err("Error performing database interaction")??;
+        .wrap_err("Error performing VACUUM query")?;
 
     let mut put_object = bucket.put_object(Some(&credentials), DB_FILE_NAME);
     let headers = put_object.headers_mut();

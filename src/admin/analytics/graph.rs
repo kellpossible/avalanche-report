@@ -1,11 +1,9 @@
 use crate::{
-    analytics::{get_time_bounds, Analytics, AnalyticsIden},
+    analytics::{get_time_bounds, Analytics},
     database::Database,
     types::Time,
 };
 use eyre::{Context, ContextCompat};
-use sea_query::{Expr, SqliteQueryBuilder};
-use sea_query_rusqlite::RusqliteBinder;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy)]

@@ -1,6 +1,6 @@
 use http::Uri;
 use nonzero_ext::nonzero;
-use rusqlite::ToSql;
+use sqlx::Executor;
 use time::{
     format_description::well_known::{
         iso8601::{self, TimePrecision},
@@ -18,7 +18,7 @@ const DATETIME_CONFIG: iso8601::EncodedConfig = iso8601::Config::DEFAULT
     .encode();
 const DATETIME_FORMAT: iso8601::Iso8601<DATETIME_CONFIG> = Iso8601;
 
-pub fn run(conn: &rusqlite::Connection) -> eyre::Result<()> {
+pub async fn run(conn: &sqlx::SqliteConnection) -> eyre::Result<()> {
     #[allow(unused)]
     struct Analytics {
         pub id: uuid::Uuid,
@@ -27,7 +27,7 @@ pub fn run(conn: &rusqlite::Connection) -> eyre::Result<()> {
         pub time: time::OffsetDateTime,
     }
 
-    conn.execute_batch(
+    sqlx::raw_sql(
         r#"
         BEGIN;
         ALTER TABLE analytics
@@ -36,7 +36,9 @@ pub fn run(conn: &rusqlite::Connection) -> eyre::Result<()> {
         ADD COLUMN time TEXT;
         COMMIT;
     "#,
-    )?;
+    )
+    .execute(conn)
+    .await?;
 
     let mut statement = conn.prepare(
         r#"
@@ -63,12 +65,15 @@ pub fn run(conn: &rusqlite::Connection) -> eyre::Result<()> {
     })? {
         let analytics = analytics?;
         let new_time: String = analytics.time.format(&new_format)?;
-        conn.execute(
+        sqlx::query(
             r#"
             UPDATE analytics SET time = ? WHERE id = ?;
             "#,
-            [new_time.to_sql()?, analytics.id.to_sql()?],
-        )?;
+        )
+        .bind(new_time)
+        .bind(analytics.id)
+        .execute(conn)
+        .await?;
     }
     conn.execute_batch(
         r#"

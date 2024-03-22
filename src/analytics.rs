@@ -12,9 +12,6 @@ use futures::{lock::Mutex, StreamExt};
 use governor::{state::StreamRateLimitExt, Quota, RateLimiter};
 use http::StatusCode;
 use nonzero_ext::nonzero;
-use rusqlite::Row;
-use sea_query::{ConditionalStatement, Expr, Order, Query, SimpleExpr, SqliteQueryBuilder};
-use sea_query_rusqlite::RusqliteBinder;
 use serde::Serialize;
 use time::{format_description::well_known::Rfc3339, Duration, OffsetDateTime};
 use tokio::sync::{mpsc, watch};
@@ -30,64 +27,11 @@ use crate::{
 };
 
 #[derive(Serialize, Clone, Debug)]
-#[sea_query::enum_def]
 pub struct Analytics {
     pub id: uuid::Uuid,
     pub uri: String,
     pub visits: u32,
     pub time: types::Time,
-}
-
-impl TryFrom<&Row<'_>> for Analytics {
-    type Error = rusqlite::Error;
-
-    fn try_from(row: &Row<'_>) -> Result<Self, Self::Error> {
-        let id: Uuid = row.get(AnalyticsIden::Id.as_ref())?;
-        let uri = row.get(AnalyticsIden::Uri.as_ref())?;
-        let visits = row.get(AnalyticsIden::Visits.as_ref())?;
-        let time = row.get(AnalyticsIden::Time.as_ref())?;
-
-        Ok(Analytics {
-            id,
-            uri,
-            visits,
-            time,
-        })
-    }
-}
-
-impl AsRef<str> for AnalyticsIden {
-    fn as_ref(&self) -> &str {
-        match self {
-            AnalyticsIden::Table => "analytics",
-            AnalyticsIden::Id => "id",
-            AnalyticsIden::Uri => "uri",
-            AnalyticsIden::Visits => "visits",
-            AnalyticsIden::Time => "time",
-        }
-    }
-}
-
-impl Analytics {
-    pub const COLUMNS: [AnalyticsIden; 4] = [
-        AnalyticsIden::Id,
-        AnalyticsIden::Uri,
-        AnalyticsIden::Visits,
-        AnalyticsIden::Time,
-    ];
-    pub const TABLE: AnalyticsIden = AnalyticsIden::Table;
-
-    pub fn values(&self) -> [SimpleExpr; 4] {
-        [
-            self.id.into(),
-            self.uri.to_string().into(),
-            self.visits.into(),
-            self.time
-                .format(&DATETIME_FORMAT)
-                .expect("Error formatting time")
-                .into(),
-        ]
-    }
 }
 
 #[derive(Clone, Debug)]
@@ -138,30 +82,12 @@ fn compact_operations(map: HashMap<String, Vec<Analytics>>) -> eyre::Result<Vec<
 pub async fn get_time_bounds(
     database: &Database,
 ) -> eyre::Result<Option<(types::Time, types::Time)>> {
-    let (sql, values) = Query::select()
-        .expr(Expr::col(AnalyticsIden::Time).min())
-        .expr(Expr::col(AnalyticsIden::Time).max())
-        .from(AnalyticsIden::Table)
-        .build_rusqlite(SqliteQueryBuilder);
-    let first = database
-        .get()
-        .await?
-        .interact::<_, eyre::Result<_>>(move |conn| {
-            let mut statement = conn.prepare_cached(&sql)?;
-            let item = Option::transpose(
-                statement
-                    .query_map(&*values.as_params(), |row| {
-                        let min = row.get(0)?;
-                        let max = row.get(1)?;
-                        Ok((min, max))
-                    })?
-                    .next(),
-            )?;
-            Ok(item)
-        })
-        .await??;
-
-    Ok(first)
+    Ok(
+        sqlx::query!("SELECT min(time) AS min_time, max(time) AS max_time FROM analytics")
+            .fetch_optional(database)
+            .await?
+            .map(|record| (record.min_time, record.max_time)),
+    )
 }
 
 pub struct CompactionConfig {
@@ -210,26 +136,16 @@ pub async fn compact(database: &Database, window: Duration, keep: Duration) -> e
         return Ok(());
     };
 
-    let (sql, values) = Query::select()
-        .from(AnalyticsIden::Table)
-        .columns(Analytics::COLUMNS)
-        .order_by(AnalyticsIden::Time, Order::Desc)
-        .limit(1)
-        .build_rusqlite(SqliteQueryBuilder);
-    let last = database
-        .get()
-        .await?
-        .interact::<_, eyre::Result<_>>(move |conn| {
-            let mut statement = conn.prepare_cached(&sql)?;
-            let item = Option::transpose(
-                statement
-                    .query_map(&*values.as_params(), |row| Analytics::try_from(row))?
-                    .next(),
-            )?;
-            Ok(item)
-        })
-        .await??
-        .wrap_err("Expected there to be a last item")?;
+    let last = match sqlx::query_as!(
+        Analytics,
+        "SELECT id, uri, visits, time FROM analytics ORDER BY time DESC LIMIT 1",
+    ).fetch_optional(database).await? {
+        Some(last) => last,
+        None => {
+            tracing::debug!("No analytics found to compact");
+            return Ok(());
+        }
+    };
 
     let end_time = *last.time - keep;
     let mut from_time = min;
@@ -283,28 +199,21 @@ pub async fn compact(database: &Database, window: Duration, keep: Duration) -> e
         for CompactOperation { delete, new } in operations {
             let delete_ids: Vec<Uuid> = delete.into_iter().map(|entry| entry.id).collect();
 
+            sqlx::query!("DELETE FROM analytics WHERE id IN ($1)", delete_ids)
+                .execute(database)
+                .await?;
+
+            sqlx::query!(
+                "INSERT INTO analytics VALUES ($1, $2, $3, $4);",
+                new.id,
+                new.uri,
+                new.visits,
+                new.time
+            )
+            .execute(database)
+            .await?;
+
             database
-                .get()
-                .await?
-                .interact::<_, eyre::Result<_>>(move |conn| {
-                    if !delete_ids.is_empty() {
-                        let (sql, values) = Query::delete()
-                            .from_table(AnalyticsIden::Table)
-                            .and_where(Expr::col(AnalyticsIden::Id).is_in(delete_ids))
-                            .build_rusqlite(SqliteQueryBuilder);
-                        let mut statement = conn.prepare_cached(&sql)?;
-                        statement.execute(&*values.as_params())?;
-                    }
-                    let (sql, values) = Query::insert()
-                        .into_table(AnalyticsIden::Table)
-                        .columns(Analytics::COLUMNS)
-                        .values(new.values())?
-                        .build_rusqlite(SqliteQueryBuilder);
-                    let mut statement = conn.prepare_cached(&sql)?;
-                    statement.execute(&*values.as_params())?;
-                    Ok(())
-                })
-                .await??;
         }
         if *to_time >= end_time {
             break;
@@ -321,34 +230,17 @@ async fn process_analytics_events(
     accumulator: EventsAccumulator,
     database: &Database,
 ) -> eyre::Result<()> {
-    if accumulator.is_empty() {
-        return Ok(());
+    for (uri, visits) in accumulator {
+        sqlx::query!(
+            "INSERT INTO analytics VALUES ($1, $2, $3, $4);",
+            uuid::Uuid::new_v4(),
+            uri,
+            visits,
+            types::Time::now_utc()
+        )
+        .execute(database)
+        .await?;
     }
-    let db = database.get().await?;
-
-    db.interact(move |conn| {
-        let mut query = Query::insert();
-
-        query
-            .into_table(AnalyticsIden::Table)
-            .columns(Analytics::COLUMNS);
-
-        for (uri, visits) in accumulator {
-            let analytics = Analytics {
-                id: uuid::Uuid::new_v4(),
-                uri,
-                visits,
-                time: time::OffsetDateTime::now_utc().into(),
-            };
-            query.values(analytics.values())?;
-        }
-
-        let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
-        conn.execute(&sql, &*values.as_params())?;
-        Ok::<(), eyre::Error>(())
-    })
-    .await
-    .map_err(|error| eyre::eyre!("{}", error))??;
 
     Ok(())
 }

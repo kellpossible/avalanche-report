@@ -1,7 +1,10 @@
+use std::pin::Pin;
+
 use base64::Engine;
 use eyre::Context;
-use rusqlite::{OptionalExtension, ToSql};
+use futures::StreamExt;
 use sha2::{Digest, Sha256};
+use sqlx::Executor;
 
 use super::DATETIME_FORMAT;
 
@@ -10,7 +13,20 @@ mod v3_analytics_uri_parameters;
 
 enum MigrationKind {
     Sql(&'static str),
-    Rust(fn(&rusqlite::Connection) -> eyre::Result<()>),
+    Rust(
+        fn(&sqlx::SqliteConnection) -> Pin<Box<dyn std::future::Future<Output = eyre::Result<()>>>>,
+    ),
+}
+
+impl MigrationKind {
+    pub fn rust<
+        FUT: std::future::Future<Output = eyre::Result<()>>,
+        F: Fn(&sqlx::SqliteConnection) -> FUT,
+    >(
+        migration: F,
+    ) -> Self {
+        Self::Rust(move |conn| Box::pin(migration(conn)))
+    }
 }
 
 struct Migration {
@@ -26,12 +42,14 @@ fn blue(string: &str) -> String {
 
 impl Migration {
     #[tracing::instrument(skip_all, fields(version = self.version))]
-    fn run(&self, conn: &rusqlite::Connection) -> eyre::Result<()> {
+    async fn run(&self, conn: &sqlx::SqliteConnection) -> eyre::Result<()> {
         tracing::info!("Running migration {}", self.name);
         match &self.kind {
             MigrationKind::Sql(sql) => {
                 tracing::debug!("Performing SQL Migration: \n{0}", blue(sql));
-                conn.execute_batch(sql)
+                sqlx::raw_sql(sql)
+                    .execute(conn)
+                    .await
                     .wrap_err("Error executing migration's SQL query")?;
             }
             MigrationKind::Rust(f) => {
@@ -62,12 +80,12 @@ fn list_migrations() -> Vec<Migration> {
         Migration {
             version: 2,
             name: "analytics_time_format",
-            kind: MigrationKind::Rust(v2_analytics_time_format::run),
+            kind: MigrationKind::rust(v2_analytics_time_format::run),
         },
         Migration {
             version: 3,
             name: "analytics_uri_parameters",
-            kind: MigrationKind::Rust(v3_analytics_uri_parameters::run),
+            kind: MigrationKind::rust(v3_analytics_uri_parameters::run),
         },
         Migration {
             version: 4,
@@ -92,34 +110,30 @@ fn list_migrations() -> Vec<Migration> {
     ]
 }
 
-fn current_migration(conn: &rusqlite::Connection) -> eyre::Result<Option<u32>> {
-    let schema_history_table_name: Option<String> = conn
-        .query_row(
-            r#"SELECT "name" FROM pragma_table_info("schema_history") LIMIT 1;"#,
-            (),
-            |row| row.get("name"),
-        )
-        .optional()?;
+async fn current_migration(conn: &sqlx::SqliteConnection) -> eyre::Result<Option<u32>> {
+    let schema_history_table_name: Option<String> =
+        sqlx::query(r#"SELECT "name" FROM pragma_table_info("schema_history") LIMIT 1;"#)
+            .fetch_optional(conn)
+            .await?;
+
     if schema_history_table_name.is_none() {
         return Ok(None);
     }
-    let version: Option<u32> = conn
-        .query_row(
-            r#"
+    let version: Option<u32> = sqlx::query(
+        r#"
             SELECT version FROM schema_history
             WHERE version = (SELECT MAX(version) from schema_history);
             "#,
-            (),
-            |row| {
-                let version: u32 = row.get("version")?;
-                Ok(version)
-            },
-        )
-        .optional()?;
+    )
+    .fetch_optional(conn)
+    .await?;
     Ok(version)
 }
 
-fn record_migration(conn: &rusqlite::Connection, migration: &Migration) -> eyre::Result<()> {
+async fn record_migration(
+    conn: &sqlx::SqliteConnection,
+    migration: &Migration,
+) -> eyre::Result<()> {
     let checksum: Option<String> = match migration.kind {
         MigrationKind::Sql(sql) => {
             let mut hasher = Sha256::new();
@@ -131,29 +145,27 @@ fn record_migration(conn: &rusqlite::Connection, migration: &Migration) -> eyre:
         _ => None,
     };
     let version = migration.version;
-    conn.execute(
+    sqlx::query(
         r#"
         INSERT INTO schema_history (version, name, applied_on, checksum)
         VALUES(?, ?, ?, ?)
         "#,
-        [
-            version.to_sql()?,
-            migration.name.to_sql()?,
-            time::OffsetDateTime::now_utc()
-                .format(&DATETIME_FORMAT)?
-                .to_sql()?,
-            checksum.to_sql()?,
-        ],
-    )?;
+    )
+    .bind(version)
+    .bind(migration.name)
+    .bind(time::OffsetDateTime::now_utc().format(&DATETIME_FORMAT))
+    .bind(checksum)
+    .execute(conn)
+    .await?;
     Ok(())
 }
 
-pub fn run(conn: &rusqlite::Connection) -> eyre::Result<()> {
+pub fn run(conn: &sqlx::SqliteConnection) -> eyre::Result<()> {
     let migrations: Vec<Migration> = list_migrations();
 
     fn run_migrations(
         mut current_migration_index: usize,
-        conn: &rusqlite::Connection,
+        conn: &sqlx::SqliteConnection,
         migrations: &[Migration],
     ) -> eyre::Result<()> {
         while let Some(migration) = migrations.get(current_migration_index + 1) {
