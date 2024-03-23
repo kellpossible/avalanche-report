@@ -10,7 +10,7 @@ use eyre::Context;
 use futures::TryStreamExt;
 use http::{header::CONTENT_TYPE, Uri};
 use serde::{Deserialize, Serialize};
-use sqlx::Row;
+use sqlx::{Execute, Row};
 use time::OffsetDateTime;
 use utils::serde::rfc3339_option;
 
@@ -134,7 +134,7 @@ struct SummariesDuration {
 #[derive(Serialize)]
 struct Summary {
     uri: Uri,
-    visits: u64,
+    visits: u32,
 }
 
 #[derive(Serialize)]
@@ -356,7 +356,7 @@ async fn get_analytics(
     to: Option<Time>,
     uri_filter: Option<String>,
 ) -> eyre::Result<Vec<Summary>> {
-    let mut query = sqlx::QueryBuilder::new(sqlx::query!("SELECT DISTINCT uri, SUM(visits) as visitor_sum FROM analytics WHERE uri NOT LIKE '/admin/analytics%' "));
+    let mut query = sqlx::QueryBuilder::new(sqlx::query!("SELECT DISTINCT uri, SUM(visits) as visitor_sum FROM analytics WHERE uri NOT LIKE '/admin/analytics%' ").sql());
 
     if let Some(from) = from {
         query.push("AND analytics.time >= ");
@@ -376,10 +376,11 @@ async fn get_analytics(
         .build()
         .fetch(database)
         .map_err(eyre::Error::from)
-        .and_then(|row| {
-            let uri = row.try_get::<String>("uri")?.parse();
+        .and_then(|row| async move {
+            let uri = row.try_get::<String, _>("uri")?.parse()?;
             let visits = row.try_get("visitor_sum")?;
             Ok(Summary { uri, visits })
         })
-        .collect()
+        .try_collect()
+        .await
 }
