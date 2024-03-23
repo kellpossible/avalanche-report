@@ -136,25 +136,25 @@ avalanche-hazard-high-about = ძალიან მაღალი ზვავ
 # Helpful description about "Extreme" avalanche hazard rating
 avalanche-hazard-extreme-about = თავი აარიდეთ ზვავსაშის რელეფს
 # Description of the size and distributions of avalanches to occur with "Low" avalanche danger
-avalanche-hazard-low-size-distribution = მცირე ზვავები სპეციფიურ ადგილებში, ან ექსტრემალურ რელიებზე
+avalanche-hazard-low-size-distribution = გვხვდება მცირე ზვავები სპეციფიურ ადგილებში, ან ექსტრემალურ რელიეფზე.
 # Description of the size and distributions of avalanches to occur with "Moderate" avalanche danger
-avalanche-hazard-moderate-size-distribution = მცირე ზვავები სპეციფიურ ადგილებში, ან დიდი ზვავები იზოლირებულ ადგილებში
+avalanche-hazard-moderate-size-distribution = გვხვდება მცირე ზვავები სპეციფიურ ადგილებში, ან დიდი ზვავები იზოლირებულ ადგილებში.
 # Description of the size and distributions of avalanches to occur with "Considerable" avalanche danger
-avalanche-hazard-considerable-size-distribution = მცირე ზვავები ბევრ ადგილას, ან დიდი ზვავები სპეციფიურ ადგილებში, ან ძალიან დიდი ზვავები იზოლირებულ ადგილებში
+avalanche-hazard-considerable-size-distribution = გვხვდება მცირე ზვავები ბევრ ადგილას, ან დიდი ზვავები სპეციფიურ ადგილებში, ან ძალიან დიდი ზვავები იზოლირებულ ადგილებში.
 # Description of the size and distributions of avalanches to occur with "High" avalanche danger
-avalanche-hazard-high-size-distribution = დიდი ზვავები ბევრ ადგილას, ან ძალიან დიდი ზვავები  სპეციფიურ ადგილებში
+avalanche-hazard-high-size-distribution = გვხვდება დიდი ზვავები ბევრ ადგილას, ან ძალიან დიდი ზვავები  სპეციფიურ ადგილებში.
 # Description of the size and distributions of avalanches to occur with "Extreme" avalanche danger
-avalanche-hazard-extreme-size-distribution = დიდი ან ძალიან დიდი ზვავები ბევრ ადგილას
+avalanche-hazard-extreme-size-distribution = გვხვდება დიდი ან ძალიან დიდი ზვავები ბევრ ადგილას
 # Description of the likelyhood for avalanches to occur with "Extreme" avalanche danger
-avalanche-hazard-extreme-likelihood = ბუნებრივი და ადამიანის ზემოქმედებით გამოწვეული ზვავების მოწყვეტა გარდაუვალია
+avalanche-hazard-extreme-likelihood = ბუნებრივი და ადამიანის ზემოქმედებით გამოწვეული ზვავების მოწყვეტა გარდაუვალია.
 # Description of the likelyhood for avalanches to occur with "High" avalanche danger
-avalanche-hazard-high-likelihood = ბუნებრივი ზვავების მოწყვეტის ალბათობა მაღალია და ადამიანის მიერ გამოწვეული ზვავის მოწყვეტის ალბათობა ძალიან მაღალია
+avalanche-hazard-high-likelihood = ბუნებრივი ზვავების მოწყვეტის ალბათობა მაღალია და ადამიანის მიერ გამოწვეული ზვავის მოწყვეტის ალბათობა ძალიან მაღალია.
 # Description of the likelyhood for avalanches to occur with "Considerable" avalanche danger
 avalanche-hazard-considerable-likelihood = ბუნებრივი ზვავების მოწყვეტა შესაძლებელია და ადამიანის მიერ გამოწვეული ზვავის მოწყვეტის ალბათობა მაღალია
 # Description of the likelyhood for avalanches to occur with "Moderate" avalanche danger
-avalanche-hazard-moderate-likelihood = ბუნებრივი ზვავების მოწყვეტის ალბათობა დაბალია და ადამიანის მიერ გამოწვეული ზვავის მოწყვეტა  შესაძლებელია
+avalanche-hazard-moderate-likelihood = ბუნებრივი ზვავების მოწყვეტის ალბათობა დაბალია და ადამიანის მიერ გამოწვეული ზვავის მოწყვეტა  შესაძლებელია.
 # Description of the likelyhood for avalanches to occur with "Low" avalanche danger
-avalanche-hazard-low-likelihood = ბუნებრივი და ადამიანის ზემოქმედებით გამოწვეული ზვავების მოწყვეტის დაბალი ალბათობა
+avalanche-hazard-low-likelihood = ბუნებრივი და ადამიანის ზემოქმედებით გამოწვეული ზვავების მოწყვეტის ალბათობა დაბალია.
 # Field heading for the likelihood of an avalanche occurring
 avalanche-likelihood-heading = ალბათობა
 # Table heading for elevation bands (plural)
