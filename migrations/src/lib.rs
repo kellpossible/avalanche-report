@@ -122,6 +122,11 @@ fn list_migrations() -> Vec<Migration> {
             name: "forecast_areas",
             kind: MigrationKind::Sql(include_str!("v7_forecast_areas.sql")),
         },
+        Migration {
+            version: 8,
+            name: "analytics_not_null",
+            kind: MigrationKind::Sql(include_str!("v8_analytics_not_null.sql")),
+        },
     ]
 }
 

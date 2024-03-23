@@ -69,6 +69,12 @@ impl sqlx::Decode<'_, sqlx::Sqlite> for Time {
     }
 }
 
+impl sqlx::Type<sqlx::Sqlite> for Time {
+    fn type_info() -> sqlx::sqlite::SqliteTypeInfo {
+        "NUMERIC".parse().unwrap()
+    }
+}
+
 impl From<OffsetDateTime> for Time {
     fn from(value: OffsetDateTime) -> Self {
         Self(value)
