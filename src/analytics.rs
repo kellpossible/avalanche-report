@@ -28,7 +28,7 @@ use crate::{
 
 #[derive(Serialize, Clone, Debug)]
 pub struct Analytics {
-    pub id: uuid::Uuid,
+    pub id: Uuid,
     pub uri: String,
     pub visits: u32,
     pub time: types::Time,
@@ -83,10 +83,10 @@ pub async fn get_time_bounds(
     database: &Database,
 ) -> eyre::Result<Option<(types::Time, types::Time)>> {
     Ok(
-        sqlx::query!("SELECT min(time) AS min_time, max(time) AS max_time FROM analytics")
+        sqlx::query!(r#"SELECT min(time) AS "min_time: types::Time", max(time) AS "max_time: types::Time" FROM analytics"#)
             .fetch_optional(database)
             .await?
-            .map(|record| (record.min_time, record.max_time)),
+            .and_then(|record| Some((record.min_time?, record.max_time?))),
     )
 }
 

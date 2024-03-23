@@ -1,19 +1,16 @@
 use std::num::NonZeroU32;
 
-use crate::{
-    database::{Database, DATETIME_FORMAT},
-    serde::string,
-    templates::render,
-    types::Time,
-};
+use crate::{database::Database, templates::render, types::Time};
 use axum::{
     extract::State,
     response::{IntoResponse, Response},
     Extension, Json,
 };
 use eyre::Context;
+use futures::TryStreamExt;
 use http::{header::CONTENT_TYPE, Uri};
 use serde::{Deserialize, Serialize};
+use sqlx::Row;
 use time::OffsetDateTime;
 use utils::serde::rfc3339_option;
 
@@ -136,7 +133,6 @@ struct SummariesDuration {
 
 #[derive(Serialize)]
 struct Summary {
-    #[serde(with = "string")]
     uri: Uri,
     visits: u64,
 }
@@ -360,62 +356,30 @@ async fn get_analytics(
     to: Option<Time>,
     uri_filter: Option<String>,
 ) -> eyre::Result<Vec<Summary>> {
-    database
-        .get()
-        .await?
-        .interact(move |conn| {
-            let mut query = sea_query::Query::select();
-            let visitor_sum = Alias::new("vs");
+    let mut query = sqlx::QueryBuilder::new(sqlx::query!("SELECT DISTINCT uri, SUM(visits) as visitor_sum FROM analytics WHERE uri NOT LIKE '/admin/analytics%' "));
 
-            query
-                .distinct()
-                .columns([AnalyticsIden::Uri])
-                .expr(Expr::cust(&format!(
-                    "SUM(\"{}\") as vs",
-                    AnalyticsIden::Visits.into_iden().to_string()
-                )))
-                .and_where(Expr::col(AnalyticsIden::Uri).not_like("/admin/analytics%"))
-                .group_by_col(AnalyticsIden::Uri)
-                .order_by(visitor_sum, Order::Desc)
-                .limit(20)
-                .from(AnalyticsIden::Table);
+    if let Some(from) = from {
+        query.push("AND analytics.time >= ");
+        query.push_bind(from);
+    }
+    if let Some(to) = to {
+        query.push("AND analytics.time <= ");
+        query.push_bind(to);
+    }
 
-            if let Some(from) = from {
-                let from_time_string = from.format(&DATETIME_FORMAT)?;
-                query.and_where(
-                    Expr::col(AnalyticsIden::Time).gte(SimpleExpr::Value(from_time_string.into())),
-                );
-            }
-            if let Some(to) = to {
-                let to_time_string = to.format(&DATETIME_FORMAT)?;
-                query.and_where(
-                    Expr::col(AnalyticsIden::Time).lte(SimpleExpr::Value(to_time_string.into())),
-                );
-            }
-
-            if let Some(uri_filter) = uri_filter {
-                query.and_where(Expr::cust_with_values(
-                    &format!("{} GLOB ?", AnalyticsIden::Uri.as_ref()),
-                    [uri_filter],
-                ));
-            }
-
-            let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
-
-            let mut statement = conn.prepare_cached(&sql)?;
-            let mut rows = statement.query(&*values.as_params())?;
-            let mut summaries: Vec<Summary> = Vec::new();
-            while let Some(row) = rows.next()? {
-                let uri: String = row.get_unwrap(0);
-                let visits = row.get_unwrap(1);
-                let summary = Summary {
-                    uri: uri.parse()?,
-                    visits,
-                };
-                summaries.push(summary);
-            }
-
-            Ok::<_, eyre::Error>(summaries)
+    if let Some(uri_filter) = uri_filter {
+        query.push("AND uri GLOB ");
+        query.push_bind(uri_filter);
+    }
+    query.push("GROUP BY uri ORDER BY visitor_sum LIMIT 20");
+    query
+        .build()
+        .fetch(database)
+        .map_err(eyre::Error::from)
+        .and_then(|row| {
+            let uri = row.try_get::<String>("uri")?.parse();
+            let visits = row.try_get("visitor_sum")?;
+            Ok(Summary { uri, visits })
         })
-        .await?
+        .collect()
 }

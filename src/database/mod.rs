@@ -15,7 +15,7 @@ use crate::state::AppState;
 
 pub mod backup;
 pub mod blob;
-mod migrations;
+pub use migrations;
 
 // pub const DATETIME_FORMAT: &[FormatItem<'static>] =
 //     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:3]");

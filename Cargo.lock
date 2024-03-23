@@ -240,6 +240,7 @@ dependencies = [
  "isbot",
  "libsqlite3-sys",
  "md-5",
+ "migrations",
  "mime",
  "mime_guess",
  "minijinja",
@@ -2737,6 +2738,26 @@ dependencies = [
  "foreign-types 0.3.2",
  "log",
  "objc",
+]
+
+[[package]]
+name = "migrations"
+version = "0.1.0"
+dependencies = [
+ "axum-reporting",
+ "base64 0.22.0",
+ "eyre",
+ "http 1.0.0",
+ "nonzero_ext",
+ "serde",
+ "sha2",
+ "sqlx",
+ "time",
+ "tokio",
+ "toml-env",
+ "tracing",
+ "tracing-appender",
+ "uuid",
 ]
 
 [[package]]
