@@ -188,9 +188,24 @@ pub async fn compact(database: &Database, window: Duration, keep: Duration) -> e
                 .map(|entry| entry.id.to_string())
                 .collect();
 
-            sqlx::query!("DELETE FROM analytics WHERE id IN ($1)", delete_ids)
-                .execute(database)
-                .await?;
+            // Generate placeholders for the IN clause
+            let placeholders = delete_ids
+                .iter()
+                .map(|_| "?")
+                .collect::<Vec<_>>()
+                .join(", ");
+
+            // Generate the SQL query dynamically
+            let query = format!("DELETE FROM analytics WHERE id IN ({})", placeholders);
+
+            // Execute the dynamic query with the delete_ids as parameters
+            let mut query = sqlx::query(&query);
+
+            for id in delete_ids {
+                query = query.bind(id);
+            }
+
+            query.execute(database).await?;
 
             sqlx::query!(
                 "INSERT INTO analytics VALUES ($1, $2, $3, $4);",
@@ -218,12 +233,14 @@ async fn process_analytics_events(
     database: &Database,
 ) -> eyre::Result<()> {
     for (uri, visits) in accumulator {
+        let id = uuid::Uuid::new_v4();
+        let time = types::Time::now_utc();
         sqlx::query!(
             "INSERT INTO analytics VALUES ($1, $2, $3, $4);",
-            uuid::Uuid::new_v4(),
+            id,
             uri,
             visits,
-            types::Time::now_utc()
+            time,
         )
         .execute(database)
         .await?;
