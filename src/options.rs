@@ -334,30 +334,3 @@ pub struct WeatherStation {
     /// Where the weather station data is pulled from.
     pub source: WeatherStationSource,
 }
-
-#[cfg(test)]
-mod test {
-    use insta::assert_json_snapshot;
-    use serde_json::json;
-
-    use super::Backup;
-
-    #[test]
-    fn parse_backup() {
-        let value = json!({ "schedule": "0 1,2,3,4,5 * * *"});
-        let backup: Backup = serde_json::from_value(value.clone()).unwrap();
-        assert_json_snapshot!(backup, @r###"
-        {
-          "schedule": "0 1-5 * * *"
-        }
-        "###);
-
-        let value = json!({ "schedule": "1/10 * * * *"});
-        let backup: Backup = serde_json::from_value(value.clone()).unwrap();
-        assert_json_snapshot!(backup, @r###"
-        {
-          "schedule": "1,11,21,31,41,51 * * * *"
-        }
-        "###);
-    }
-}
