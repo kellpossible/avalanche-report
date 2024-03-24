@@ -291,5 +291,7 @@ wind-direction-label = Посока на вятъра
 atmospheric-temperature-label = Температура
 # Label for the current atmospheric humidity
 atmospheric-humidity-label = Влажност на въздуха
-# Label for the weather station located on top of Kudebi at 3000 m
+# Label for the weather station located on top of Kudebi at elevation of 3000 m
 weather-station-kudebi_top-label = Метеостанция Кудеби (3000 м н.в.)
+# Label for the weather station located in lower Gudauri at elevation of 1950 m
+weather-station-lower_gudauri-label = Lower Gudauri Station (1950 m)
