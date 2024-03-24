@@ -26,11 +26,17 @@ pub async fn initialize(data_dir: &Path) -> eyre::Result<Database> {
         tracing::info!("Using existing database: {path:?}");
     } else {
         tracing::info!("No existing database found, initializing new one: {path:?}");
+        if !data_dir.exists() {
+            std::fs::create_dir_all(&data_dir)?;
+        }
     }
 
-    let pool =
-        sqlx::SqlitePool::connect_with(sqlx::sqlite::SqliteConnectOptions::new().filename(path))
-            .await?;
+    let pool = sqlx::SqlitePool::connect_with(
+        sqlx::sqlite::SqliteConnectOptions::new()
+            .filename(path)
+            .create_if_missing(true),
+    )
+    .await?;
 
     migrations::run(&pool).await?;
 
