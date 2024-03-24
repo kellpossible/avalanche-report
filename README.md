@@ -60,6 +60,10 @@ For convenience, there is also a docker container [Dockerfile](./Dockerfile) bas
 $ docker build .
 ```
 
+### Dockerhub
+
+Docker images for this project are published to dockerhub <https://hub.docker.com/r/lfrisken/avalanche-report> with the name `lfrisken/avalanche-report`. You can use either the `latest` tag, or a tag for a specific git commit version.
+
 ## Running
 
 ### Configuration
