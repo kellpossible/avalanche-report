@@ -138,7 +138,7 @@ pub async fn compact(database: &Database, window: Duration, keep: Duration) -> e
 
     let last = match sqlx::query_as!(
         Analytics,
-        r#"SELECT id as "id!: Uuid", uri, visits as "visits!: u32", time as "time!: types::Time" FROM analytics ORDER BY analytics.time DESC LIMIT 1"#,
+        r#"SELECT id as "id!: _", uri, visits as "visits!: _", time as "time!: _" FROM analytics ORDER BY analytics.time DESC LIMIT 1"#,
     )
     .fetch_optional(database)
     .await?
@@ -167,7 +167,7 @@ pub async fn compact(database: &Database, window: Duration, keep: Duration) -> e
 
         let map: HashMap<String, Vec<Analytics>> = sqlx::query_as!(
             Analytics,
-            r#"SELECT id as "id!: Uuid", uri, visits as "visits!: u32", time as "time!: types::Time" from analytics WHERE analytics.time >= $1 AND analytics.time < $2 ORDER BY analytics.time ASC"#,
+            r#"SELECT id as "id!: _", uri, visits as "visits!: _", time as "time!: _" from analytics WHERE analytics.time >= $1 AND analytics.time < $2 ORDER BY analytics.time ASC"#,
             from_time,
             to_time
         ).fetch(database).try_fold(HashMap::<String, Vec<Analytics>>::new(), |mut acc, item| async move {

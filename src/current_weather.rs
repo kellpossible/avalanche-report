@@ -230,31 +230,11 @@ impl CurrentWeatherCacheService {
             data: sqlx::types::Json(weather_data),
         };
 
-        sqlx::query!()
-        let database = self.config.database.get().await?;
-        database
-            .interact(move |conn| {
-                let mut query = sea_query::Query::insert();
-                let values = current_weather.values()?;
-                query
-                    .into_table(CurrentWeatherCache::TABLE)
-                    .columns(CurrentWeatherCache::COLUMNS)
-                    .values(values.clone())?;
-                query.on_conflict(
-                    OnConflict::column(CurrentWeatherCacheIden::WeatherStationId)
-                        .values(
-                            CurrentWeatherCache::COLUMNS[1..]
-                                .into_iter()
-                                .zip(values[1..].into_iter())
-                                .map(|(c, v)| (*c, v.clone())),
-                        )
-                        .to_owned(),
-                );
-                let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
-                conn.execute(&sql, &*values.as_params())?;
-                eyre::Ok(())
-            })
-            .await??;
+        sqlx::query!(
+            "INSERT INTO current_weather_cache VALUES($1, $2) ON CONFLICT(weather_station_id) DO UPDATE SET data=excluded.data",
+            current_weather.weather_station_id,
+            current_weather.data,
+        ).execute(&self.config.database).await?;
         Ok(())
     }
 

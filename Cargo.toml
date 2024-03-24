@@ -26,6 +26,7 @@ erased-serde = "0.4.2"
 serde_json = { workspace = true }
 serde_urlencoded = "0.7.1"
 serde_with = "3.4.0"
+http-serde = "2.0.0"
 color-eyre = "0.6"
 fluent = "0.16.0"
 fluent-langneg = "0.13.0"
@@ -103,7 +104,7 @@ members = [
 [workspace.dependencies]
 tracing = "0.1"
 base64 = "0.22.0"
-http = "1.0.0"
+http = "1.1.0"
 sha2 = "0.10.6"
 time = { version = "0.3.17", features = ["serde", "parsing", "formatting", "macros"] }
 nonzero_ext = "0.3.0"

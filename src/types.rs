@@ -43,7 +43,11 @@ impl sqlx::Encode<'_, sqlx::Sqlite> for Time {
         &self,
         buf: &mut Vec<sqlx::sqlite::SqliteArgumentValue<'_>>,
     ) -> sqlx::encode::IsNull {
-        sqlx::Encode::<sqlx::Sqlite>::encode(self.format(&DATETIME_FORMAT), buf)
+        sqlx::Encode::<sqlx::Sqlite>::encode(
+            self.format(&DATETIME_FORMAT)
+                .expect("Error formatting datetime"),
+            buf,
+        )
     }
 }
 
@@ -58,8 +62,9 @@ impl FromStr for Time {
 impl sqlx::Decode<'_, sqlx::Sqlite> for Time {
     fn decode(value: sqlx::sqlite::SqliteValueRef<'_>) -> Result<Self, sqlx::error::BoxDynError> {
         match value.type_info().name() {
-            "TEXT" => {
-                let s: &str = value.to_owned().try_decode()?;
+            "NUMERIC" | "TEXT" => {
+                let value = value.to_owned();
+                let s: &str = value.try_decode()?;
                 s.parse::<Time>().map_err(Into::into)
             }
             unsupported_type => {
@@ -71,7 +76,7 @@ impl sqlx::Decode<'_, sqlx::Sqlite> for Time {
 
 impl sqlx::Type<sqlx::Sqlite> for Time {
     fn type_info() -> sqlx::sqlite::SqliteTypeInfo {
-        "NUMERIC".parse().unwrap()
+        <OffsetDateTime as sqlx::Type<sqlx::Sqlite>>::type_info()
     }
 }
 
@@ -157,7 +162,8 @@ impl sqlx::Decode<'_, sqlx::Sqlite> for Uri {
     fn decode(value: sqlx::sqlite::SqliteValueRef<'_>) -> Result<Self, sqlx::error::BoxDynError> {
         match value.type_info().name() {
             "TEXT" => {
-                let s: &str = value.to_owned().try_decode()?;
+                let value = value.to_owned();
+                let s: &str = value.try_decode()?;
                 s.parse::<Uri>().map_err(Into::into)
             }
             unsupported_type => {

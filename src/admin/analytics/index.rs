@@ -133,6 +133,7 @@ struct SummariesDuration {
 
 #[derive(Serialize)]
 struct Summary {
+    #[serde(with = "http_serde::uri")]
     uri: Uri,
     visits: u32,
 }

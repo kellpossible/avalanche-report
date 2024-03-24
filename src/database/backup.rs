@@ -61,7 +61,11 @@ async fn perform_backup(config: &Config) -> eyre::Result<BackupInfo> {
     let backup_file = backup_dir.path().join(DB_FILE_NAME);
     let backup_file_query = backup_file.clone();
     sqlx::query("VACUUM main INTO ?1")
-        .bind(backup_file_query)
+        .bind(
+            backup_file_query
+                .to_str()
+                .wrap_err("Unable to convert backup file path to string")?,
+        )
         .execute(database)
         .await
         .wrap_err("Error performing VACUUM query")?;
