@@ -17,8 +17,6 @@ use forecast_spreadsheet::{
 use http::{header::CONTENT_TYPE, HeaderValue, StatusCode};
 use indexmap::IndexMap;
 use once_cell::sync::Lazy;
-use sea_query::{Alias, Expr, IntoColumnRef, OnConflict, SqliteQueryBuilder};
-use sea_query_rusqlite::RusqliteBinder;
 use secrecy::SecretString;
 use serde::Serialize;
 use time::{OffsetDateTime, PrimitiveDateTime};
@@ -27,7 +25,7 @@ use tracing::instrument;
 use unic_langid::LanguageIdentifier;
 
 use crate::{
-    database::DatabaseInstance,
+    database::Database,
     diagrams,
     error::map_eyre_error,
     google_drive::{self, ListFileMetadata},
@@ -36,15 +34,22 @@ use crate::{
     options::Map,
     state::AppState,
     templates::{render, TemplatesWithContext},
+    types,
     user_preferences::UserPreferences,
 };
 
-use self::files::{ForecastFiles, ForecastFilesIden};
-
-mod files;
 pub mod probability;
 
 use probability::Probability;
+
+#[derive(Clone)]
+pub struct ForecastFile {
+    pub google_drive_id: String,
+    pub last_modified: types::Time,
+    pub file_blob: Vec<u8>,
+    pub parsed_forecast: Option<forecast_spreadsheet::Forecast>,
+    pub schema_version: Option<forecast_spreadsheet::Version>,
+}
 
 pub static FORECAST_SCHEMA: Lazy<forecast_spreadsheet::options::Options> =
     Lazy::new(|| serde_json::from_str(include_str!("./schemas/0.3.1.json")).unwrap());
@@ -130,7 +135,7 @@ fn parse_forecast_name_impl(
 pub async fn handler(
     Path(file_name): Path<String>,
     State(state): State<AppState>,
-    Extension(database): Extension<DatabaseInstance>,
+    Extension(database): Extension<Database>,
     Extension(i18n): Extension<I18nLoader>,
     Extension(templates): Extension<TemplatesWithContext>,
     Extension(preferences): Extension<UserPreferences>,
@@ -342,7 +347,7 @@ async fn handler_impl(
     file_name: String,
     options: &crate::Options,
     client: &reqwest::Client,
-    database: &DatabaseInstance,
+    database: &Database,
     templates: &TemplatesWithContext,
     i18n: &I18nLoader,
     preferences: &UserPreferences,
@@ -440,7 +445,7 @@ pub async fn get_forecast_data(
     file_metadata: &ListFileMetadata,
     requested: RequestedForecastData,
     client: &reqwest::Client,
-    database: &DatabaseInstance,
+    database: &Database,
     google_drive_api_key: &SecretString,
 ) -> eyre::Result<ForecastData> {
     if matches!(requested, RequestedForecastData::Forecast) {
@@ -449,27 +454,19 @@ pub async fn get_forecast_data(
         }
     }
     let google_drive_id = file_metadata.id.clone();
-    let cached_forecast_file: Option<ForecastFiles> = database
-        .interact(move |conn| {
-            let mut query = sea_query::Query::select();
+    let cached_forecast_file: Option<ForecastFile> = Option::transpose(sqlx::query!(
+        r#"SELECT google_drive_id, last_modified as "last_modified: types::Time", file_blob, parsed_forecast as "parsed_forecast: sqlx::types::Json<forecast_spreadsheet::Forecast>", schema_version FROM forecast_files WHERE google_drive_id=$1"#,
+        google_drive_id
+    ).fetch_optional(database).await?.map(|record| {
+            eyre::Ok(ForecastFile {
+                google_drive_id: record.google_drive_id,
+                last_modified: record.last_modified,
+                file_blob: record.file_blob,
+                parsed_forecast: record.parsed_forecast.map(|f| f.0),
+                schema_version: Option::transpose(record.schema_version.map(|sv| sv.parse()))?
 
-            query
-                .columns(ForecastFiles::COLUMNS)
-                .from(ForecastFiles::TABLE)
-                .and_where(Expr::col(ForecastFilesIden::GoogleDriveId).eq(&google_drive_id));
-
-            let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
-            let mut statement = conn.prepare_cached(&sql)?;
-
-            let forecast_file = Option::transpose(
-                statement
-                    .query_map(&*values.as_params(), |row| ForecastFiles::try_from(row))
-                    .wrap_err("Error performing query to obtain `ForecastFiles`")?
-                    .next(),
-            )?;
-            Ok::<_, eyre::Error>(forecast_file)
-        })
-        .await??
+            })
+    }))?
         .and_then(|cached_forecast_file| {
             let cached_last_modified: OffsetDateTime = cached_forecast_file.last_modified.into();
             let server_last_modified: &OffsetDateTime = &file_metadata.modified_time;
@@ -484,7 +481,7 @@ pub async fn get_forecast_data(
             }
         });
 
-    let forecast_file: ForecastFiles = if let Some(cached_forecast_file) = cached_forecast_file {
+    let forecast_file: ForecastFile = if let Some(cached_forecast_file) = cached_forecast_file {
         tracing::debug!("Using cached forecast file");
         cached_forecast_file
     } else {
@@ -523,62 +520,28 @@ pub async fn get_forecast_data(
                 (file.bytes().await?.into(), None)
             }
         };
-        let forecast_file_db = ForecastFiles {
+        let forecast_file_db = ForecastFile {
             google_drive_id: file_metadata.id.clone(),
             last_modified: file_metadata.modified_time.clone().into(),
             file_blob: forecast_file_bytes.clone(),
             parsed_forecast: forecast.as_ref().map(|f| f.0.clone()),
             schema_version: forecast.as_ref().map(|f| f.1.clone()),
         };
-        let forecast_file_db_query = forecast_file_db.clone();
+        let parsed_forecast = forecast_file_db
+            .parsed_forecast
+            .clone()
+            .map(sqlx::types::Json);
+        let schema_version = forecast_file_db.schema_version.map(|v| v.to_string());
         tracing::debug!("Updating cached forecast file");
-        database
-            .interact(move |conn| {
-                let mut query = sea_query::Query::insert();
+        sqlx::query!(
+            "INSERT INTO forecast_files VALUES($1, $2, $3, $4, $5) ON CONFLICT(google_drive_id) DO UPDATE SET last_modified=excluded.last_modified, file_blob=excluded.file_blob, parsed_forecast=excluded.parsed_forecast, schema_version=excluded.schema_version",
+            forecast_file_db.google_drive_id,
+            forecast_file_db.last_modified,
+            forecast_file_db.file_blob,
+            parsed_forecast,
+            schema_version,
+        ).execute(database).await?;
 
-                let values = forecast_file_db_query.values()?;
-                query
-                    .into_table(ForecastFiles::TABLE)
-                    .columns(ForecastFiles::COLUMNS)
-                    .values(values)?;
-
-                let excluded_column: Alias = Alias::new("excluded");
-                query.on_conflict(
-                    OnConflict::column(ForecastFilesIden::GoogleDriveId)
-                        .values([
-                            (
-                                ForecastFilesIden::LastModified,
-                                (excluded_column.clone(), ForecastFilesIden::LastModified)
-                                    .into_column_ref()
-                                    .into(),
-                            ),
-                            (
-                                ForecastFilesIden::FileBlob,
-                                (excluded_column.clone(), ForecastFilesIden::FileBlob)
-                                    .into_column_ref()
-                                    .into(),
-                            ),
-                            (
-                                ForecastFilesIden::ParsedForecast,
-                                (excluded_column.clone(), ForecastFilesIden::ParsedForecast)
-                                    .into_column_ref()
-                                    .into(),
-                            ),
-                            (
-                                ForecastFilesIden::SchemaVersion,
-                                (excluded_column, ForecastFilesIden::SchemaVersion)
-                                    .into_column_ref()
-                                    .into(),
-                            ),
-                        ])
-                        .to_owned(),
-                );
-
-                let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
-                conn.execute(&sql, &*values.as_params())?;
-                Result::<_, eyre::Error>::Ok(())
-            })
-            .await??;
         forecast_file_db
     };
 
@@ -604,32 +567,16 @@ pub async fn get_forecast_data(
                 )
                 .context("Error parsing forecast spreadsheet")?;
 
-            let json_forecast: serde_json::Value = serde_json::to_value(forecast.clone())?;
             tracing::debug!("Updating cached parsed forecast and schema version");
-            database
-                .interact(move |conn| {
-                    let mut query = sea_query::Query::update();
-                    query
-                        .table(ForecastFiles::TABLE)
-                        .values([
-                            (
-                                ForecastFilesIden::ParsedForecast,
-                                Some(json_forecast).into(),
-                            ),
-                            (
-                                ForecastFilesIden::SchemaVersion,
-                                Some(FORECAST_SCHEMA.schema_version.to_string()).into(),
-                            ),
-                        ])
-                        .and_where(
-                            Expr::col(ForecastFilesIden::GoogleDriveId)
-                                .eq(forecast_file.google_drive_id),
-                        );
-                    let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
-                    conn.execute(&sql, &*values.as_params())?;
-                    Result::<_, eyre::Error>::Ok(())
-                })
-                .await??;
+
+            let parsed_forecast = Some(sqlx::types::Json(forecast.clone()));
+            let schema_version = Some(FORECAST_SCHEMA.schema_version.to_string());
+            sqlx::query!(
+                "UPDATE forecast_files SET parsed_forecast=$1, schema_version=$2 WHERE google_drive_id=$3",
+                parsed_forecast,
+                schema_version,
+                forecast_file.google_drive_id
+            ).execute(database).await?;
 
             Ok(ForecastData::Forecast(forecast))
         }

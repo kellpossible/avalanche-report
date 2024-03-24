@@ -20,6 +20,9 @@ COPY ./ .
 
 RUN npm install
 RUN just tailwind
+# For sqlx macro
+ARG DATABASE_URL="sqlite://data/db.sqlite3"
+RUN cargo run -p migrations
 RUN cargo build --target x86_64-unknown-linux-musl --release
 
 ####################################################################################################

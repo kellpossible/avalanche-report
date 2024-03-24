@@ -4,8 +4,6 @@ use crate::serde::hide_secret;
 use cronchik::CronSchedule;
 use eyre::ContextCompat;
 use nonzero_ext::nonzero;
-use rusqlite::types::FromSql;
-use sea_query::SimpleExpr;
 use secrecy::SecretString;
 use serde::{ser::Error, Deserialize, Serialize};
 use serde_with::{serde_as, EnumMap};
@@ -77,19 +75,14 @@ pub struct I18n {
     pub directory: Option<PathBuf>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone)]
+#[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone, sqlx::Type)]
 #[serde(transparent)]
+#[sqlx(transparent)]
 pub struct WeatherStationId(String);
 
-impl FromSql for WeatherStationId {
-    fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
-        String::column_result(value).map(Self)
-    }
-}
-
-impl From<WeatherStationId> for SimpleExpr {
-    fn from(id: WeatherStationId) -> Self {
-        id.0.into()
+impl From<String> for WeatherStationId {
+    fn from(value: String) -> Self {
+        Self(value)
     }
 }
 
@@ -340,31 +333,4 @@ pub struct AmbientWeatherSource {
 pub struct WeatherStation {
     /// Where the weather station data is pulled from.
     pub source: WeatherStationSource,
-}
-
-#[cfg(test)]
-mod test {
-    use insta::assert_json_snapshot;
-    use serde_json::json;
-
-    use super::Backup;
-
-    #[test]
-    fn parse_backup() {
-        let value = json!({ "schedule": "0 1,2,3,4,5 * * *"});
-        let backup: Backup = serde_json::from_value(value.clone()).unwrap();
-        assert_json_snapshot!(backup, @r###"
-        {
-          "schedule": "0 1-5 * * *"
-        }
-        "###);
-
-        let value = json!({ "schedule": "1/10 * * * *"});
-        let backup: Backup = serde_json::from_value(value.clone()).unwrap();
-        assert_json_snapshot!(backup, @r###"
-        {
-          "schedule": "1,11,21,31,41,51 * * * *"
-        }
-        "###);
-    }
 }

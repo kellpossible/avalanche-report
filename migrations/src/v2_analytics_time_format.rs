@@ -1,6 +1,6 @@
 use http::Uri;
 use nonzero_ext::nonzero;
-use rusqlite::ToSql;
+use sqlx::{Executor, Row};
 use time::{
     format_description::well_known::{
         iso8601::{self, TimePrecision},
@@ -18,16 +18,16 @@ const DATETIME_CONFIG: iso8601::EncodedConfig = iso8601::Config::DEFAULT
     .encode();
 const DATETIME_FORMAT: iso8601::Iso8601<DATETIME_CONFIG> = Iso8601;
 
-pub fn run(conn: &rusqlite::Connection) -> eyre::Result<()> {
+pub async fn run(conn: sqlx::SqlitePool) -> eyre::Result<()> {
     #[allow(unused)]
     struct Analytics {
         pub id: uuid::Uuid,
         pub uri: Uri,
-        pub visits: u64,
+        pub visits: u32,
         pub time: time::OffsetDateTime,
     }
 
-    conn.execute_batch(
+    sqlx::raw_sql(
         r#"
         BEGIN;
         ALTER TABLE analytics
@@ -36,45 +36,51 @@ pub fn run(conn: &rusqlite::Connection) -> eyre::Result<()> {
         ADD COLUMN time TEXT;
         COMMIT;
     "#,
-    )?;
-
-    let mut statement = conn.prepare(
-        r#"
-        SELECT * FROM analytics;
-        "#,
-    )?;
+    )
+    .execute(&conn)
+    .await?;
 
     let original_format = format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:6] [offset_hour sign:mandatory]:[offset_minute]");
     // let new_format = format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:3]");
     let new_format = DATETIME_FORMAT;
-    for analytics in statement.query_map((), |row| {
-        let id: Uuid = row.get("id")?;
-        let uri_string: String = row.get("uri")?;
-        let uri = uri_string.parse().unwrap();
-        let visits = row.get("visits")?;
-        let time_string: String = row.get("old_time")?;
-        let time = OffsetDateTime::parse(&time_string, &original_format).unwrap();
-        Ok(Analytics {
-            id,
-            uri,
-            visits,
-            time,
+
+    for analytics in sqlx::query("SELECT * FROM analytics")
+        .fetch_all(&conn)
+        .await?
+        .into_iter()
+        .map(|row| {
+            let id: Uuid = row.get("id");
+            let uri_string: String = row.get("uri");
+            let uri = uri_string.parse().unwrap();
+            let visits = row.get("visits");
+            let time_string: String = row.get("old_time");
+            let time = OffsetDateTime::parse(&time_string, &original_format).unwrap();
+            Analytics {
+                id,
+                uri,
+                visits,
+                time,
+            }
         })
-    })? {
-        let analytics = analytics?;
+    {
         let new_time: String = analytics.time.format(&new_format)?;
-        conn.execute(
+        sqlx::query(
             r#"
             UPDATE analytics SET time = ? WHERE id = ?;
             "#,
-            [new_time.to_sql()?, analytics.id.to_sql()?],
-        )?;
+        )
+        .bind(new_time)
+        .bind(analytics.id)
+        .execute(&conn)
+        .await?;
     }
-    conn.execute_batch(
+
+    conn.execute(
         r#"
         ALTER TABLE analytics
         DROP COLUMN old_time;
     "#,
-    )?;
+    )
+    .await?;
     Ok(())
 }

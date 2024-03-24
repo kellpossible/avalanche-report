@@ -11,12 +11,27 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "sqlite://data/db.sqlite3"
 
     steps:
     - uses: actions/checkout@v3
+    - name: Install just
+      run: |
+        curl --location https://github.com/casey/just/releases/download/1.13.0/just-1.13.0-x86_64-unknown-linux-musl.tar.gz \
+        --output /tmp/just-1.13.0-x86_64-unknown-linux-musl.tar.gz &&\
+        echo "f76fce93a71686f6aa6b2db1a39184e736f9ac8248c0489e003c617b49eb2676  /tmp/just-1.13.0-x86_64-unknown-linux-musl.tar.gz" | sha256sum -c &&\
+        mkdir /tmp/just &&\
+        tar --directory=/tmp/just -xvf /tmp/just-1.13.0-x86_64-unknown-linux-musl.tar.gz &&\
+        cp /tmp/just/just /usr/local/bin
+    - name: Install npm dependencies
+      run: npm install
+    - name: Build tailwind assets
+      run: just tailwind
+    - name: Run database migrations for sqlx
+      run: cargo run -p migrations
     - name: Build
-      run: cargo build --verbose
+      run: cargo build
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test --all

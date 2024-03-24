@@ -9,9 +9,6 @@ use axum::{
     Extension, Json, Router,
 };
 use eyre::{bail, Context, ContextCompat};
-use rusqlite::{types::Type, Row};
-use sea_query::{Expr, OnConflict, SimpleExpr, SqliteQueryBuilder};
-use sea_query_rusqlite::RusqliteBinder;
 use secrecy::ExposeSecret;
 use serde::{Deserialize, Serialize};
 use tracing::Instrument;
@@ -147,35 +144,18 @@ impl CurrentWeatherService {
         &self,
         id: &WeatherStationId,
     ) -> eyre::Result<Vec<WeatherDataItem>> {
-        let database = self.database.get().await?;
-        let id = id.clone();
-        database
-            .interact(move |conn| {
-                let id_clone = id.clone();
-                let mut query = sea_query::Query::select();
-                query
-                    .columns(CurrentWeatherCache::COLUMNS)
-                    .from(CurrentWeatherCache::TABLE)
-                    .and_where(Expr::col(CurrentWeatherCacheIden::WeatherStationId).eq(id));
-                let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
-                let mut statement = conn.prepare_cached(&sql)?;
-                let data: Vec<WeatherDataItem> = Option::transpose(
-                    statement
-                        .query_map(&*values.as_params(), |row| {
-                            CurrentWeatherCache::try_from(row)
-                        })
-                        .wrap_err("Error performing query to obtain `ForecastFiles`")?
-                        .next(),
-                )?
-                .map(|cache_item| cache_item.data)
-                .unwrap_or_else(|| {
-                    tracing::warn!("No cached weather data can be found for {id_clone}");
-                    Default::default()
-                });
-
-                eyre::Ok(data)
-            })
-            .await?
+        // Type override to workaround https://github.com/launchbadge/sqlx/issues/1979
+        Ok(sqlx::query_as!(
+            CurrentWeatherCache,
+            r#"SELECT weather_station_id, data as "data!: sqlx::types::Json<Vec<WeatherDataItem>>" FROM current_weather_cache WHERE weather_station_id = ?"#,
+            id,
+        )
+        .fetch_all(&self.database)
+        .await
+        .wrap_err("Error fetching current weather cache item")?
+        .into_iter()
+        .flat_map(|row| row.data.0)
+        .collect())
     }
 }
 
@@ -211,51 +191,9 @@ pub struct CurrentWeatherCacheService {
     config: CurrentWeatherCacheServiceConfig,
 }
 
-#[sea_query::enum_def]
 pub struct CurrentWeatherCache {
     pub weather_station_id: WeatherStationId,
-    pub data: Vec<WeatherDataItem>,
-}
-
-impl AsRef<str> for CurrentWeatherCacheIden {
-    fn as_ref(&self) -> &str {
-        match self {
-            Self::Table => "current_weather_cache",
-            Self::WeatherStationId => "weather_station_id",
-            Self::Data => "data",
-        }
-    }
-}
-
-impl CurrentWeatherCache {
-    pub const COLUMNS: [CurrentWeatherCacheIden; 2] = [
-        CurrentWeatherCacheIden::WeatherStationId,
-        CurrentWeatherCacheIden::Data,
-    ];
-    pub const TABLE: CurrentWeatherCacheIden = CurrentWeatherCacheIden::Table;
-
-    pub fn values(self) -> eyre::Result<[SimpleExpr; 2]> {
-        Ok([
-            self.weather_station_id.into(),
-            serde_json::to_string(&self.data)?.into(),
-        ])
-    }
-}
-
-impl TryFrom<&Row<'_>> for CurrentWeatherCache {
-    type Error = rusqlite::Error;
-
-    fn try_from(row: &Row<'_>) -> Result<Self, Self::Error> {
-        let weather_station_id = row.get(CurrentWeatherCacheIden::WeatherStationId.as_ref())?;
-        let data: serde_json::Value = row.get(CurrentWeatherCacheIden::Data.as_ref())?;
-        let data = serde_json::from_value(data)
-            .map_err(|e| rusqlite::Error::FromSqlConversionFailure(2, Type::Text, Box::new(e)))?;
-
-        Ok(CurrentWeatherCache {
-            weather_station_id,
-            data,
-        })
-    }
+    pub data: sqlx::types::Json<Vec<WeatherDataItem>>,
 }
 
 impl CurrentWeatherCacheService {
@@ -288,32 +226,14 @@ impl CurrentWeatherCacheService {
         };
         let current_weather = CurrentWeatherCache {
             weather_station_id: id.clone(),
-            data: weather_data,
+            data: sqlx::types::Json(weather_data),
         };
-        let database = self.config.database.get().await?;
-        database
-            .interact(move |conn| {
-                let mut query = sea_query::Query::insert();
-                let values = current_weather.values()?;
-                query
-                    .into_table(CurrentWeatherCache::TABLE)
-                    .columns(CurrentWeatherCache::COLUMNS)
-                    .values(values.clone())?;
-                query.on_conflict(
-                    OnConflict::column(CurrentWeatherCacheIden::WeatherStationId)
-                        .values(
-                            CurrentWeatherCache::COLUMNS[1..]
-                                .into_iter()
-                                .zip(values[1..].into_iter())
-                                .map(|(c, v)| (*c, v.clone())),
-                        )
-                        .to_owned(),
-                );
-                let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
-                conn.execute(&sql, &*values.as_params())?;
-                eyre::Ok(())
-            })
-            .await??;
+
+        sqlx::query!(
+            "INSERT INTO current_weather_cache VALUES($1, $2) ON CONFLICT(weather_station_id) DO UPDATE SET data=excluded.data",
+            current_weather.weather_station_id,
+            current_weather.data,
+        ).execute(&self.config.database).await?;
         Ok(())
     }
 

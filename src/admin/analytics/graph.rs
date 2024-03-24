@@ -1,12 +1,7 @@
-use crate::{
-    analytics::{get_time_bounds, Analytics, AnalyticsIden},
-    database::Database,
-    types::Time,
-};
+use crate::{analytics::get_time_bounds, database::Database, types::Time};
 use eyre::{Context, ContextCompat};
-use sea_query::{Expr, SqliteQueryBuilder};
-use sea_query_rusqlite::RusqliteBinder;
 use serde::{Deserialize, Serialize};
+use sqlx::Row;
 
 #[derive(Debug, Clone, Copy)]
 struct AnalyticsData {
@@ -53,45 +48,23 @@ async fn get_analytics_data(
     let mut data = Vec::with_capacity(options.resolution);
     loop {
         let options_conn = options.clone();
-        let visits = database
-            .get()
-            .await?
-            .interact::<_, eyre::Result<_>>(move |conn| {
-                let mut query = sea_query::Query::select();
-                let from_where = Expr::col(AnalyticsIden::Time).gte(from);
-                let to_where = if to == to_max {
-                    Expr::col(AnalyticsIden::Time).lte(to)
-                } else {
-                    Expr::col(AnalyticsIden::Time).lt(to)
-                };
-                query
-                    .expr(Expr::col(AnalyticsIden::Visits).sum())
-                    .from(Analytics::TABLE)
-                    .and_where(from_where)
-                    .and_where(to_where);
 
-                if let Some(ref uri_filter) = options_conn.uri_filter {
-                    query.and_where(Expr::cust_with_values(
-                        &format!("{} GLOB ?", AnalyticsIden::Uri.as_ref()),
-                        [uri_filter],
-                    ));
-                }
-                let (sql, values) = query.build_rusqlite(SqliteQueryBuilder);
-                let mut statement = conn.prepare_cached(&sql)?;
-                let visits: u32 = statement
-                    .query_row(&*values.as_params(), |row| {
-                        let visits: Option<i64> = row.get(0)?;
-                        Ok(visits.unwrap_or_default())
-                    })
-                    .wrap_err_with(|| {
-                        format!("Error executing query {sql} with values {values:?}")
-                    })?
-                    .try_into()
-                    .wrap_err("Error converting visits from i32 into u32")?;
+        let mut query = sqlx::QueryBuilder::new("SELECT SUM(visits) FROM analytics WHERE ");
+        query.push("analytics.time >= ").push_bind(from);
 
-                Ok(visits)
-            })
-            .await??;
+        if to == to_max {
+            query.push(" AND analytics.time <= ");
+        } else {
+            query.push(" AND analytics.time < ");
+        }
+        query.push_bind(to);
+
+        if let Some(ref uri_filter) = options_conn.uri_filter {
+            query.push(" AND analytics.uri GLOB ").push_bind(uri_filter);
+        }
+
+        let visits: u32 = query.build().fetch_one(database).await?.try_get(0)?;
+
         let time = *from + (window.checked_div(2).wrap_err("Error dividing duration")?);
 
         data.push(AnalyticsData {

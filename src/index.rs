@@ -2,13 +2,13 @@ use axum::{extract::State, response::IntoResponse, Extension};
 use color_eyre::Help;
 use eyre::{bail, eyre, Context, ContextCompat};
 use futures::{stream, StreamExt, TryStreamExt};
-use headers::{CacheControl, Header, HeaderMapExt};
+use headers::{CacheControl, HeaderMapExt};
 use i18n_embed::LanguageLoader;
 use serde::Serialize;
 use unic_langid::LanguageIdentifier;
 
 use crate::{
-    database::DatabaseInstance,
+    database::Database,
     error::map_eyre_error,
     forecasts::{
         get_forecast_data, parse_forecast_name, Forecast, ForecastData, ForecastDetails,
@@ -16,7 +16,6 @@ use crate::{
     },
     google_drive::{self, ListFileMetadata},
     i18n::{self, I18nLoader},
-    isbot::is_bot,
     state::AppState,
     templates::{render, TemplatesWithContext},
     user_preferences::{UserPreferences, WindUnit},
@@ -97,7 +96,7 @@ struct IndexContext {
 pub async fn handler(
     Extension(templates): Extension<TemplatesWithContext>,
     Extension(i18n): Extension<I18nLoader>,
-    Extension(database): Extension<DatabaseInstance>,
+    Extension(database): Extension<Database>,
     Extension(preferences): Extension<UserPreferences>,
     State(state): State<AppState>,
 ) -> axum::response::Result<impl IntoResponse> {

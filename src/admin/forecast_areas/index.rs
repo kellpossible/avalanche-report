@@ -1,10 +1,10 @@
 use axum::{response::Response, Extension};
 
-use crate::{database::DatabaseInstance, error::map_eyre_error, templates::TemplatesWithContext};
+use crate::{error::map_eyre_error, templates::TemplatesWithContext};
 
 pub async fn handler(
     Extension(templates): Extension<TemplatesWithContext>,
-    Extension(database): Extension<DatabaseInstance>,
+    Extension(database): Extension<crate::database::Database>,
 ) -> axum::response::Result<Response> {
     tracing::info!("Forecast areas!!");
     templates
