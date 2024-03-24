@@ -64,6 +64,8 @@ $ docker build .
 
 Docker images for this project are published to dockerhub <https://hub.docker.com/r/lfrisken/avalanche-report> with the name `lfrisken/avalanche-report`. You can use either the `latest` tag, or a tag for a specific git commit version.
 
+See <https://github.com/kellpossible/avalanche-bg-avalanche-report> for an example of customizing and deploying avalanche-report using this dockerhub image.
+
 ## Running
 
 ### Configuration
