@@ -1,12 +1,13 @@
 use axum::{
-    response::{IntoResponse, Response},
+    response::{IntoResponse, Redirect, Response},
     Extension,
 };
 use eyre::ContextCompat;
 
 use crate::{
+    database::Database,
     error::{map_eyre_error, map_std_error},
-    forecast_areas::{ForecastArea, ForecastAreaId},
+    forecast_areas::{upsert_forecast_area, ForecastArea, ForecastAreaId},
     templates::TemplatesWithContext,
 };
 
@@ -19,13 +20,17 @@ pub async fn get_handler(
 }
 
 pub async fn post_handler(
-    Extension(database): Extension<crate::database::Database>,
+    Extension(database): Extension<Database>,
     multipart: axum::extract::Multipart,
-) -> axum::response::Result<()> {
-    post(multipart).await.map_err(map_eyre_error)
+) -> axum::response::Result<Response> {
+    post(&database, multipart).await.map_err(map_eyre_error)?;
+    Ok(Redirect::to("../forecast-areas").into_response())
 }
 
-pub async fn post(mut multipart: axum::extract::Multipart) -> eyre::Result<()> {
+pub async fn post(
+    database: &Database,
+    mut multipart: axum::extract::Multipart,
+) -> eyre::Result<()> {
     let mut id = None;
     let mut geojson = None;
     while let Some(field) = multipart.next_field().await? {
@@ -44,7 +49,8 @@ pub async fn post(mut multipart: axum::extract::Multipart) -> eyre::Result<()> {
         id: id.wrap_err("id field was not specified")?,
         geojson: geojson.wrap_err("geojson field was not specified")?,
     };
-    tracing::info!("Created forecast area: {forecast_area:?}");
+
+    upsert_forecast_area(database, forecast_area).await?;
 
     Ok(())
 }
