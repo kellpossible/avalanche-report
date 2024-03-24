@@ -5,7 +5,7 @@ use http::{HeaderValue, StatusCode};
 use secrecy::{ExposeSecret, SecretString};
 use std::{pin::Pin, sync::Arc};
 use tokio::sync::OnceCell;
-use tower_http::{auth::AsyncAuthorizeRequest, body::UnsyncBoxBody};
+use tower_http::auth::AsyncAuthorizeRequest;
 
 /// Basic authentication for accessing logs.
 #[derive(Clone)]

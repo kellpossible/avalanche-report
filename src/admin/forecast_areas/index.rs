@@ -24,4 +24,5 @@ pub async fn handler(
     templates
         .render("admin/forecast_areas/index.html", &context)
         .map_err(map_eyre_error)
+        .map_err(Into::into)
 }

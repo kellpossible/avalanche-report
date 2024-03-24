@@ -362,5 +362,6 @@ pub async fn weather_station_handler(
         .current_weather(&path.weather_station_id)
         .await
         .map_err(map_eyre_error)
+        .map_err(Into::into)
         .map(Json)
 }

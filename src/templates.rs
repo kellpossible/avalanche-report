@@ -2,7 +2,6 @@ use std::{
     borrow::Cow,
     collections::{BTreeMap, HashMap},
     future::{self, Future},
-    path::PathBuf,
     pin::Pin,
     sync::Arc,
 };
@@ -556,7 +555,9 @@ pub fn create_handler(
         templates: &TemplatesWithContext,
         template_key: &str,
     ) -> axum::response::Result<Response> {
-        templates.render(template_key, &()).map_err(map_eyre_error)
+        Ok(templates
+            .render(template_key, &())
+            .map_err(map_eyre_error)?)
     }
     let template_key: String = template_key.to_owned();
     move |Extension(templates): Extension<TemplatesWithContext>| {

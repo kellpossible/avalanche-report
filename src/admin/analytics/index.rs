@@ -208,22 +208,21 @@ pub async fn handler(
         (None, Some(_), Some(Duration::AllTime))
         | (Some(_), None, Some(Duration::AllTime))
         | (Some(_), Some(_), Some(Duration::AllTime)) => {
-            return Err(eyre::eyre!(
+            return Err(map_eyre_error(eyre::eyre!(
                 "Cannot specify `from` or `to`, and a `duration` of `all-time`"
             ))
-            .map_err(map_eyre_error);
+            .into());
         }
         (Some(_), Some(_), Some(Duration::Duration(_))) => {
-            return Err(eyre::eyre!(
+            return Err(map_eyre_error(eyre::eyre!(
                 "Cannot specify `from` and `to`, and a `duration`"
             ))
-            .map_err(map_eyre_error);
+            .into());
         }
         (None, None, Some(Duration::Custom)) => {
-            return Err(eyre::eyre!(
+            return Err(map_eyre_error(eyre::eyre!(
                 "Cannot specify `duration` as `custom` without also specifying either `from` or `to`"
-            ))
-            .map_err(map_eyre_error);
+            )).into());
         }
         (Some(from), None, Some(Duration::Duration(duration))) => {
             let option = duration_options
@@ -284,10 +283,10 @@ pub async fn handler(
     match (query.from, query.to) {
         (Some(from), Some(to)) => {
             if to < from {
-                return Err(eyre::eyre!(
+                return Err(map_eyre_error(eyre::eyre!(
                     "Invalid query parameters to: {to} should not be less than from: {from}"
                 ))
-                .map_err(map_eyre_error);
+                .into());
             }
         }
         _ => {}
@@ -348,7 +347,7 @@ pub async fn handler(
         .and_then(|value| value.to_str().ok())
         .unwrap_or("admin/analytics.html");
 
-    render(&templates.environment, template, &page).map_err(map_eyre_error)
+    Ok(render(&templates.environment, template, &page).map_err(map_eyre_error)?)
 }
 
 async fn get_analytics(

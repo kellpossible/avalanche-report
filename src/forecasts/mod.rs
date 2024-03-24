@@ -140,7 +140,7 @@ pub async fn handler(
     Extension(templates): Extension<TemplatesWithContext>,
     Extension(preferences): Extension<UserPreferences>,
 ) -> axum::response::Result<Response> {
-    handler_impl(
+    Ok(handler_impl(
         file_name,
         &state.options,
         &state.client,
@@ -150,7 +150,7 @@ pub async fn handler(
         &preferences,
     )
     .await
-    .map_err(map_eyre_error)
+    .map_err(map_eyre_error)?)
 }
 
 #[derive(Debug, Serialize, Clone)]
