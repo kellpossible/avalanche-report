@@ -48,7 +48,8 @@ The following command will build the software in release mode:
 ```bash
 npm install && \
 npx tailwindcss --input src/style.css --output dist/style.css && \
-cargo build --release
+cargo run -p migrations && \
+DATABASE_URL="sqlite://data/db.sqlite3" cargo build --release
 ```
 
 The final output is a self-contained static binary at `target/release/avalanche-report` (or `target\release\avalanche-report.exe` on Windows), which you can then take and run. All the required assets are embedded into the binary, this is all you need to run the server.
@@ -56,7 +57,7 @@ The final output is a self-contained static binary at `target/release/avalanche-
 For convenience, there is also a docker container [Dockerfile](./Dockerfile) based on [`alpine` linux](https://www.alpinelinux.org/) which you can build with:
 
 ```bash
-$ docker build
+$ docker build .
 ```
 
 ## Running

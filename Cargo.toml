@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 migrations = { path = "./migrations" }
-toml-env = { workpace = true }
+toml-env = { workspace = true }
 forecast-spreadsheet = { path = "./forecast-spreadsheet" }
 utils = { path = "./utils" }
 # geo = { path = "./geo" }
@@ -62,7 +62,7 @@ once_cell = { workspace = true }
 unic-langid = { workspace = true, features = ["serde"] }
 time = { workspace = true }
 resvg = { version = "0.39.0", default-features = false, features = ["text", "memmap-fonts"] } # required only for svg to png diagram generation
-reqwest = { version = "0.11.24", default-features = false, features = ["json", "stream", "rustls-tls"] }
+reqwest = { version = "0.12.0", default-features = false, features = ["json", "stream", "rustls-tls"] }
 secrecy = { version = "0.8.0", features = ["serde"] }
 usvg-text-layout = { version = "0.38.0", default-features = false, features = ["memmap-fonts"]}
 buildstructor = "0.5.4"
@@ -99,6 +99,7 @@ members = [
     "geo",
     "geo/debug", "migrations",
     "utils",
+    "migrations",
 ]
 
 [workspace.dependencies]
@@ -122,6 +123,6 @@ enum-iterator = "1.4.1"
 assert-json-diff = "2.0.2"
 sqlx = { version = "0.7", features = ["runtime-tokio", "sqlite", "macros", "json", "time", "uuid"] }
 uuid = { version = "1.3.0", features = ["v4", "serde"] }
-toml-env = "1.2.0"
 tokio = "1.36.0"
 axum-reporting = { git = "https://github.com/kellpossible/axum-reporting.git" }
+toml-env = "1.2.0"

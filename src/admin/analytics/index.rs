@@ -358,7 +358,6 @@ async fn get_analytics(
     uri_filter: Option<String>,
 ) -> eyre::Result<Vec<Summary>> {
     let mut query = sqlx::QueryBuilder::new(sqlx::query!("SELECT DISTINCT uri, SUM(visits) as visitor_sum FROM analytics WHERE uri NOT LIKE '/admin/analytics%' ").sql());
-
     if let Some(from) = from {
         query.push("AND analytics.time >= ");
         query.push_bind(from);
@@ -372,7 +371,7 @@ async fn get_analytics(
         query.push("AND uri GLOB ");
         query.push_bind(uri_filter);
     }
-    query.push("GROUP BY uri ORDER BY visitor_sum LIMIT 20");
+    query.push("GROUP BY uri ORDER BY visitor_sum DESC LIMIT 20");
     query
         .build()
         .fetch(database)

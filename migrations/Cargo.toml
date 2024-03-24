@@ -18,5 +18,5 @@ tracing = { workspace = true }
 http = { workspace = true }
 uuid = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
-axum-reporting = { workspace = true }
-tracing-appender = "0.2"
+tracing-subscriber = "0.3.18"
+color-eyre = "0.6.3"
