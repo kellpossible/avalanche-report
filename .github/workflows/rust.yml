@@ -11,8 +11,9 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "sqlite://data/db.sqlite3"
 
     steps:
     - uses: actions/checkout@v3
@@ -28,7 +29,9 @@ jobs:
       run: npm install
     - name: Build tailwind assets
       run: just tailwind
+    - name: Run database migrations for sqlx
+      run: cargo run -p migrations
     - name: Build
-      run: cargo build --verbose
+      run: cargo build
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test
