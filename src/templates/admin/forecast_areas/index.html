@@ -3,7 +3,10 @@
     Forecast Areas
 {% endblock title %}
 {% block body %}
+    <h1>Forecast Areas</h1>
+    <a class="font-bold text-blue-600 hover:text-blue-800"
+       href="forecast-areas/create">Create Forecast Area</a>
     <ul>
-        {% for area in areas %}<li>{{ area.name }}</li>{% endfor %}
+        {% for id in forecast_area_ids %}<li>{{ fl("forecast-area-" ~ id) }}</li>{% endfor %}
     </ul>
 {% endblock body %}

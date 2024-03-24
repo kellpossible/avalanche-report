@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}
+    Create Forecast Area
+{% endblock title %}
+{% block body %}
+<h1>Create Forecast Area</h1>
+<form action="./create" method="post" enctype="multipart/form-data">
+        <div>
+            <label for="id">Forecast Area ID:</label>
+            <input class="w-full px-3 py-2 border focus:outline-none focus:border-blue-500" type="text" id="id" name="id" required>
+        </div>
+        <div>
+            <label for="geojson">Forecast Area GeoJSON</label>
+            <input class="w-full px-3 py-2 border focus:outline-none focus:border-blue-500" type="file" id="geojson" name="geojson" accept=".json,.geojson" required>
+        </div>
+        <div>
+            <button class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600" type="submit">Submit</button>
+        </div>
+    </form>
+{% endblock body %}

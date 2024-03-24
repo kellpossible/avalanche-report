@@ -7,7 +7,7 @@ use axum::{
     response::Response,
 };
 use cronchik::CronSchedule;
-use eyre::{Context, ContextCompat};
+use eyre::Context;
 use futures::{lock::Mutex, StreamExt, TryStreamExt};
 use governor::{state::StreamRateLimitExt, Quota, RateLimiter};
 use http::StatusCode;
