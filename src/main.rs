@@ -50,6 +50,7 @@ mod templates;
 mod types;
 mod user_preferences;
 mod utilities;
+mod version;
 mod weather;
 
 #[tokio::main]
@@ -140,6 +141,7 @@ async fn main() -> eyre::Result<()> {
         // All these pages are dynamic and should have the Cache-Control: no-store header set
         // using the cache_control::no_store_middleware to help prevent browsers from caching them
         // and preventing updates during refresh.
+        .route("/version", get(version::handler))
         .nest(
             "/",
             Router::new()
