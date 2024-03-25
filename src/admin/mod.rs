@@ -6,6 +6,7 @@ use crate::{auth::MyBasicAuth, state::AppState, templates};
 
 mod analytics;
 mod forecast_areas;
+mod forecast_files;
 mod logs;
 
 pub struct Config {
@@ -19,6 +20,7 @@ pub fn router(config: Config) -> Router<AppState> {
         .nest("/analytics", analytics::router())
         .nest("/logs", logs::router(config.reporting))
         .nest("/forecast-areas", forecast_areas::router())
+        .nest("/forecast-files", forecast_files::router())
         .layer(AsyncRequireAuthorizationLayer::new(MyBasicAuth::new(
             config.admin_password_hash,
         )))
