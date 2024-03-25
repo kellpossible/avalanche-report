@@ -22,7 +22,6 @@ COPY ./ .
 COPY package.json /tmp/package.json
 COPY package-lock.json /tmp/package-lock.json
 RUN cd /tmp && npm install
-RUN npm install
 RUN mkdir -p /avalanche-report && cp -a /tmp/node_modules /avalanche-report
 
 RUN just tailwind
