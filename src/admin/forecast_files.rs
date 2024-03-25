@@ -33,13 +33,10 @@ pub async fn index_handler(
     Extension(templates): Extension<TemplatesWithContext>,
     Extension(database): Extension<crate::database::Database>,
 ) -> axum::response::Result<Response> {
-    let forecast_files = sqlx::query!(r#"SELECT google_drive_id, json_extract(parsed_forecast, "$.time") as time FROM forecast_files"#)
-    .try_map(|record| {
-        Ok(ForecastFileDetails {
-            google_drive_id: record.google_drive_id,
-            time: Option::transpose(record.time.map(|t| t.parse::<types::Time>())).map_err(|e| sqlx::Error::Decode(e.into()))?,
-        })
-    }).fetch_all(&database).await.map_err(map_std_error)?;
+    let forecast_files = sqlx::query_as!(
+        ForecastFileDetails,
+        r#"SELECT google_drive_id, json_extract(parsed_forecast, "$.time") as "time?: types::Time" FROM forecast_files"#
+    ).fetch_all(&database).await.map_err(map_std_error)?;
     let context = Context { forecast_files };
     templates
         .render("admin/forecast_files.html", &context)
