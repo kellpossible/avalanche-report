@@ -96,6 +96,10 @@ impl std::fmt::Display for WeatherStationId {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GoogleDrive {
     /// The identifier for the folder in Google Drive where the published forecasts are stored.
+    ///
+    /// **WARNING:** This folder needs to have the General Access sharing option set to "Anyone with
+    /// the link" due to some strange Google Drive limitation, otherwise the folder will appear
+    /// empty when using the `api_key` for authentication.
     pub published_folder_id: String,
     /// Google Drive API key, used to access forecast spreadsheets.
     #[serde(serialize_with = "hide_secret::serialize")]
