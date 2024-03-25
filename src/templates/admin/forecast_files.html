@@ -12,10 +12,10 @@
             <th>Time</th>
         </tr>
         {% for forecast_file in forecast_files %}
-        <tr>
-            <td>{{ forecast_file.google_drive_id }}</td>
-            <td>{{ forecast_file.time }}</td>
-        </tr>
+            <tr>
+                <td>{{ forecast_file.google_drive_id }}</td>
+                <td>{{ forecast_file.time }}</td>
+            </tr>
         {% endfor %}
     </table>
 {% endblock body %}
