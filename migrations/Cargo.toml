@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-toml-env = { workpace = true }
+toml-env = { workspace = true }
 serde = { workspace = true }
 sqlx = { workspace = true }
 base64 = { workspace = true }
