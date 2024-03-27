@@ -108,7 +108,7 @@ pub async fn handler(
     .await
     .wrap_err("Error listing google drive files")
     .map_err(map_eyre_error)?;
-    let (forecasts, errors): (Vec<ForecastAccumulator>, Vec<String>) = file_list
+    let (forecasts, mut errors): (Vec<ForecastAccumulator>, Vec<String>) = file_list
         .iter()
         .map(|file| {
             let filename = &file.name;
@@ -156,7 +156,7 @@ pub async fn handler(
             acc
         });
 
-    let mut forecasts: Vec<IndexForecast> = stream::iter(forecasts)
+    let (mut forecasts, errors_2): (Vec<IndexForecast>, Vec<String>) = stream::iter(forecasts)
         .map::<eyre::Result<ForecastAccumulator>, _>(eyre::Result::Ok)
         .and_then(|forecast_acc| async {
             tracing::debug!("forecast_acc.files {:?}", forecast_acc.files);
@@ -213,10 +213,17 @@ pub async fn handler(
                 forecast,
             })
         })
-        .try_collect()
-        .await
-        .wrap_err("Error converting accumulated forecast")
-        .map_err(map_eyre_error)?;
+        .map_err(|error| error.wrap_err("Error converting accumulated forecast"))
+        .fold((Vec::new(), Vec::new()), |mut acc, result| async move {
+            match result {
+                Ok(ok) => acc.0.push(ok),
+                Err(error) => acc.1.push(error.to_string()),
+            }
+            acc
+        })
+        .await;
+
+    errors.extend(errors_2.into_iter());
 
     forecasts.sort_by(|a, b| b.details.time.cmp(&a.details.time));
 

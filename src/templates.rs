@@ -317,7 +317,12 @@ pub async fn middleware(
         tracing::debug!("translations: {translations:?}");
 
         if translations.len().unwrap_or(0) == 0 {
-            return Ok(Value::default());
+            return Err(minijinja::Error::new(
+                minijinja::ErrorKind::MissingArgument,
+                format!(
+                    "No translations are provided in the translations argument: {translations:?}"
+                ),
+            ));
         }
 
         let selected_languages = fluent_langneg::negotiate_languages(

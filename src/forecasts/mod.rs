@@ -507,7 +507,9 @@ pub async fn get_forecast_data(
                         &forecast_file_bytes,
                         &*FORECAST_SCHEMA,
                     )
-                    .context("Error parsing forecast spreadsheet")?;
+                    .with_context(|| {
+                        format!("Error parsing forecast spreadsheet: {file_metadata:?}")
+                    })?;
 
                 (
                     forecast_file_bytes,
@@ -565,7 +567,9 @@ pub async fn get_forecast_data(
                     &forecast_file.file_blob,
                     &*FORECAST_SCHEMA,
                 )
-                .context("Error parsing forecast spreadsheet")?;
+                .with_context(|| {
+                    format!("Error parsing forecast spreadsheet: {file_metadata:?}")
+                })?;
 
             tracing::debug!("Updating cached parsed forecast and schema version");
 
