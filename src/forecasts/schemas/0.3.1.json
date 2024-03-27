@@ -11,7 +11,8 @@
   "area": {
     "position": "Form!B3",
     "map": {
-      "Gudauri": "gudauri"
+      "Gudauri": "gudauri",
+      "Bansko": "bansko"
     },
     "elevation_band_boundaries": {
       "position": "Terms!F89",
@@ -21,6 +22,9 @@
   "area_definitions": {
     "gudauri": {
       "time_zone": "Asia/Tbilisi"
+    },
+    "bansko": {
+      "time_zone": "Europe/Sofia"
     }
   },
   "forecaster": {
