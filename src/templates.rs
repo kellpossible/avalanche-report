@@ -314,6 +314,12 @@ pub async fn middleware(
 
         let requested_languages = i18n_negotiate_translation.current_languages();
 
+        tracing::debug!("translations: {translations:?}");
+
+        if translations.len().unwrap_or(0) == 0 {
+            return Ok(Value::default());
+        }
+
         let selected_languages = fluent_langneg::negotiate_languages(
             &requested_languages,
             &available_languages,
@@ -321,10 +327,15 @@ pub async fn middleware(
             fluent_langneg::NegotiationStrategy::Filtering,
         );
 
-        let selected_language = selected_languages
-            .first()
-            .expect("Expected at least one language to be present due to default")
-            .to_string();
+        let selected_language = match selected_languages.first() {
+            Some(language) => language.to_string(),
+            None => {
+                return Err(minijinja::Error::new(
+                    minijinja::ErrorKind::InvalidOperation,
+                    "Unexpected error, no language selected",
+                ))
+            }
+        };
         // Return Value because this value is optional.
         translations.get_item(&Value::from(selected_language))
     });

@@ -118,6 +118,7 @@ pub async fn handler(
                 .suggestion("Name file according to the standard format.\n e.g. \"Gudauri_2023-01-24T17:00_LF.en.pdf\"")?;
             match details.forecast.area.as_str() {
                 "Gudauri" => (),
+                "Bansko" => (),
                 unknown => return Err(
                     eyre!(
                         "Unknown forecast area {unknown:?} in filename \
@@ -125,7 +126,7 @@ pub async fn handler(
                     ))
                     .suggestion(
                         "Forecast area name is case sensitive. \
-                        Available forecast areas: Gudauri"
+                        Available forecast areas: Gudauri, Bansko"
                     )
             }
             let formatted_details = FormattedForecastFileDetails::format(details, &i18n);
