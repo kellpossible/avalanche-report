@@ -1231,7 +1231,7 @@ mod tests {
             insta::assert_json_snapshot!(&forecast);
         });
     }
-    
+
     #[test]
     fn test_parse_excel_spreadsheet_bansko() {
         let fixtures = Path::new(CRATE_DIR).join("fixtures");

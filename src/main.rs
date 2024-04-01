@@ -21,6 +21,7 @@ use crate::{
         CurrentWeatherCacheService, CurrentWeatherCacheServiceConfig, CurrentWeatherService,
     },
     database::backup,
+    forecasts::{ForecastSpreadsheetSchema, GUDUAURI_FORECAST_SCHEMA},
     options::Options,
     state::AppState,
     templates::Templates,
@@ -126,8 +127,21 @@ async fn main() -> eyre::Result<()> {
     .wrap_err("Unable to create CurrentWeatherCacheService")?
     .spawn();
 
+    let forecast_spreadsheet_schema: &'static ForecastSpreadsheetSchema =
+        if let Some(schema_path) = &options.forecast_spreadsheet_schema {
+            let schema: ForecastSpreadsheetSchema =
+                serde_json::from_str(&tokio::fs::read_to_string(schema_path).await.wrap_err_with(
+                    || format!("Error reading forecast spreadsheet schema file {schema_path:?}"),
+                )?)
+                .wrap_err("Error parsing forecast spreadsheet schema")?;
+            Box::leak(Box::new(schema))
+        } else {
+            &*GUDUAURI_FORECAST_SCHEMA
+        };
+
     let state = AppState {
         options,
+        forecast_spreadsheet_schema,
         client: client.clone(),
         i18n,
         templates,

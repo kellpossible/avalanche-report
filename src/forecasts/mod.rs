@@ -51,8 +51,10 @@ pub struct ForecastFile {
     pub schema_version: Option<forecast_spreadsheet::Version>,
 }
 
-pub static FORECAST_SCHEMA: Lazy<forecast_spreadsheet::options::Options> =
-    Lazy::new(|| serde_json::from_str(include_str!("./schemas/0.3.1.json")).unwrap());
+pub type ForecastSpreadsheetSchema = forecast_spreadsheet::options::Options;
+
+pub static GUDUAURI_FORECAST_SCHEMA: Lazy<ForecastSpreadsheetSchema> =
+    Lazy::new(|| serde_json::from_str(include_str!("./schemas/gudauri.0.3.1.json")).unwrap());
 
 #[derive(Serialize, PartialEq, Eq, Clone)]
 pub struct ForecastDetails {
@@ -68,11 +70,14 @@ pub struct ForecastFileDetails {
     pub language: Option<LanguageIdentifier>,
 }
 
-pub fn parse_forecast_name(file_name: &str) -> eyre::Result<ForecastFileDetails> {
+pub fn parse_forecast_name(
+    file_name: &str,
+    forecast_schema: &ForecastSpreadsheetSchema,
+) -> eyre::Result<ForecastFileDetails> {
     parse_forecast_name_impl(
         file_name,
-        &FORECAST_SCHEMA.area.map,
-        &FORECAST_SCHEMA.area_definitions,
+        &forecast_schema.area.map,
+        &forecast_schema.area_definitions,
     )
 }
 
@@ -148,6 +153,7 @@ pub async fn handler(
         &templates,
         &i18n,
         &preferences,
+        state.forecast_spreadsheet_schema,
     )
     .await
     .map_err(map_eyre_error)?)
@@ -351,6 +357,7 @@ async fn handler_impl(
     templates: &TemplatesWithContext,
     i18n: &I18nLoader,
     preferences: &UserPreferences,
+    forecast_schema: &ForecastSpreadsheetSchema,
 ) -> eyre::Result<Response> {
     let (requested_json, file_name) = {
         let path = std::path::Path::new(&file_name);
@@ -402,6 +409,7 @@ async fn handler_impl(
         client,
         database,
         &options.google_drive.api_key,
+        forecast_schema,
     )
     .await?
     {
@@ -447,6 +455,7 @@ pub async fn get_forecast_data(
     client: &reqwest::Client,
     database: &Database,
     google_drive_api_key: &SecretString,
+    forecast_schema: &ForecastSpreadsheetSchema,
 ) -> eyre::Result<ForecastData> {
     if matches!(requested, RequestedForecastData::Forecast) {
         if !file_metadata.is_google_sheet() {
@@ -505,7 +514,7 @@ pub async fn get_forecast_data(
                 let forecast: forecast_spreadsheet::Forecast =
                     forecast_spreadsheet::parse_excel_spreadsheet(
                         &forecast_file_bytes,
-                        &*FORECAST_SCHEMA,
+                        forecast_schema,
                     )
                     .with_context(|| {
                         format!("Error parsing forecast spreadsheet: {file_metadata:?}")
@@ -513,7 +522,7 @@ pub async fn get_forecast_data(
 
                 (
                     forecast_file_bytes,
-                    Some((forecast, FORECAST_SCHEMA.schema_version.clone())),
+                    Some((forecast, forecast_schema.schema_version.clone())),
                 )
             }
             RequestedForecastData::File => {
@@ -550,14 +559,14 @@ pub async fn get_forecast_data(
     match requested {
         RequestedForecastData::Forecast => {
             if let Some(forecast) = forecast_file.parsed_forecast {
-                if forecast_file.schema_version == Some(FORECAST_SCHEMA.schema_version) {
+                if forecast_file.schema_version == Some(forecast_schema.schema_version) {
                     tracing::debug!("Re-using parsed forecast");
                     return Ok(ForecastData::Forecast(forecast));
                 } else {
                     tracing::warn!(
                         "Cached forecast schema version {:?} doesn't match current {:?}",
                         forecast_file.schema_version,
-                        FORECAST_SCHEMA.schema_version
+                        forecast_schema.schema_version
                     );
                 }
             }
@@ -565,7 +574,7 @@ pub async fn get_forecast_data(
             let forecast: forecast_spreadsheet::Forecast =
                 forecast_spreadsheet::parse_excel_spreadsheet(
                     &forecast_file.file_blob,
-                    &*FORECAST_SCHEMA,
+                    forecast_schema,
                 )
                 .with_context(|| {
                     format!("Error parsing forecast spreadsheet: {file_metadata:?}")
@@ -574,7 +583,7 @@ pub async fn get_forecast_data(
             tracing::debug!("Updating cached parsed forecast and schema version");
 
             let parsed_forecast = Some(sqlx::types::Json(forecast.clone()));
-            let schema_version = Some(FORECAST_SCHEMA.schema_version.to_string());
+            let schema_version = Some(forecast_schema.schema_version.to_string());
             sqlx::query!(
                 "UPDATE forecast_files SET parsed_forecast=$1, schema_version=$2 WHERE google_drive_id=$3",
                 parsed_forecast,
@@ -595,11 +604,17 @@ mod test {
     use forecast_spreadsheet::{options::AreaDefinition, AreaId};
     use indexmap::IndexMap;
 
+    use crate::forecasts::GUDUAURI_FORECAST_SCHEMA;
+
     use super::{parse_forecast_name, parse_forecast_name_impl};
 
     #[test]
     fn test_parse_forecast_name() {
-        let forecast_details = parse_forecast_name("Gudauri_2023-01-24T17:00_LF.en.pdf").unwrap();
+        let forecast_details = parse_forecast_name(
+            "Gudauri_2023-01-24T17:00_LF.en.pdf",
+            &GUDUAURI_FORECAST_SCHEMA,
+        )
+        .unwrap();
         insta::assert_json_snapshot!(forecast_details, @r###"
         {
           "forecast": {

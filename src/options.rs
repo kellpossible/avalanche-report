@@ -59,6 +59,10 @@ pub struct Options {
     /// See [`Templates`].
     #[serde(default)]
     pub templates: Templates,
+    /// The path to the schema used for parsing spreadsheets into forecasts. Overrides the current default
+    /// Gudauri schema.
+    #[serde(default)]
+    pub forecast_spreadsheet_schema: Option<PathBuf>,
 }
 
 /// Configuration for the HTML templates.

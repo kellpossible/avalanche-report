@@ -112,7 +112,7 @@ pub async fn handler(
         .iter()
         .map(|file| {
             let filename = &file.name;
-            let details: ForecastFileDetails = parse_forecast_name(filename).wrap_err_with(|| {
+            let details: ForecastFileDetails = parse_forecast_name(filename, state.forecast_spreadsheet_schema).wrap_err_with(|| {
                     eyre!("Error parsing forecast details from file {filename:?}")
                 })
                 .suggestion("Name file according to the standard format.\n e.g. \"Gudauri_2023-01-24T17:00_LF.en.pdf\"")?;
@@ -186,6 +186,7 @@ pub async fn handler(
                     &state.client,
                     &database,
                     &state.options.google_drive.api_key,
+                    &state.forecast_spreadsheet_schema,
                 )
                 .await?
                 {
