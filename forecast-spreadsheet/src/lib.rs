@@ -1214,13 +1214,31 @@ mod tests {
     use crate::options::Options;
 
     use super::parse_excel_spreadsheet;
+
     #[test]
-    fn test_parse_excel_spreadsheet() {
+    fn test_parse_excel_spreadsheet_gudauri() {
         let fixtures = Path::new(CRATE_DIR).join("fixtures");
         let spreadsheet_bytes =
             std::fs::read(fixtures.join("forecasts/Gudauri_2023_02_07T19 00_LS.xlsx")).unwrap();
         let options: Options = serde_json::from_str(
-            &std::fs::read_to_string(fixtures.join("options/options.0.3.1.json")).unwrap(),
+            &std::fs::read_to_string(fixtures.join("options/options.gudauri.0.3.1.json")).unwrap(),
+        )
+        .unwrap();
+        let forecast = parse_excel_spreadsheet(&spreadsheet_bytes, &options).unwrap();
+        let mut settings = insta::Settings::clone_current();
+        settings.set_sort_maps(true);
+        settings.bind(|| {
+            insta::assert_json_snapshot!(&forecast);
+        });
+    }
+    
+    #[test]
+    fn test_parse_excel_spreadsheet_bansko() {
+        let fixtures = Path::new(CRATE_DIR).join("fixtures");
+        let spreadsheet_bytes =
+            std::fs::read(fixtures.join("forecasts/Bansko_2024-03-27T08 30_АМ.xlsx")).unwrap();
+        let options: Options = serde_json::from_str(
+            &std::fs::read_to_string(fixtures.join("options/options.bansko.0.3.1.json")).unwrap(),
         )
         .unwrap();
         let forecast = parse_excel_spreadsheet(&spreadsheet_bytes, &options).unwrap();

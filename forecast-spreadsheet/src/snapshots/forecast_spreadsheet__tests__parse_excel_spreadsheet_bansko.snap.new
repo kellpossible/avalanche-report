@@ -1,0 +1,130 @@
+---
+source: forecast-spreadsheet/src/lib.rs
+assertion_line: 1248
+expression: "&forecast"
+---
+{
+  "template_version": {
+    "major": 0,
+    "minor": 3,
+    "patch": 3
+  },
+  "area": "bansko",
+  "forecaster": {
+    "name": "Александър Михайлов",
+    "organisation": "Avalanche Bulgaria"
+  },
+  "time": "2024-03-27T08:30:00+02:00",
+  "recent_observations": {
+    "bg-BG": "Сериозно покачване на температурите в следствие на южния фронт - през нощта снежната покривка не е замръзнала и под 2400 м н.в. е допълнително напоена с вода от валежи от дъжд. Нов сняг има само в алпийския пояс. "
+  },
+  "forecast_changes": {
+    "bg-BG": "южен фронт с валежи на затопляне"
+  },
+  "weather_forecast": {
+    "bg-BG": "Очаква се облачността да се разкъса с напредване на деня, температурите да се покачат още и нулевата изотерма да се качи до 2800 м н.в. "
+  },
+  "valid_for": 86400,
+  "description": {
+    "bg-BG": "Усложнена обстановка в следствие на южния фронт през последното денонощие, дошъл със сериозно покачване на температурите, силен Ю вятър по билата и валежи от дъжд под 2400 м н.в. В алпийския пояс поради високите температури и влажност очакваме да са се формирали снежни дъски от новият сняг, в комбинация с навятия сняг на И-СИ-С-СЗ-З изложения. В преходния пояс - мокри дъски от натежалата снежна покривка. "
+  },
+  "hazard_ratings": {
+    "alpine": {
+      "value": "moderate",
+      "trend": "no-change",
+      "confidence": "high"
+    },
+    "high-alpine": {
+      "value": "considerable",
+      "trend": "no-change",
+      "confidence": "high"
+    },
+    "overall": {
+      "value": "considerable",
+      "trend": "deteriorating",
+      "confidence": "moderate"
+    },
+    "sub-alpine": {
+      "value": "moderate",
+      "trend": "no-change",
+      "confidence": "moderate"
+    }
+  },
+  "avalanche_problems": [
+    {
+      "kind": "wind-slab",
+      "aspect_elevation": {
+        "high-alpine": {
+          "aspects": [
+            "N",
+            "NW",
+            "NE",
+            "W",
+            "E"
+          ]
+        }
+      },
+      "confidence": "moderate",
+      "trend": "no-change",
+      "size": 2,
+      "distribution": "specific",
+      "time_of_day": "all-day",
+      "sensitivity": "stubborn",
+      "description": {
+        "bg-BG": "В алпийския пояс поради високите температури и влажност очакваме да са се формирали снежни дъски от новият сняг, в комбинация с навятия сняг на И-СИ-С-СЗ-З изложения."
+      }
+    },
+    {
+      "kind": "wet-slab",
+      "aspect_elevation": {
+        "alpine": {
+          "aspects": [
+            "NW",
+            "N",
+            "NE",
+            "E",
+            "SE",
+            "S",
+            "SW",
+            "W"
+          ]
+        },
+        "sub-alpine": {
+          "aspects": [
+            "NW",
+            "N",
+            "NE",
+            "E",
+            "SE",
+            "S",
+            "SW",
+            "W"
+          ]
+        }
+      },
+      "confidence": "moderate",
+      "trend": "deteriorating",
+      "size": 2,
+      "distribution": "specific",
+      "time_of_day": "all-day",
+      "sensitivity": "stubborn",
+      "description": {
+        "bg-BG": "Сериозното затопляне и високата влажност, в комбинация с валежите от дъжд са напоили снежната покривка с вода и има вероятност от мокри лавини на стръмни откворени участъци. "
+      }
+    }
+  ],
+  "elevation_bands": {
+    "alpine": {
+      "upper": 2400,
+      "lower": 2000
+    },
+    "high-alpine": {
+      "upper": null,
+      "lower": 2400
+    },
+    "sub-alpine": {
+      "upper": 2000,
+      "lower": null
+    }
+  }
+}

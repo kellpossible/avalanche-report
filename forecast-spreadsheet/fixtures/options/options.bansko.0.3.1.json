@@ -1,0 +1,269 @@
+{
+  "schema_version": "0.3.1",
+  "template_version": "Form!G2",
+  "form_language": {
+    "position": "Form!B2",
+    "language_map": {
+      "English": "en-UK",
+      "Bulgarian": "bg-BG"
+    }
+  },
+  "area": {
+    "position": "Form!B3",
+    "map": {
+      "Bansko": "bansko"
+    },
+    "elevation_band_boundaries": {
+      "position": "Terms!F89",
+      "reverse": true
+    }
+  },
+  "area_definitions": {
+    "bansko": {
+      "time_zone": "Europe/Sofia"
+    }
+  },
+  "forecaster": {
+    "name": "Form!B4",
+    "organisation": "Form!F4"
+  },
+  "time": {
+    "date": "Form!D3",
+    "time": "Form!G3"
+  },
+  "recent_observations": {
+    "root": "Forecast Translation!B5",
+    "translations": {
+      "en-UK": { "position": "A1", "enabled": "F1" },
+      "bg-BG": { "position": "A2", "enabled": "F2" }
+    }
+  },
+  "forecast_changes": {
+    "root": "Forecast Translation!B10",
+    "translations": {
+      "en-UK": { "position": "A1", "enabled": "F1" },
+      "bg-BG": { "position": "A2", "enabled": "F2" }
+    }
+  },
+  "weather_forecast": {
+    "root": "Forecast Translation!B15",
+    "translations": {
+      "en-UK": { "position": "A1", "enabled": "F1" },
+      "bg-BG": { "position": "A2", "enabled": "F2" }
+    }
+  },
+  "valid_for": "Form!A14",
+  "hazard_ratings": {
+    "inputs": {
+      "high-alpine": {
+        "root": "Form!A50",
+        "value": "C1",
+        "trend": "E1",
+        "confidence": "F1"
+      },
+      "alpine": {
+        "root": "Form!A53",
+        "value": "C1",
+        "trend": "E1",
+        "confidence": "F1"
+      },
+      "sub-alpine": {
+        "root": "Form!A56",
+        "value": "C1",
+        "trend": "E1",
+        "confidence": "F1"
+      },
+      "overall": {
+        "root": "Form!A59",
+        "value": "C1",
+        "trend": "E1",
+        "confidence": "F1"
+      }
+    }
+  },
+  "avalanche_problems": [
+    {
+      "root": "Form!A16",
+      "enabled": "A1",
+      "kind": "C2",
+      "sensitivity": "H2",
+      "distribution": "I2",
+      "size": "J2",
+      "time_of_day": "K2",
+      "trend": "L2",
+      "confidence": "M2",
+      "aspect_elevation": {
+        "high-alpine": {
+          "enabled": "F2",
+          "aspects": "G2"
+        },
+        "alpine": {
+          "enabled": "F3",
+          "aspects": "G3"
+        },
+        "sub-alpine": {
+          "enabled": "F4",
+          "aspects": "G4"
+        }
+      },
+      "description": {
+        "root": "Forecast Translation!B20",
+        "translations": {
+          "en-UK": { "position": "A1", "enabled": "F1" },
+          "bg-BG": { "position": "A2", "enabled": "F2" }
+        }
+      }
+    },
+    {
+      "root": "Form!A24",
+      "enabled": "A1",
+      "kind": "C2",
+      "sensitivity": "H2",
+      "distribution": "I2",
+      "size": "J2",
+      "time_of_day": "K2",
+      "trend": "L2",
+      "confidence": "M2",
+      "aspect_elevation": {
+        "high-alpine": {
+          "enabled": "F2",
+          "aspects": "G2"
+        },
+        "alpine": {
+          "enabled": "F3",
+          "aspects": "G3"
+        },
+        "sub-alpine": {
+          "enabled": "F4",
+          "aspects": "G4"
+        }
+      },
+      "description": {
+        "root": "Forecast Translation!B25",
+        "translations": {
+          "en-UK": { "position": "A1", "enabled": "F1" },
+          "bg-BG": { "position": "A2", "enabled": "F2" }
+        }
+      }
+    },
+    {
+      "root": "Form!A32",
+      "enabled": "A1",
+      "kind": "C2",
+      "sensitivity": "H2",
+      "distribution": "I2",
+      "size": "J2",
+      "time_of_day": "K2",
+      "trend": "L2",
+      "confidence": "M2",
+      "aspect_elevation": {
+        "high-alpine": {
+          "enabled": "F2",
+          "aspects": "G2"
+        },
+        "alpine": {
+          "enabled": "F3",
+          "aspects": "G3"
+        },
+        "sub-alpine": {
+          "enabled": "F4",
+          "aspects": "G4"
+        }
+      },
+      "description": {
+        "root": "Forecast Translation!B30",
+        "translations": {
+          "en-UK": { "position": "A1", "enabled": "F1" },
+          "bg-BG": { "position": "A2", "enabled": "F2" }
+        }
+      }
+    },
+    {
+      "root": "Form!A40",
+      "enabled": "A1",
+      "kind": "C2",
+      "sensitivity": "H2",
+      "distribution": "I2",
+      "size": "J2",
+      "time_of_day": "K2",
+      "trend": "L2",
+      "confidence": "M2",
+      "aspect_elevation": {
+        "high-alpine": {
+          "enabled": "F2",
+          "aspects": "G2"
+        },
+        "alpine": {
+          "enabled": "F3",
+          "aspects": "G3"
+        },
+        "sub-alpine": {
+          "enabled": "F4",
+          "aspects": "G4"
+        }
+      },
+      "description": {
+        "root": "Forecast Translation!B35",
+        "translations": {
+          "en-UK": { "position": "A1", "enabled": "F1" },
+          "bg-BG": { "position": "A2", "enabled": "F2" }
+        }
+      }
+    }
+  ],
+  "elevation_bands": ["sub-alpine", "alpine", "high-alpine"],
+  "description": {
+    "root": "Forecast Translation!B40",
+    "translations": {
+      "en-UK": { "position": "A1", "enabled": "F1" },
+      "bg-BG": { "position": "A2", "enabled": "F2" }
+    }
+  },
+  "terms": {
+    "hazard_rating": {
+      "Low 1": "low",
+      "Moderate 2": "moderate",
+      "Considerable 3": "considerable",
+      "High 4": "high",
+      "Extreme 5": "extreme"
+    },
+    "confidence": {
+      "Low": "low",
+      "Moderate": "moderate",
+      "High": "high"
+    },
+    "trend": {
+      "Improving": "improving",
+      "No change": "no-change",
+      "Deteriorating": "deteriorating"
+    },
+    "time_of_day": {
+      "All day": "all-day",
+      "Afternoon": "afternoon",
+      "Morning": "morning"
+    },
+    "sensitivity": {
+      "Unreactive": "unreactive",
+      "Stubborn": "stubborn",
+      "Reactive": "reactive",
+      "Touchy": "touchy"
+    },
+    "distribution": {
+      "Isolated": "isolated",
+      "Specific": "specific",
+      "Widespread": "widespread"
+    },
+    "avalanche_problem_kind": {
+      "Loose Dry": "loose-dry",
+      "Loose Wet": "loose-wet",
+      "Storm Slab": "storm-slab",
+      "Wind Slab": "wind-slab",
+      "Wet Slab": "wet-slab",
+      "Persistent Slab": "persistent-slab",
+      "Deep Slab": "deep-slab",
+      "Cornice": "cornice",
+      "Glide": "glide"
+    }
+  }
+}
+
