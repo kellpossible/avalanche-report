@@ -149,7 +149,7 @@ pub fn order_languages<T>(
     language_order: &[unic_langid::LanguageIdentifier],
     eq: impl Fn(&T, &unic_langid::LanguageIdentifier) -> bool,
 ) -> Vec<T> {
-    let mut ordered = Vec::new();
+    let mut ordered = Vec::with_capacity(unordered.len());
     for l in language_order {
         if let Some(i) = unordered.iter().position(|t| eq(t, l)) {
             ordered.push(unordered.remove(i));
