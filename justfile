@@ -21,3 +21,9 @@ fmt-templates:
 
 check-templates:
     djlint --lint --profile jinja ./src/templates/
+
+docker-publish:
+    ./docker-publish.sh
+
+docker-build:
+    ./docker-build.sh
