@@ -1,6 +1,5 @@
 ---
 source: forecast-spreadsheet/src/lib.rs
-assertion_line: 1248
 expression: "&forecast"
 ---
 {
