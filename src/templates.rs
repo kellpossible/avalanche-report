@@ -25,7 +25,7 @@ use uuid::Uuid;
 
 use crate::{
     error::map_eyre_error,
-    i18n::{ordered_language_display_names, I18nLoader},
+    i18n::{order_languages, ordered_language_display_names, I18nLoader},
     AppState,
 };
 
@@ -288,6 +288,17 @@ pub async fn middleware(
     );
 
     environment.add_function("translated_string", move |translations: Value| {
+        tracing::debug!("translations: {translations:?}");
+
+        if translations.len().unwrap_or(0) == 0 {
+            return Err(minijinja::Error::new(
+                minijinja::ErrorKind::MissingArgument,
+                format!(
+                    "No translations are provided in the translations argument: {translations:?}"
+                ),
+            ));
+        }
+
         let available_languages: Vec<unic_langid::LanguageIdentifier> = translations
             .try_iter()?
             .map(|key| {
@@ -312,23 +323,22 @@ pub async fn middleware(
             })
             .collect::<Result<_, minijinja::Error>>()?;
 
+        let available_languages = order_languages(
+            available_languages,
+            &state.options.default_language_order,
+            |al, l| al == l,
+        );
+
         let requested_languages = i18n_negotiate_translation.current_languages();
-
-        tracing::debug!("translations: {translations:?}");
-
-        if translations.len().unwrap_or(0) == 0 {
-            return Err(minijinja::Error::new(
-                minijinja::ErrorKind::MissingArgument,
-                format!(
-                    "No translations are provided in the translations argument: {translations:?}"
-                ),
-            ));
-        }
 
         let selected_languages = fluent_langneg::negotiate_languages(
             &requested_languages,
             &available_languages,
-            None,
+            Some(
+                available_languages
+                    .first()
+                    .expect("at least one available language"),
+            ),
             fluent_langneg::NegotiationStrategy::Filtering,
         );
 
