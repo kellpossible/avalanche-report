@@ -7,9 +7,6 @@ no-current-forecast-heading = ამჟამინდელი პროგნ�
 view-full-forecast-button = სრული პროგნოზის ნახვა
 # Text on the index page explaining to check the forecast archive because there is no current forecast.
 check-forecast-archive-below = ამ არეალზე უახლესი ინფორმაციისთვის გთხოვთ, შეამოწმოთ ქვემოთ მოცემული პროგნოზების არქივი
-# Message on the index page
-# TODO: Remove and replace with user configured content in the database.
-see-facebook-page-message = თვალი ადევნეთ ჩვენს [Facebook გვერდზე]({ $url }) დისკუსიებს და განახლებებს
 # Heading for the area that the forecast is about
 forecast-area-heading = პროგნოზის არეა
 # The Gudauri forecast area name
