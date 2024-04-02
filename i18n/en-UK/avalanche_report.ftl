@@ -7,9 +7,6 @@ no-current-forecast-heading = No Current Forecast
 view-full-forecast-button = View full forecast
 # Text on the index page explaining to check the forecast archive because there is no current forecast.
 check-forecast-archive-below = Please check the forecast archive below for the most recent forecast for this area.
-# Message on the index page
-# TODO: Remove and replace with user configured content in the database.
-see-facebook-page-message = See [Our Facebook Page]({$url}) for discussion and updates, and watch this space.
 # Heading for the area that the forecast is about
 forecast-area-heading = Forecast Area
 # The Gudauri forecast area name
