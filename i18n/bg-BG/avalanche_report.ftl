@@ -7,9 +7,6 @@ no-current-forecast-heading = Няма актуална прогноза
 view-full-forecast-button = Виж детайлната прогноза
 # Text on the index page explaining to check the forecast archive because there is no current forecast.
 check-forecast-archive-below = За проверка на последно издадените прогнози за този регион, разгледай архива по-долу.
-# Message on the index page
-# TODO: Remove and replace with user configured content in the database.
-see-facebook-page-message = За подробна информация и дискусии, следи този сайт и [нашата страница във facebook]({ $url }).
 # Heading for the area that the forecast is about
 forecast-area-heading = Зона на опериране
 # The Gudauri forecast area name
