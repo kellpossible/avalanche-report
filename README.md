@@ -2,6 +2,10 @@
 
 A simple self-hosted web server for creating and managing an avalanche forecast for a region, along with accepting public observations.
 
+Current deployments:
+
+* [avalanche.ge](https://avalanche.ge)
+
 Currently it uses a Google Sheet [Avalanche Forecast Template](https://docs.google.com/spreadsheets/d/1vkav8SNr4uv1sOtc6mp2eTDa7nYTj5k852T1rD8F_8Y/edit?usp=sharing) for forecast data entry. Forecasts are placed in a specific google drive folder when they are ready to be published, and are automatically picked up by the server and rendered as HTML to users.
 
 There is a blog post which explains the inception, history and motivations for this project: [Introducing `avalanche-report`](https://lukefrisken.com/code/introducing-avalanche-report/).
