@@ -1,4 +1,4 @@
-# Avalanche Report [![Crowdin](https://badges.crowdin.net/avalanche-report/localized.svg)](https://crowdin.com/project/avalanche-report)
+# Avalanche Report [![Crowdin](https://badges.crowdin.net/avalanche-report/localized.svg)](https://crowdin.com/project/avalanche-report) [![github actions badge](https://github.com/kellpossible/avalanche-report/actions/workflows/rust.yml/badge.svg)](https://github.com/kellpossible/avalanche-report/actions?query=workflow%3ARust+branch%3Amain+)
 
 A simple self-hosted web server for creating and managing an avalanche forecast for a region, along with accepting public observations.
 
