@@ -218,7 +218,7 @@ pub async fn handler(
         .fold((Vec::new(), Vec::new()), |mut acc, result| async move {
             match result {
                 Ok(ok) => acc.0.push(ok),
-                Err(error) => acc.1.push(error.to_string()),
+                Err(error) => acc.1.push(format!("{error:?}")),
             }
             acc
         })

@@ -433,6 +433,31 @@ pub async fn middleware(
             },
         )
     });
+    environment.add_function("limit_line_length", |string: &str, length: usize| {
+        let mut new_string = String::with_capacity(string.len());
+        for line in string.lines() {
+            let mut line = line;
+            if line.chars().count() <= length {
+                new_string.push_str(line);
+                new_string.push('\n');
+                continue;
+            }
+            while line.chars().count() > length {
+                let split_position = line
+                    .char_indices()
+                    .enumerate()
+                    .find_map(|(i, (p, _c))| if i >= length { Some(p) } else { None })
+                    .expect("Expected to find split position");
+                let (before, after) = line.split_at(split_position);
+                new_string.push_str(before);
+                new_string.push('\n');
+                line = after;
+            }
+            new_string.push_str(line);
+            new_string.push('\n');
+        }
+        new_string
+    });
     let uri = request.uri();
     let query_value: Value = uri
         .query()

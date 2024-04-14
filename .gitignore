@@ -3,6 +3,7 @@
 /dist
 /data
 .env.toml
+.env.toml.*
 .env
 
 # Spreadsheet Lock Files
