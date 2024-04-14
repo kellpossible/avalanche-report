@@ -291,12 +291,7 @@ pub async fn middleware(
         tracing::debug!("translations: {translations:?}");
 
         if translations.len().unwrap_or(0) == 0 {
-            return Err(minijinja::Error::new(
-                minijinja::ErrorKind::MissingArgument,
-                format!(
-                    "No translations are provided in the translations argument: {translations:?}"
-                ),
-            ));
+            return Ok(minijinja::Value::from_safe_string(String::new()));
         }
 
         let available_languages: Vec<unic_langid::LanguageIdentifier> = translations
