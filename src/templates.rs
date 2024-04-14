@@ -334,11 +334,12 @@ pub async fn middleware(
         let selected_languages = fluent_langneg::negotiate_languages(
             &requested_languages,
             &available_languages,
-            Some(
-                available_languages
-                    .first()
-                    .expect("at least one available language"),
-            ),
+            Some(available_languages.first().ok_or_else(|| {
+                minijinja::Error::new(
+                    minijinja::ErrorKind::InvalidOperation,
+                    "Unexpected error: expected at least one langauage to be available",
+                )
+            })?),
             fluent_langneg::NegotiationStrategy::Filtering,
         );
 

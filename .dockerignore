@@ -1,3 +1,5 @@
+# See docker-debug-context.sh for a tool to debug this.
+
 **/fixtures
 benchmarks
 data

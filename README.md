@@ -99,7 +99,6 @@ AVALANCHE_REPORT="..."
 
 # Available options
 [AVALANCHE_REPORT]
-
 # (REQUIRED) Hash of the `admin` user password, used to access `/admin/*` routes.
 admin_password_hash="SECRET"
 # The default selected langauge for the page (used when the user has not yet
@@ -115,6 +114,22 @@ listen_address="127.0.0.1:3000"
 # Can be also specified by setting the environment variable `BASE_URL`.
 # Default is `http://{listen_address}/`.
 base_url="https://mywebsite.org/"
+# The default selected langauge for the page (used when the user has not yet set a language
+# or when their browser does not provide an Accept-Language header).
+# Default is ["en-UK"]
+default_language_order=["en-UK", "ka-GE"]
+# Override the default spreadsheet parsing schema, where `area_id` is the id of the forecast area.
+forecast_spreadsheet_schema="forecast_spreadsheet_schema.area_id.0.3.1.json"
+
+# Configuration for the HTML templates.
+[templates]
+# The path to the directory containing overrides for templates.
+directory="templates"
+
+# Configuration for application localization.
+[i18n]
+# The path to the directory containing overrides for localization resources.
+directory="i18n"
 
 # (REQUIRED) Configuration for using Google Drive.
 [AVALANCHE_REPORT.google_drive]
@@ -176,6 +191,14 @@ longitude=44.480
 # Enables the https://meteoblue.com weather map.
 [AVALANCHE_REPORT.weather_maps.Meteoblue]
 location_id="gudauri_georgia_614410"
+
+# Enables displaying data from https://ambientweather.net/ weather station.
+# `kudebi_top` is the id used for the name of the weather station, 
+# in the localization id `weather-station-kudebi_top-label`.
+[AVALANCHE_REPORT.weather_stations.kudebi_top.source.ambient_weather]
+device_mac_address="54:32:04:4B:E5:94"
+api_key="SECRET"
+application_key="SECRET"
 ```
 
 Options can also be specified using the `AVALANCHE_REPORT` environment variable, with a multiline string containing all options specified in TOML format. See the [`fly.toml`](./fly.toml)'s `env.AVALANCHE_REPORT` key for an example of this in a deployment.

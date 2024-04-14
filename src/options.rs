@@ -31,6 +31,8 @@ pub struct Options {
     pub listen_address: SocketAddr,
     /// The default selected langauge for the page (used when the user has not yet set a language
     /// or when their browser does not provide an Accept-Language header).
+    ///
+    /// Default is `["en-UK"]`.
     #[serde(default = "default_default_language_order")]
     pub default_language_order: Vec<unic_langid::LanguageIdentifier>,
     /// See [`Map`].

@@ -114,7 +114,7 @@ pub fn spawn_compaction_task(CompactionConfig { schedule, database }: Compaction
                         .await
                         .wrap_err("Error performing compaction")
                 {
-                    tracing::error!("{error}");
+                    tracing::error!("{error:?}");
                 }
             }
         }

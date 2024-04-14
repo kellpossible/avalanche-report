@@ -39,7 +39,7 @@ COPY --from=planner /avalanche-report/recipe.json recipe.json
 RUN cargo chef cook -p migrations --target x86_64-unknown-linux-musl --release --recipe-path recipe.json
 RUN cargo chef cook --target x86_64-unknown-linux-musl --release --recipe-path recipe.json
 
-COPY ./ .
+COPY . .
 
 RUN just tailwind
 
