@@ -5,6 +5,7 @@ A simple self-hosted web server for creating and managing an avalanche forecast 
 Current deployments:
 
 * [avalanche.ge](https://avalanche.ge)
+* [bansko.avalanche.bg](https://bansko.avalanche.bg)
 
 Currently it uses a Google Sheet [Avalanche Forecast Template](https://docs.google.com/spreadsheets/d/1vkav8SNr4uv1sOtc6mp2eTDa7nYTj5k852T1rD8F_8Y/edit?usp=sharing) for forecast data entry. Forecasts are placed in a specific google drive folder when they are ready to be published, and are automatically picked up by the server and rendered as HTML to users.
 
