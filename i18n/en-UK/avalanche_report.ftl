@@ -11,7 +11,8 @@ check-forecast-archive-below = Please check the forecast archive below for the m
 forecast-area-heading = Forecast Area
 # The Gudauri forecast area name
 forecast-area-gudauri = Gudauri
-gudauri-avalanche-forecast-heading = Gudauri Avalanche Forecast
+# The title used for the index page.
+index-title = Gudauri Avalanche Forecast
 latest-forecast-heading = Latest Forecast
 avalanche-hazard-level-heading = Avalanche Hazard Level
 forecast-archive-heading = Forecast Archive
