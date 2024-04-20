@@ -11,7 +11,8 @@ check-forecast-archive-below = За проверка на последно из�
 forecast-area-heading = Зона на опериране
 # The Gudauri forecast area name
 forecast-area-gudauri = Гудаури
-gudauri-avalanche-forecast-heading = Лавинен бюлетин Гудаури
+# The title used for the index page.
+index-title = Лавинен бюлетин Гудаури
 latest-forecast-heading = Последо издадена прогноза
 avalanche-hazard-level-heading = Степен на лавинна опасност
 forecast-archive-heading = Архив на издадените прогнози
