@@ -44,7 +44,7 @@ expression: "&forecast"
       "confidence": "moderate"
     },
     "sub-alpine": {
-      "value": "moderate",
+      "value": "no-rating",
       "trend": "no-change",
       "confidence": "moderate"
     }

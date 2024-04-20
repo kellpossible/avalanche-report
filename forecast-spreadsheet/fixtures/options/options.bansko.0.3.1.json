@@ -221,6 +221,7 @@
   },
   "terms": {
     "hazard_rating": {
+      "No Rating": "no-rating",
       "Low 1": "low",
       "Moderate 2": "moderate",
       "Considerable 3": "considerable",

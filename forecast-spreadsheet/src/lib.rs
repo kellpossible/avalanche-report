@@ -314,6 +314,7 @@ impl Display for HazardRatingKind {
 #[derive(Copy, Clone, Debug, Deserialize, Serialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "kebab-case")]
 pub enum HazardRatingValue {
+    NoRating = 0,
     Low = 1,
     Moderate = 2,
     Considerable = 3,
