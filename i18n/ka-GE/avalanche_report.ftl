@@ -11,7 +11,8 @@ check-forecast-archive-below = ამ არეალზე უახლეს�
 forecast-area-heading = პროგნოზის არეა
 # The Gudauri forecast area name
 forecast-area-gudauri = გუდაური
-gudauri-avalanche-forecast-heading = გუდაურის ზვავის პროგნოზი
+# The title used for the index page.
+index-title = გუდაურის ზვავის პროგნოზი
 latest-forecast-heading = უახლესი პროგნოზი
 avalanche-hazard-level-heading = ზვავსაშიშროების საფეხური
 forecast-archive-heading = პროგნოზის არქივი
