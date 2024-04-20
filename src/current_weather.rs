@@ -76,7 +76,7 @@ pub struct QueryDeviceDataResponseItem {
     pub yearlyrainin: Option<f64>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct WeatherDataItem {
     #[serde(with = "time::serde::rfc3339")]
     pub time: time::OffsetDateTime,
@@ -311,10 +311,27 @@ impl CurrentWeatherCacheService {
     }
 }
 
-#[derive(Serialize)]
-struct CurrentWeatherContext {
-    weather_stations: HashMap<WeatherStationId, Vec<WeatherDataItem>>,
-    wind_unit: WindUnit,
+#[derive(Serialize, Debug)]
+pub struct CurrentWeatherContext {
+    pub weather_stations: HashMap<WeatherStationId, Vec<WeatherDataItem>>,
+    pub wind_unit: WindUnit,
+}
+
+impl CurrentWeatherContext {
+    pub async fn from_service(
+        service: &CurrentWeatherService,
+        wind_unit: WindUnit,
+    ) -> eyre::Result<Self> {
+        let mut weather_stations = HashMap::new();
+        for id in service.available_weather_stations() {
+            let data = service.current_weather(&id).await?;
+            weather_stations.insert(id, data);
+        }
+        Ok(Self {
+            weather_stations,
+            wind_unit,
+        })
+    }
 }
 
 #[derive(Deserialize, Default, Clone, Debug)]
@@ -328,24 +345,23 @@ pub async fn handler(
     State(service): State<std::sync::Arc<CurrentWeatherService>>,
     Extension(preferences): Extension<UserPreferences>,
     Extension(templates): Extension<TemplatesWithContext>,
-) -> Response {
+) -> axum::response::Result<Response> {
     tracing::debug!("Getting current weather");
-    let mut weather_stations = HashMap::new();
-    for id in service.available_weather_stations() {
-        let data = service.current_weather(&id).await.unwrap();
-        weather_stations.insert(id, data);
-    }
-    let context = CurrentWeatherContext {
-        weather_stations,
-        wind_unit: query
+    let context = CurrentWeatherContext::from_service(
+        &service,
+        query
             .wind_unit
             .or(preferences.wind_unit)
             .unwrap_or_default(),
-    };
-    render(&templates.environment, "current_weather.html", &context)
-        .wrap_err("Error rendering current weather template")
-        .map_err(map_eyre_error)
-        .into_response()
+    )
+    .await
+    .map_err(map_eyre_error)?;
+    Ok(
+        render(&templates.environment, "current_weather.html", &context)
+            .wrap_err("Error rendering current weather template")
+            .map_err(map_eyre_error)
+            .into_response(),
+    )
 }
 
 pub async fn available_weather_stations_handler(

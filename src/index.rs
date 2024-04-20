@@ -16,6 +16,7 @@ use crate::{
     },
     google_drive::{self, ListFileMetadata},
     i18n::{self, I18nLoader},
+    options::{WeatherMaps, WeatherStationId},
     state::AppState,
     templates::{render, TemplatesWithContext},
     user_preferences::{UserPreferences, WindUnit},
@@ -86,11 +87,18 @@ pub struct ForecastAccumulator {
 }
 
 #[derive(Serialize, Debug)]
+struct WeatherContext {
+    wind_unit: WindUnit,
+    weather_maps: WeatherMaps,
+    weather_station_ids: Vec<WeatherStationId>,
+}
+
+#[derive(Serialize, Debug)]
 struct IndexContext {
     current_forecast: Option<IndexForecast>,
     forecasts: Vec<IndexForecast>,
     errors: Vec<String>,
-    wind_unit: WindUnit,
+    weather: WeatherContext,
 }
 
 pub async fn handler(
@@ -241,7 +249,11 @@ pub async fn handler(
         current_forecast,
         forecasts,
         errors,
-        wind_unit: preferences.wind_unit.unwrap_or_default(),
+        weather: WeatherContext {
+            wind_unit: preferences.wind_unit.unwrap_or_default(),
+            weather_station_ids: state.options.weather_stations.keys().cloned().collect(),
+            weather_maps: state.options.weather_maps.clone(),
+        },
     };
     let mut response = render(&templates.environment, "index.html", &index)
         .map_err(map_eyre_error)?

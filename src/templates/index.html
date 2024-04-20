@@ -1,7 +1,7 @@
 {% from "macros/elements.html" import divider %}
 {% from "macros/language_select.html" import language_select %}
 {% from "macros/forecast_intro.html" import forecast_intro %}
-{% from "macros/weather.html" import weather, weather_wind_unit_select %}
+{% from "macros/weather.html" import weather as weather_macro, weather_wind_unit_select %}
 {% extends "base.html" %}
 {% block head %}
     <link rel="stylesheet" href="/dist/uPlot.css">
@@ -55,7 +55,7 @@
         </td>
     </tr>
 {% endmacro %}
-{% set page_title = fl("gudauri-avalanche-forecast-heading") %}
+{% set page_title = fl("index-title") %}
 {% block title %}
     {{ page_title }}
 {% endblock title %}
@@ -69,8 +69,12 @@
                 <p class="text-2xl font-bold text-rose-600">{{ fl("no-forecasts-available-message") }}</p>
             {% else %}
                 <div class="py-5">{{ current_forecast_block(current_forecast=current_forecast) }}</div>
-                {{ divider() }}
-                <div class="py-2">{{ weather(wind_unit, show_wind_unit_select=true) }}</div>
+                {% if weather.weather_station_ids or weather.weather_maps %}
+                    {{ divider() }}
+                    <div class="py-2">
+                        {{ weather_macro(weather.wind_unit, show_wind_unit_select=true, weather_maps=weather.weather_maps) }}
+                    </div>
+                {% endif %}
                 {{ divider() }}
                 <div class="py-5">
                     <h2 class="text-2xl font-bold py-2">{{ fl("about-title") }}</h2>
