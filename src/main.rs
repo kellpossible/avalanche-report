@@ -12,7 +12,7 @@ use eyre::Context;
 use rust_embed::RustEmbed;
 use std::marker::PhantomData;
 use templates::TemplatesWithContext;
-use tower_http::trace::TraceLayer;
+use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing_appender::rolling::Rotation;
 
 use crate::{
@@ -151,7 +151,7 @@ async fn main() -> eyre::Result<()> {
     };
 
     // build our application with a route
-    let app = Router::new()
+    let router = Router::new()
         // All these pages are dynamic and should have the Cache-Control: no-store header set
         // using the cache_control::no_store_middleware to help prevent browsers from caching them
         // and preventing updates during refresh.
@@ -188,8 +188,18 @@ async fn main() -> eyre::Result<()> {
         .nest("/current-weather", current_weather::router())
         .nest("/diagrams", diagrams::router())
         .nest("/forecast-areas", forecast_areas::router())
-        .route_service("/dist/*file", dist_handler.into_service())
-        .route_service("/static/*file", static_handler.into_service())
+        .route_service("/dist/*file", dist_handler.into_service());
+
+    let router = if let Some(override_directory) = &options.static_files.directory {
+        router.nest_service(
+            "/static",
+            ServeDir::new(override_directory).fallback(static_handler.into_service()),
+        )
+    } else {
+        router.route_service("/static/*file", static_handler.into_service())
+    };
+
+    let app = router
         .fallback(not_found_handler)
         .layer(middleware::from_fn_with_state(
             state.clone(),

@@ -45,7 +45,7 @@ humantime = "2.1.0"
 nonzero_ext = { workspace = true }
 http-body = "1.0.0"
 time-tz = { workspace = true }
-tower-http = { version = "0.5.1", features = ["trace", "auth"] }
+tower-http = { version = "0.5.1", features = ["trace", "auth", "fs"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tokio-stream = { version = "0.1.14" }
 thiserror = "1.0.38"

@@ -65,6 +65,16 @@ pub struct Options {
     /// Gudauri schema.
     #[serde(default)]
     pub forecast_spreadsheet_schema: Option<PathBuf>,
+    /// See [`StaticFiles`].
+    #[serde(default)]
+    pub static_files: StaticFiles,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct StaticFiles {
+    /// The path to the directory containing overrides for static files.
+    #[serde(default)]
+    pub directory: Option<PathBuf>,
 }
 
 /// Configuration for the HTML templates.
