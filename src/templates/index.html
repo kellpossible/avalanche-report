@@ -3,10 +3,6 @@
 {% from "macros/forecast_intro.html" import forecast_intro %}
 {% from "macros/weather.html" import weather as weather_macro, weather_wind_unit_select %}
 {% extends "base.html" %}
-{% block head %}
-    <link rel="stylesheet" href="/dist/uPlot.css">
-    <script src="/dist/uPlot.js"></script>
-{% endblock head %}
 {% macro current_forecast_block(current_forecast) %}
     <div class="py-4">
         {% if current_forecast %}
@@ -55,12 +51,16 @@
         </td>
     </tr>
 {% endmacro %}
+{% block head %}
+    <link rel="stylesheet" href="/dist/uPlot.css">
+    <script src="/dist/uPlot.js"></script>
+{% endblock head %}
 {% set page_title = fl("index-title") %}
 {% block title %}
     {{ page_title }}
 {% endblock title %}
 {% block body %}
-    <h1 class="text-5xl font-bold text-center">{{ page_title }}</h1>
+    {% include 'index_html/title.html' %}
     <div class="flex items-center justify-center w-screen">
         <div class="p-2 w-full md:min-w-3xl md:max-w-3xl text-center">
             <div class="pb-2">{{ language_select() }}</div>
