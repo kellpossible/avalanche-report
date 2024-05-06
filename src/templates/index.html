@@ -6,7 +6,7 @@
 {% macro current_forecast_block(current_forecast) %}
     <div class="py-4">
         {% if current_forecast %}
-            <a href="/forecasts/{{ current_forecast.file.file.name | urlencode }}">
+            <a href="{{ current_forecast.file.path }}">
                 <h2 class="text-4xl font-bold text-blue-600">{{ fl("current-forecast-heading") }}</h2>
             </a>
             {% with forecast = current_forecast.forecast %}
@@ -22,7 +22,7 @@
             {% endwith %}
             <div>
                 <a class="text-xl font-bold text-blue-600 hover:text-blue-800"
-                   href="/forecasts/{{ current_forecast.file.file.name | urlencode }}">{{ fl("view-full-forecast-button") }}</a>
+                   href="{{ current_forecast.file.path }}">{{ fl("view-full-forecast-button") }}</a>
             </div>
         {% else %}
             <span class="inline-flex items-baseline">
@@ -37,15 +37,15 @@
 {% macro forecast_archive_block(forecast, emphasize=false) %}
     <tr>
         <td>
-            {% if forecast.forecast %}
-                {% set hazard_rating = forecast.forecast.hazard_ratings.overall.value %}
+            {% if forecast.hazard_ratings.overall %}
+                {% set hazard_rating = forecast.hazard_ratings.overall.value %}
                 <img src="/static/images/icons/hazard-rating/{{ hazard_rating }}.png"
                      class="self-center h-8 mx-1"/>
             {% endif %}
         </td>
         <td>
             <a class="text-xl font-bold text-blue-600 hover:text-blue-800 visited:text-purple-600 {% if emphasize %}text-xl font-bold{% endif %}"
-               href="/forecasts/{{ forecast.file.file.name | urlencode }}">
+               href="{{ forecast.file.path }}">
                 {{ forecast.details.formatted_time }}
             </a>
         </td>

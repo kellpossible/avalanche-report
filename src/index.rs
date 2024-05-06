@@ -1,9 +1,17 @@
-use axum::{extract::State, response::IntoResponse, Extension};
+use std::sync::Arc;
+
+use axum::{
+    extract::State,
+    response::{IntoResponse, Response},
+    Extension, Json,
+};
 use color_eyre::Help;
 use eyre::{bail, eyre, Context, ContextCompat};
+use forecast_spreadsheet::{HazardRating, HazardRatingKind};
 use futures::{stream, StreamExt, TryStreamExt};
-use headers::{CacheControl, HeaderMapExt};
-use i18n_embed::LanguageLoader;
+use headers::{CacheControl, ContentType, HeaderMapExt};
+use i18n_embed::{fluent::FluentLanguageLoader, LanguageLoader};
+use indexmap::IndexMap;
 use serde::Serialize;
 use unic_langid::LanguageIdentifier;
 
@@ -11,8 +19,8 @@ use crate::{
     database::Database,
     error::map_eyre_error,
     forecasts::{
-        get_forecast_data, parse_forecast_name, Forecast, ForecastData, ForecastDetails,
-        ForecastFileDetails, FormattedForecast, RequestedForecastData,
+        get_forecast_data, parse_forecast_name, Forecast, ForecastContext, ForecastData,
+        ForecastDetails, ForecastFileDetails, RequestedForecastData,
     },
     google_drive::{self, ListFileMetadata},
     i18n::{self, I18nLoader},
@@ -32,11 +40,22 @@ pub enum ForecastFileView {
     Download,
 }
 
-#[derive(Clone, Serialize, Debug)]
+#[derive(Clone, Debug)]
 pub struct ForecastFile {
     pub details: FormattedForecastFileDetails,
     pub file: ListFileMetadata,
-    pub view: ForecastFileView,
+}
+
+#[derive(Clone, Serialize, Debug)]
+pub struct ForecastFileContext {
+    path: String,
+}
+
+impl From<ForecastFile> for ForecastFileContext {
+    fn from(value: ForecastFile) -> Self {
+        let path = format!("/forecast/{}", urlencoding::encode(&value.file.name));
+        Self { path }
+    }
 }
 
 #[derive(Clone, Serialize, Debug)]
@@ -58,6 +77,7 @@ impl FormattedForecastFileDetails {
 pub struct FormattedForecastDetails {
     pub area: String,
     pub formatted_time: String,
+    #[serde(with = "time::serde::rfc3339")]
     pub time: time::OffsetDateTime,
     pub forecaster: String,
 }
@@ -75,10 +95,30 @@ impl FormattedForecastDetails {
 }
 
 #[derive(Serialize, Debug, Clone)]
-pub struct IndexForecast {
+pub struct IndexFullForecastContext {
     pub details: FormattedForecastDetails,
-    pub file: ForecastFile,
-    pub forecast: Option<FormattedForecast>,
+    pub file: ForecastFileContext,
+    pub forecast: Option<ForecastContext>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct IndexSummaryForecastContext {
+    pub details: FormattedForecastDetails,
+    pub file: ForecastFileContext,
+    pub hazard_ratings: IndexMap<HazardRatingKind, HazardRating>,
+}
+
+impl From<IndexFullForecastContext> for IndexSummaryForecastContext {
+    fn from(forecast: IndexFullForecastContext) -> Self {
+        Self {
+            details: forecast.details,
+            file: forecast.file,
+            hazard_ratings: forecast
+                .forecast
+                .map(|forecast| forecast.forecast.hazard_ratings)
+                .unwrap_or_default(),
+        }
+    }
 }
 
 pub struct ForecastAccumulator {
@@ -95,8 +135,8 @@ struct WeatherContext {
 
 #[derive(Serialize, Debug)]
 struct IndexContext {
-    current_forecast: Option<IndexForecast>,
-    forecasts: Vec<IndexForecast>,
+    current_forecast: Option<IndexFullForecastContext>,
+    forecasts: Vec<IndexSummaryForecastContext>,
     errors: Vec<String>,
     weather: WeatherContext,
 }
@@ -107,15 +147,56 @@ pub async fn handler(
     Extension(database): Extension<Database>,
     Extension(preferences): Extension<UserPreferences>,
     State(state): State<AppState>,
-) -> axum::response::Result<impl IntoResponse> {
+    request: axum::extract::Request,
+) -> axum::response::Result<Response> {
+    let requested_content_type = request.headers().typed_get::<headers::ContentType>();
+    Ok(handler_impl(
+        requested_content_type,
+        templates,
+        i18n,
+        database,
+        preferences,
+        state,
+    )
+    .await
+    .map_err(map_eyre_error)?)
+}
+
+/// Handler for requests that should always return JSON.
+pub async fn json_handler(
+    Extension(templates): Extension<TemplatesWithContext>,
+    Extension(i18n): Extension<I18nLoader>,
+    Extension(database): Extension<Database>,
+    Extension(preferences): Extension<UserPreferences>,
+    State(state): State<AppState>,
+) -> axum::response::Result<Response> {
+    Ok(handler_impl(
+        Some(ContentType::json()),
+        templates,
+        i18n,
+        database,
+        preferences,
+        state,
+    )
+    .await
+    .map_err(map_eyre_error)?)
+}
+
+async fn handler_impl(
+    requested_content_type: Option<ContentType>,
+    templates: TemplatesWithContext,
+    i18n: Arc<FluentLanguageLoader>,
+    database: Database,
+    preferences: UserPreferences,
+    state: AppState,
+) -> eyre::Result<Response> {
     let file_list = google_drive::list_files(
         &state.options.google_drive.published_folder_id,
         &state.options.google_drive.api_key,
         &state.client,
     )
     .await
-    .wrap_err("Error listing google drive files")
-    .map_err(map_eyre_error)?;
+    .wrap_err("Error listing google drive files")?;
     let (forecasts, mut errors): (Vec<ForecastAccumulator>, Vec<String>) = file_list
         .iter()
         .map(|file| {
@@ -145,7 +226,7 @@ pub async fn handler(
                 "application/vnd.google-apps.spreadsheet" => ForecastFileView::Html,
                 unsupported => bail!("Unsupported mime {unsupported} for file {filename}"),
             };
-            Ok(ForecastFile { details: formatted_details, file: file.clone(), view })
+            Ok(ForecastFile { details: formatted_details, file: file.clone() })
         })
         .fold((Vec::new(), Vec::new()), |mut acc, result: eyre::Result<ForecastFile>| {
             match result {
@@ -164,73 +245,74 @@ pub async fn handler(
             acc
         });
 
-    let (mut forecasts, errors_2): (Vec<IndexForecast>, Vec<String>) = stream::iter(forecasts)
-        .map::<eyre::Result<ForecastAccumulator>, _>(eyre::Result::Ok)
-        .and_then(|forecast_acc| async {
-            tracing::debug!("forecast_acc.files {:?}", forecast_acc.files);
-            let file: ForecastFile = forecast_acc
-                .files
-                .iter()
-                .filter(|file| {
-                    if let Some(language) = &file.details.language {
-                        return language.language == i18n.current_language().language;
-                    }
-                    true
-                })
-                .cloned()
-                .next()
-                .or_else(|| forecast_acc.files.into_iter().next())
-                .wrap_err_with(|| {
-                    format!(
+    let (mut forecasts, errors_2): (Vec<IndexFullForecastContext>, Vec<String>) =
+        stream::iter(forecasts)
+            .map::<eyre::Result<ForecastAccumulator>, _>(eyre::Result::Ok)
+            .and_then(|forecast_acc| async {
+                tracing::debug!("forecast_acc.files {:?}", forecast_acc.files);
+                let file: ForecastFile = forecast_acc
+                    .files
+                    .iter()
+                    .filter(|file| {
+                        if let Some(language) = &file.details.language {
+                            return language.language == i18n.current_language().language;
+                        }
+                        true
+                    })
+                    .cloned()
+                    .next()
+                    .or_else(|| forecast_acc.files.into_iter().next())
+                    .wrap_err_with(|| {
+                        format!(
                         "Expected there to be at least one forecast file for this forecast {:#?}",
                         forecast_acc.details
                     )
-                })?;
+                    })?;
 
-            let forecast = if file.file.is_google_sheet() {
-                match get_forecast_data(
-                    &file.file,
-                    RequestedForecastData::Forecast,
-                    &state.client,
-                    &database,
-                    &state.options.google_drive.api_key,
-                    &state.forecast_spreadsheet_schema,
-                )
-                .await?
-                {
-                    ForecastData::Forecast(forecast) => {
-                        let forecast = Forecast::try_new(forecast)?;
-                        let formatted_forecast: FormattedForecast = FormattedForecast::format(
-                            forecast,
-                            &i18n,
-                            &state.options,
-                            &preferences,
-                        );
-                        Some(formatted_forecast)
+                let forecast = if file.file.is_google_sheet() {
+                    match get_forecast_data(
+                        &file.file,
+                        RequestedForecastData::Forecast,
+                        &state.client,
+                        &database,
+                        &state.options.google_drive.api_key,
+                        &state.forecast_spreadsheet_schema,
+                    )
+                    .await?
+                    {
+                        ForecastData::Forecast(forecast) => {
+                            let forecast = Forecast::try_new(forecast)?;
+                            let formatted_forecast: ForecastContext = ForecastContext::format(
+                                forecast,
+                                &i18n,
+                                &state.options,
+                                &preferences,
+                            );
+                            Some(formatted_forecast)
+                        }
+                        ForecastData::File(_) => {
+                            return Err(eyre::eyre!("Expected ForecastData::Forecast").into())
+                        }
                     }
-                    ForecastData::File(_) => {
-                        return Err(eyre::eyre!("Expected ForecastData::Forecast").into())
-                    }
-                }
-            } else {
-                None
-            };
+                } else {
+                    None
+                };
 
-            eyre::Result::Ok(IndexForecast {
-                details: forecast_acc.details,
-                file,
-                forecast,
+                eyre::Result::Ok(IndexFullForecastContext {
+                    details: forecast_acc.details,
+                    file: file.into(),
+                    forecast,
+                })
             })
-        })
-        .map_err(|error| error.wrap_err("Error converting accumulated forecast"))
-        .fold((Vec::new(), Vec::new()), |mut acc, result| async move {
-            match result {
-                Ok(ok) => acc.0.push(ok),
-                Err(error) => acc.1.push(format!("{error:?}")),
-            }
-            acc
-        })
-        .await;
+            .map_err(|error| error.wrap_err("Error converting accumulated forecast"))
+            .fold((Vec::new(), Vec::new()), |mut acc, result| async move {
+                match result {
+                    Ok(ok) => acc.0.push(ok),
+                    Err(error) => acc.1.push(format!("{error:?}")),
+                }
+                acc
+            })
+            .await;
 
     errors.extend(errors_2.into_iter());
 
@@ -245,6 +327,11 @@ pub async fn handler(
         }
     });
 
+    let forecasts = forecasts
+        .into_iter()
+        .map(IndexSummaryForecastContext::from)
+        .collect();
+
     let index = IndexContext {
         current_forecast,
         forecasts,
@@ -255,11 +342,14 @@ pub async fn handler(
             weather_maps: state.options.weather_maps.clone(),
         },
     };
-    let mut response = render(&templates.environment, "index.html", &index)
-        .map_err(map_eyre_error)?
-        .into_response();
-    response
-        .headers_mut()
-        .typed_insert(CacheControl::new().with_no_store());
-    Ok(response)
+
+    if requested_content_type == Some(ContentType::json()) {
+        Ok(Json(index).into_response())
+    } else {
+        let mut response = render(&templates.environment, "index.html", &index)?.into_response();
+        response
+            .headers_mut()
+            .typed_insert(CacheControl::new().with_no_store());
+        Ok(response)
+    }
 }

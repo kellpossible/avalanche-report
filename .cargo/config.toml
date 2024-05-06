@@ -1,3 +1,8 @@
+# Enable for faster builds during development with mold linker:
+# [target.'cfg(all(target_os = "linux", debug_assertions))']
+# linker = "clang"
+# rustflags = ["-C", "link-arg=--ld-path=/usr/local/bin/mold"]
+
 [env]
 # Enable the sqlite rtree module https://sqlite.org/rtree.html
 LIBSQLITE3_FLAGS = "-DSQLITE_ENABLE_RTREE=1"

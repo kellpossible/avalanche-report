@@ -14,6 +14,7 @@ use forecast_spreadsheet::{
     ElevationBandId, Forecaster, HazardRating, HazardRatingKind, ProblemKind, Sensitivity, Size,
     TimeOfDay, Trend,
 };
+use headers::{ContentType, HeaderMapExt};
 use http::{header::CONTENT_TYPE, HeaderValue, StatusCode};
 use indexmap::IndexMap;
 use once_cell::sync::Lazy;
@@ -23,6 +24,7 @@ use time::{OffsetDateTime, PrimitiveDateTime};
 use time_tz::{Offset, TimeZone};
 use tracing::instrument;
 use unic_langid::LanguageIdentifier;
+use utils::serde::duration_seconds;
 
 use crate::{
     database::Database,
@@ -144,8 +146,11 @@ pub async fn handler(
     Extension(i18n): Extension<I18nLoader>,
     Extension(templates): Extension<TemplatesWithContext>,
     Extension(preferences): Extension<UserPreferences>,
+    request: axum::extract::Request,
 ) -> axum::response::Result<Response> {
+    let requested_content_type = request.headers().typed_get::<headers::ContentType>();
     Ok(handler_impl(
+        requested_content_type,
         file_name,
         &state.options,
         &state.client,
@@ -163,6 +168,7 @@ pub async fn handler(
 pub struct Forecast {
     pub area: AreaId,
     pub forecaster: Forecaster,
+    #[serde(with = "time::serde::rfc3339")]
     pub time: OffsetDateTime,
     #[serde(default)]
     pub recent_observations: HashMap<unic_langid::LanguageIdentifier, String>,
@@ -170,6 +176,7 @@ pub struct Forecast {
     pub forecast_changes: HashMap<unic_langid::LanguageIdentifier, String>,
     #[serde(default)]
     pub weather_forecast: HashMap<unic_langid::LanguageIdentifier, String>,
+    #[serde(with = "duration_seconds")]
     pub valid_for: time::Duration,
     #[serde(default)]
     pub description: HashMap<unic_langid::LanguageIdentifier, String>,
@@ -232,7 +239,7 @@ impl From<forecast_spreadsheet::ElevationRange> for ElevationRange {
 /// An extension of [Forecast] with values that can only be calculated on the Rust side, perhaps
 /// will be moved to template functions in the future.
 #[derive(Debug, Serialize, Clone)]
-pub struct FormattedForecast {
+pub struct ForecastContext {
     #[serde(flatten)]
     pub forecast: Forecast,
     pub formatted_time: String,
@@ -242,7 +249,7 @@ pub struct FormattedForecast {
     pub external_weather: crate::weather::Context,
 }
 
-impl FormattedForecast {
+impl ForecastContext {
     pub fn format(
         forecast: Forecast,
         i18n: &I18nLoader,
@@ -350,6 +357,7 @@ impl TryFrom<forecast_spreadsheet::AvalancheProblem> for AvalancheProblem {
 
 #[instrument(level = "error", skip_all)]
 async fn handler_impl(
+    requested_content_type: Option<ContentType>,
     file_name: String,
     options: &crate::Options,
     client: &reqwest::Client,
@@ -371,7 +379,12 @@ async fn handler_impl(
                     .to_owned(),
             )
         } else {
-            (false, file_name)
+            (
+                requested_content_type
+                    .map(|content_type| content_type == ContentType::json())
+                    .unwrap_or(false),
+                file_name,
+            )
         }
     };
 
@@ -418,7 +431,7 @@ async fn handler_impl(
                 let forecast = Forecast::try_new(forecast)
                     .wrap_err("Error converting forecast into template data")?;
                 let formatted_forecast =
-                    FormattedForecast::format(forecast, &i18n, options, preferences);
+                    ForecastContext::format(forecast, &i18n, options, preferences);
                 render(&templates.environment, "forecast.html", &formatted_forecast)
             }
             ForecastFileView::Json => Ok(Json(forecast).into_response()),

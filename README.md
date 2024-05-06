@@ -53,7 +53,7 @@ The following command will build the software in release mode:
 ```bash
 npm install && \
 npx tailwindcss --input src/style.css --output dist/style.css && \
-cargo run -p migrations && \
+cargo run --release -p migrations && \
 DATABASE_URL="sqlite://data/db.sqlite3" cargo build --release
 ```
 
