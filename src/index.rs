@@ -53,7 +53,7 @@ pub struct ForecastFileContext {
 
 impl From<ForecastFile> for ForecastFileContext {
     fn from(value: ForecastFile) -> Self {
-        let path = format!("/forecast/{}", urlencoding::encode(&value.file.name));
+        let path = format!("/forecasts/{}", urlencoding::encode(&value.file.name));
         Self { path }
     }
 }
