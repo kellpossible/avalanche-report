@@ -5,6 +5,7 @@ use axum::{
     response::{IntoResponse, Response},
     Extension, Json,
 };
+use axum_extra::routing::TypedPath;
 use color_eyre::Help;
 use eyre::{bail, eyre, Context, ContextCompat};
 use forecast_spreadsheet::{HazardRating, HazardRatingKind};
@@ -20,7 +21,7 @@ use crate::{
     error::map_eyre_error,
     forecasts::{
         get_forecast_data, parse_forecast_name, Forecast, ForecastContext, ForecastData,
-        ForecastDetails, ForecastFileDetails, RequestedForecastData,
+        ForecastDetails, ForecastFileDetails, ForecastsFilePath, RequestedForecastData,
     },
     google_drive::{self, ListFileMetadata},
     i18n::{self, I18nLoader},
@@ -53,7 +54,11 @@ pub struct ForecastFileContext {
 
 impl From<ForecastFile> for ForecastFileContext {
     fn from(value: ForecastFile) -> Self {
-        let path = format!("/forecasts/{}", urlencoding::encode(&value.file.name));
+        let path = ForecastsFilePath {
+            file_name: value.file.name,
+        }
+        .to_uri()
+        .to_string();
         Self { path }
     }
 }

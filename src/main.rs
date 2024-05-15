@@ -6,6 +6,7 @@ use axum::{
     routing::{get, post},
     Extension, Router,
 };
+use axum_extra::routing::RouterExt;
 use bytes::Bytes;
 use error::map_std_error;
 use eyre::Context;
@@ -173,7 +174,7 @@ async fn main() -> eyre::Result<()> {
                     Router::new()
                         .route("/", get(index::handler))
                         .route("/json", get(index::json_handler))
-                        .route("/forecasts/:file_name", get(forecasts::handler))
+                        .typed_get(forecasts::handler)
                         .nest("/observations", observations::router())
                         .layer(middleware::from_fn(disclaimer::middleware)),
                 )

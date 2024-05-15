@@ -8,6 +8,7 @@ use axum::{
     response::{IntoResponse, Response},
     Extension, Json,
 };
+use axum_extra::routing::TypedPath;
 use eyre::{Context, ContextCompat};
 use forecast_spreadsheet::{
     options::AreaDefinition, AreaId, Aspect, AspectElevation, Confidence, Distribution,
@@ -19,7 +20,7 @@ use http::{header::CONTENT_TYPE, HeaderValue, StatusCode};
 use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use secrecy::SecretString;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use time::{OffsetDateTime, PrimitiveDateTime};
 use time_tz::{Offset, TimeZone};
 use tracing::instrument;
@@ -139,8 +140,14 @@ fn parse_forecast_name_impl(
     })
 }
 
+#[derive(Deserialize, TypedPath)]
+#[typed_path("/forecasts/:file_name")]
+pub struct ForecastsFilePath {
+    pub file_name: String,
+}
+
 pub async fn handler(
-    Path(file_name): Path<String>,
+    ForecastsFilePath { file_name }: ForecastsFilePath,
     State(state): State<AppState>,
     Extension(database): Extension<Database>,
     Extension(i18n): Extension<I18nLoader>,

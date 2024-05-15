@@ -14,7 +14,7 @@ utils = { path = "./utils" }
 average = "0.14.1"
 axum = { version = "0.7.4", features = ["macros", "multipart"] }
 headers = "0.4.0"
-axum-extra = { version = "0.9.2", default-features = false, features = ["cookie"] }
+axum-extra = { version = "0.9.2", default-features = false, features = ["cookie", "typed-routing"] }
 base64 = { workspace = true }
 bcrypt = "0.15.0"
 ansi-to-html = "0.2.1"
