@@ -129,7 +129,10 @@ pub fn spawn_compaction_task(CompactionConfig { schedule, database }: Compaction
 pub async fn compact(database: &Database, window: Duration, keep: Duration) -> eyre::Result<()> {
     tracing::info!("Compacting analytics...");
 
-    let min = if let Some((min, _max)) = get_time_bounds(database).await? {
+    let min = if let Some((min, _max)) = get_time_bounds(database)
+        .await
+        .wrap_err("Error getting time bounds")?
+    {
         min
     } else {
         // No analytics
@@ -138,10 +141,10 @@ pub async fn compact(database: &Database, window: Duration, keep: Duration) -> e
 
     let last = match sqlx::query_as!(
         Analytics,
-        r#"SELECT id as "id!: _", uri, visits as "visits!: _", time as "time!: _" FROM analytics ORDER BY analytics.time DESC LIMIT 1"#,
+        r#"SELECT id as "id!: _", uri, visits as "visits!: _", time as "time: types::Time" FROM analytics ORDER BY analytics.time DESC LIMIT 1"#,
     )
     .fetch_optional(database)
-    .await?
+    .await.wrap_err("Error fetching last analytics row")?
     {
         Some(last) => last,
         None => {
@@ -161,20 +164,24 @@ pub async fn compact(database: &Database, window: Duration, keep: Duration) -> e
         let to_time = types::Time::from(to_time);
         tracing::debug!(
             "{} .. {}",
-            from_time.format(&Rfc3339)?,
-            to_time.format(&Rfc3339)?
+            from_time
+                .format(&Rfc3339)
+                .wrap_err("Error formatting from_time")?,
+            to_time
+                .format(&Rfc3339)
+                .wrap_err("Error formatting to_time")?
         );
 
         let map: HashMap<String, Vec<Analytics>> = sqlx::query_as!(
             Analytics,
-            r#"SELECT id as "id!: _", uri, visits as "visits!: _", time as "time!: _" from analytics WHERE analytics.time >= $1 AND analytics.time < $2 ORDER BY analytics.time ASC"#,
+            r#"SELECT id as "id!: _", uri, visits as "visits!: _", time as "time: types::Time" from analytics WHERE analytics.time >= $1 AND analytics.time < $2 ORDER BY analytics.time ASC"#,
             from_time,
             to_time
         ).fetch(database).try_fold(HashMap::<String, Vec<Analytics>>::new(), |mut acc, item| async move {
             let entries = acc.entry(item.uri.clone()).or_insert_with(|| Vec::new());
             entries.push(item);
             Ok(acc)
-        }).await?;
+        }).await.wrap_err("Error fetching range of analytics rows")?;
 
         let operations = compact_operations(map)?;
         tracing::debug!("{} operations", operations.len());
@@ -205,7 +212,10 @@ pub async fn compact(database: &Database, window: Duration, keep: Duration) -> e
                 query = query.bind(id);
             }
 
-            query.execute(database).await?;
+            query
+                .execute(database)
+                .await
+                .wrap_err("Error deleting analytics rows")?;
 
             sqlx::query!(
                 "INSERT INTO analytics VALUES ($1, $2, $3, $4);",
@@ -215,7 +225,8 @@ pub async fn compact(database: &Database, window: Duration, keep: Duration) -> e
                 new.time
             )
             .execute(database)
-            .await?;
+            .await
+            .wrap_err("Error inserting analytics rows")?;
         }
         if *to_time >= end_time {
             break;
@@ -243,7 +254,8 @@ async fn process_analytics_events(
             time,
         )
         .execute(database)
-        .await?;
+        .await
+        .wrap_err("Error inserting analytics row")?;
     }
 
     Ok(())
