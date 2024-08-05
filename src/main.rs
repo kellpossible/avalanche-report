@@ -173,11 +173,11 @@ async fn main() -> eyre::Result<()> {
                     "/",
                     Router::new()
                         .route("/", get(index::handler))
-                        .route("/json", get(index::json_handler))
                         .typed_get(forecasts::handler)
                         .nest("/observations", observations::router())
                         .layer(middleware::from_fn(disclaimer::middleware)),
                 )
+                .route("/json", get(index::json_handler))
                 .nest(
                     "/admin",
                     admin::router(admin::Config {

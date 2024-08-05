@@ -7,10 +7,10 @@ use axum::{
 };
 use axum_extra::routing::TypedPath;
 use color_eyre::Help;
-use eyre::{bail, eyre, Context, ContextCompat};
+use eyre::{eyre, Context, ContextCompat};
 use forecast_spreadsheet::{HazardRating, HazardRatingKind};
 use futures::{stream, StreamExt, TryStreamExt};
-use headers::{CacheControl, ContentType, HeaderMapExt};
+use headers::{CacheControl, HeaderMapExt};
 use i18n_embed::{fluent::FluentLanguageLoader, LanguageLoader};
 use indexmap::IndexMap;
 use serde::Serialize;
@@ -152,49 +152,56 @@ pub async fn handler(
     Extension(database): Extension<Database>,
     Extension(preferences): Extension<UserPreferences>,
     State(state): State<AppState>,
-    request: axum::extract::Request,
 ) -> axum::response::Result<Response> {
-    let requested_content_type = request.headers().typed_get::<headers::ContentType>();
-    Ok(handler_impl(
-        requested_content_type,
-        templates,
-        i18n,
-        database,
-        preferences,
-        state,
-    )
-    .await
-    .map_err(map_eyre_error)?)
-}
-
-/// Handler for requests that should always return JSON.
-pub async fn json_handler(
-    Extension(templates): Extension<TemplatesWithContext>,
-    Extension(i18n): Extension<I18nLoader>,
-    Extension(database): Extension<Database>,
-    Extension(preferences): Extension<UserPreferences>,
-    State(state): State<AppState>,
-) -> axum::response::Result<Response> {
-    Ok(handler_impl(
-        Some(ContentType::json()),
-        templates,
-        i18n,
-        database,
-        preferences,
-        state,
-    )
-    .await
-    .map_err(map_eyre_error)?)
+    Ok(handler_impl(templates, i18n, database, preferences, state)
+        .await
+        .map_err(map_eyre_error)?)
 }
 
 async fn handler_impl(
-    requested_content_type: Option<ContentType>,
     templates: TemplatesWithContext,
     i18n: Arc<FluentLanguageLoader>,
     database: Database,
     preferences: UserPreferences,
     state: AppState,
 ) -> eyre::Result<Response> {
+    let index = index_context(i18n, database, preferences, state).await?;
+    let mut response = render(&templates.environment, "index.html", &index)?.into_response();
+    response
+        .headers_mut()
+        .typed_insert(CacheControl::new().with_no_store());
+    Ok(response)
+}
+
+/// Handler for requests that should always return JSON.
+pub async fn json_handler(
+    Extension(i18n): Extension<I18nLoader>,
+    Extension(database): Extension<Database>,
+    Extension(preferences): Extension<UserPreferences>,
+    State(state): State<AppState>,
+) -> axum::response::Result<Response> {
+    Ok(json_handler_impl(i18n, database, preferences, state)
+        .await
+        .map_err(map_eyre_error)?)
+}
+
+/// Handler for requests that should always return JSON.
+pub async fn json_handler_impl(
+    i18n: Arc<FluentLanguageLoader>,
+    database: Database,
+    preferences: UserPreferences,
+    state: AppState,
+) -> eyre::Result<Response> {
+    let index = index_context(i18n, database, preferences, state).await?;
+    Ok(Json(index).into_response())
+}
+
+async fn index_context(
+    i18n: Arc<FluentLanguageLoader>,
+    database: Database,
+    preferences: UserPreferences,
+    state: AppState,
+) -> eyre::Result<IndexContext> {
     let file_list = google_drive::list_files(
         &state.options.google_drive.published_folder_id,
         &state.options.google_drive.api_key,
@@ -224,13 +231,6 @@ async fn handler_impl(
                     )
             }
             let formatted_details = FormattedForecastFileDetails::format(details, &i18n);
-
-            let filename = &file.name;
-            let view = match file.mime_type.as_str() {
-                "application/pdf" => ForecastFileView::Download,
-                "application/vnd.google-apps.spreadsheet" => ForecastFileView::Html,
-                unsupported => bail!("Unsupported mime {unsupported} for file {filename}"),
-            };
             Ok(ForecastFile { details: formatted_details, file: file.clone() })
         })
         .fold((Vec::new(), Vec::new()), |mut acc, result: eyre::Result<ForecastFile>| {
@@ -337,7 +337,7 @@ async fn handler_impl(
         .map(IndexSummaryForecastContext::from)
         .collect();
 
-    let index = IndexContext {
+    Ok(IndexContext {
         current_forecast,
         forecasts,
         errors,
@@ -346,15 +346,5 @@ async fn handler_impl(
             weather_station_ids: state.options.weather_stations.keys().cloned().collect(),
             weather_maps: state.options.weather_maps.clone(),
         },
-    };
-
-    if requested_content_type == Some(ContentType::json()) {
-        Ok(Json(index).into_response())
-    } else {
-        let mut response = render(&templates.environment, "index.html", &index)?.into_response();
-        response
-            .headers_mut()
-            .typed_insert(CacheControl::new().with_no_store());
-        Ok(response)
-    }
+    })
 }
