@@ -289,3 +289,5 @@ atmospheric-humidity-label = Humidity
 weather-station-kudebi_top-label = Kudebi Weather Station (3000 m)
 # Label for the weather station located in lower Gudauri at elevation of 1950 m
 weather-station-lower_gudauri-label = Lower Gudauri Station (1950 m)
+# Label for the weather station located at AltiHut at elevation of 3000 m
+weather-station-altihut-label = AltiHut Weather Station (3000 m)
