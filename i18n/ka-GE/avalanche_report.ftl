@@ -287,3 +287,5 @@ atmospheric-humidity-label = ნესტიანობა
 weather-station-kudebi_top-label = კუდების ამინდის სადგური (3000 მ)
 # Label for the weather station located in lower Gudauri at elevation of 1950 m
 weather-station-lower_gudauri-label = ქვემო გუდაურის სადგური (1950 მ)
+# Label for the weather station located at AltiHut at elevation of 3000 m
+weather-station-altihut-label = ალტიჰატი (3000 მ)
