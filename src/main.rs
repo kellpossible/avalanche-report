@@ -14,7 +14,6 @@ use rust_embed::RustEmbed;
 use std::marker::PhantomData;
 use templates::TemplatesWithContext;
 use tower_http::{services::ServeDir, trace::TraceLayer};
-use tracing_appender::rolling::Rotation;
 
 use crate::{
     analytics::CompactionConfig,
@@ -69,7 +68,7 @@ async fn main() -> eyre::Result<()> {
             default_filter: "warn,avalanche_report=info".to_owned(),
             page_title: "avalanche-report".to_owned(),
             data_dir: options.data_dir.clone(),
-            log_rotation: Rotation::DAILY,
+            log_rotation: axum_reporting::Rotation::Daily,
             log_file_name: "avalanche-report".to_owned(),
         }));
 
@@ -156,8 +155,7 @@ async fn main() -> eyre::Result<()> {
         // All these pages are dynamic and should have the Cache-Control: no-store header set
         // using the cache_control::no_store_middleware to help prevent browsers from caching them
         // and preventing updates during refresh.
-        .nest(
-            "/",
+        .merge(
             Router::new()
                 // Using a GET request because this supports a redirect.
                 .route("/version", get(version::handler))
@@ -169,8 +167,7 @@ async fn main() -> eyre::Result<()> {
                 .route("/weather", get(weather::handler))
                 // These routes expose public forecast information and thus have the disclaimer middleware
                 // applied to them.
-                .nest(
-                    "/",
+                .merge(
                     Router::new()
                         .route("/", get(index::handler))
                         .typed_get(forecasts::handler)
@@ -190,7 +187,7 @@ async fn main() -> eyre::Result<()> {
         .nest("/current-weather", current_weather::router())
         .nest("/diagrams", diagrams::router())
         .nest("/forecast-areas", forecast_areas::router())
-        .route_service("/dist/*file", dist_handler.into_service());
+        .route_service("/dist/{*file}", dist_handler.into_service());
 
     let router = if let Some(override_directory) = &options.static_files.directory {
         router.nest_service(
@@ -198,7 +195,7 @@ async fn main() -> eyre::Result<()> {
             ServeDir::new(override_directory).fallback(static_handler.into_service()),
         )
     } else {
-        router.route_service("/static/*file", static_handler.into_service())
+        router.route_service("/static/{*file}", static_handler.into_service())
     };
 
     let app = router

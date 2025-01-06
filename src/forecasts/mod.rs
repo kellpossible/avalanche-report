@@ -4,7 +4,7 @@ use std::{
 };
 
 use axum::{
-    extract::{Path, State},
+    extract::State,
     response::{IntoResponse, Response},
     Extension, Json,
 };
@@ -141,7 +141,7 @@ fn parse_forecast_name_impl(
 }
 
 #[derive(Deserialize, TypedPath)]
-#[typed_path("/forecasts/:file_name")]
+#[typed_path("/forecasts/{file_name}")]
 pub struct ForecastsFilePath {
     pub file_name: String,
 }

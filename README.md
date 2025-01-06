@@ -59,6 +59,12 @@ DATABASE_URL="sqlite://data/db.sqlite3" cargo build --release
 
 The final output is a self-contained static binary at `target/release/avalanche-report` (or `target\release\avalanche-report.exe` on Windows), which you can then take and run. All the required assets are embedded into the binary, this is all you need to run the server.
 
+The following can be added to your `.env` file to make it easier to run various cargo commands without the DATABASE_URL environment variable:
+
+```bash
+DATABASE_URL="sqlite://data/db.sqlite3"
+```
+
 For convenience, there is also a docker container [Dockerfile](./Dockerfile) based on [`alpine` linux](https://www.alpinelinux.org/) which you can build with:
 
 ```bash

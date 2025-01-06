@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-show-image = "0.13.1"
+show-image = "0.14.0"
 plotly = { version = "0.8.4", features = ["plotly_ndarray"] }
 geo = { path = "../" }
 eyre = { workspace = true }

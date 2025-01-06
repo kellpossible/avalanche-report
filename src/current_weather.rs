@@ -168,7 +168,7 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(handler))
         .route(
-            "/weather-station/:weather_station_id",
+            "/weather-station/{weather_station_id}",
             get(weather_station_handler),
         )
         .route(

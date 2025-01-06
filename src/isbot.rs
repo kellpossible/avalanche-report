@@ -40,7 +40,10 @@ pub async fn middleware(
 impl<S> FromRequestParts<S> for IsBot {
     type Rejection = (StatusCode, &'static str);
 
-    async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
-        Ok(IsBot(is_bot(&parts.headers)))
+    fn from_request_parts(
+        parts: &mut Parts,
+        _state: &S,
+    ) -> impl futures::Future<Output = Result<Self, Self::Rejection>> + Send {
+        futures::future::ready(Ok(IsBot(is_bot(&parts.headers))))
     }
 }

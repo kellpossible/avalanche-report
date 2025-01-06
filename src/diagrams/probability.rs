@@ -23,7 +23,6 @@ impl From<Query> for ProbabilityBar {
 const SVG_TEMPLATE: &str = include_str!("./probability.svg");
 const FILLED_COLOUR: &str = "#276fdcff";
 const TRANSPARENT_COLOUR: &str = "#00000000";
-const DISABLED_COLOUR: &str = "#808080ff";
 static PATH_ID_RE: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"<rect\s*style="(?P<style>fill:(?P<fill>.*);)([^/])*id="(?P<id>.+)""#)
         .expect("Unable to compile svg path id regex")

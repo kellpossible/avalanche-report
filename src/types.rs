@@ -5,6 +5,7 @@ use std::{
     str::FromStr,
 };
 
+use eyre::Context;
 use http::uri::InvalidUri;
 use serde::{Deserialize, Serialize};
 use sqlx::{TypeInfo, Value, ValueRef};
@@ -42,7 +43,7 @@ impl sqlx::Encode<'_, sqlx::Sqlite> for Time {
     fn encode_by_ref(
         &self,
         buf: &mut Vec<sqlx::sqlite::SqliteArgumentValue<'_>>,
-    ) -> sqlx::encode::IsNull {
+    ) -> Result<sqlx::encode::IsNull, sqlx::error::BoxDynError> {
         sqlx::Encode::<sqlx::Sqlite>::encode(
             self.format(&DATETIME_FORMAT)
                 .expect("Error formatting datetime"),
@@ -65,7 +66,9 @@ impl sqlx::Decode<'_, sqlx::Sqlite> for Time {
             "NUMERIC" | "TEXT" => {
                 let value = value.to_owned();
                 let s: &str = value.try_decode()?;
-                s.parse::<Time>().map_err(Into::into)
+                s.parse::<Time>()
+                    .wrap_err_with(|| format!("Error parsing time from {s}"))
+                    .map_err(Into::into)
             }
             unsupported_type => {
                 Err(format!("Unsupported column type for Time: {unsupported_type}").into())
@@ -153,7 +156,7 @@ impl sqlx::Encode<'_, sqlx::Sqlite> for Uri {
     fn encode_by_ref(
         &self,
         buf: &mut Vec<sqlx::sqlite::SqliteArgumentValue<'_>>,
-    ) -> sqlx::encode::IsNull {
+    ) -> Result<sqlx::encode::IsNull, sqlx::error::BoxDynError> {
         sqlx::Encode::<sqlx::Sqlite>::encode(self.0.to_string(), buf)
     }
 }

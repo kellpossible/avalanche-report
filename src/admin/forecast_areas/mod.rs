@@ -10,5 +10,5 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(index::handler))
         .nest("/create", create::router())
-        .nest("/:forecast_area_id/edit", edit::router())
+        .nest("/{forecast_area_id}/edit", edit::router())
 }
