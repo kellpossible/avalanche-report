@@ -34,4 +34,4 @@ jobs:
     - name: Build
       run: cargo build
     - name: Run tests
-      run: cargo test --workspace --exclude debug-geo geo
+      run: cargo test --workspace --exclude debug-geo --exclude geo
