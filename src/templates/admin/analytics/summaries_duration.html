@@ -11,7 +11,7 @@
                 class="p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
             {% for option in duration_options %}
                 <option value="{{ option.duration }}"
-                        {% if option.duration == summaries_duration.duration_option.duration %} selected="selected"{% endif %}>
+                        {% if option.duration == summaries_duration.duration_option.duration %}selected="selected"{% endif %}>
                     {{ option.name }}
                 </option>
             {% endfor %}
@@ -35,16 +35,12 @@
                 hx-push-url="true"
                 hx-headers='{"X-Template": "admin/analytics/summaries_duration.html"}'
                 hx-include="[name='uri-filter']"
-                hx-target="#summaries-duration">
-            Apply
-        </button>
+                hx-target="#summaries-duration">Apply</button>
         <button class="p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
                 hx-get="{{ PATH }}?{{ query | mapremove("uri-filter") | querystring }}"
                 hx-push-url="true"
                 hx-headers='{"X-Template": "admin/analytics/summaries_duration.html"}'
-                hx-target="#summaries-duration">
-            Clear
-        </button>
+                hx-target="#summaries-duration">Clear</button>
     </span>
     <h1 class="text-2xl font-bold">{{ summaries_duration.duration_option.name }}</h1>
     {% set chart_id = uuid() %}
@@ -72,8 +68,7 @@
                     </td>
                     <td>{{ summary.visits }}</td>
                 </tr>
-                <tr id="{{ graph_id }}">
-                </tr>
+                <tr id="{{ graph_id }}"></tr>
             {% endfor %}
         </tbody>
     </table>

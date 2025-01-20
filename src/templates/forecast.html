@@ -34,15 +34,15 @@
 {%- endmacro %}
 {% extends "base.html" %}
 {% block title %}
-    {{ formatted_time }} - {{ fl("forecast-area-" ~ area) }} - {{ fl("avalanche-forecast-heading" ) }}
+    {{ formatted_time }} - {{ fl("forecast-area-" ~ area) }} - {{ fl("avalanche-forecast-heading") }}
 {% endblock title %}
 {% block head %}
-    <link rel="stylesheet" href="/dist/leaflet.css"/>
+    <link rel="stylesheet" href="/dist/leaflet.css" />
     <script src="/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="/dist/leaflet-gesture-handling.css"/>
+    <link rel="stylesheet" href="/dist/leaflet-gesture-handling.css" />
     <script src="/dist/leaflet-gesture-handling.js"></script>
     <script src="/dist/maptiler-sdk.umd.js"></script>
-    <link href="/dist/maptiler-sdk.css" rel="stylesheet"/>
+    <link href="/dist/maptiler-sdk.css" rel="stylesheet" />
     <!-- MapTiler SDK + Leaflet bindings -->
     <script src="/dist/leaflet-maptilersdk.js"></script>
     <link rel="stylesheet" href="/dist/uPlot.css">
@@ -63,19 +63,15 @@
                 </div>
                 <div class="pt-2 pb-4 text-center">{{ language_select() }}</div>
                 {{ divider() }}
-                {{ forecast_intro(
-                overall_hazard=overall_hazard,
-                description=description,
-                formatted_time=formatted_time,
-                formatted_valid_until=formatted_valid_until,
-                forecaster_name=forecaster.name
-                ) }}
+                {{ forecast_intro(overall_hazard=overall_hazard,
+                                description=description,
+                                formatted_time=formatted_time,
+                                formatted_valid_until=formatted_valid_until,
+                                forecaster_name=forecaster.name) }}
             </div>
             <figure>
                 <div id="map" class="h-[80vh]"></div>
-                <figcaption class="text-center font-bold">
-                    {{ fl("forecast-area-heading") }}
-                </figcaption>
+                <figcaption class="text-center font-bold">{{ fl("forecast-area-heading") }}</figcaption>
             </figure>
             <div class="px-2">
                 <div class="py-8">
@@ -100,10 +96,10 @@
                             <div class="flex justify-center items-center p-4 md:py-0">
                                 <img class="max-h-32 min-w-0"
                                      src="/static/images/icons/hazard-rating/{{ band_hazard }}.png"
-                                     alt="Icon for {{ fl("avalanche-hazard-heading") }}: {{ fl("avalanche-hazard-" ~ overall_hazard) }}"/>
+                                     alt="Icon for {{ fl("avalanche-hazard-heading") }}: {{ fl("avalanche-hazard-" ~ overall_hazard) }}" />
                                 <img class="max-h-32 min-w-0"
-                                     src="/diagrams/elevation_hazard.svg?elevation_band={{ elevation_band_id | replace("-", "_") }}&hazard_level={{ band_hazard }}"
-                                     alt="Elevation Hazard Diagram {{ elevation_band_id }} {{ band_hazard }}"/>
+                                     src="/diagrams/elevation_hazard.svg?elevation_band={{ elevation_band_id | replace('-', '_') }}&hazard_level={{ band_hazard }}"
+                                     alt="Elevation Hazard Diagram {{ elevation_band_id }} {{ band_hazard }}" />
                             </div>
                             <div>
                                 <h4 class="text-2xl text-center md:text-left">
@@ -123,17 +119,15 @@
                                 aria-labelledby="problem-type-heading-{{ loop.index0 }}">
                             <img class="min-w-0 max-h-52 p-4"
                                  src="/static/images/icons/problem-types/{{ problem.kind }}.png"
-                                 alt="{{ fl("problem-type-heading") }} {{ fl("problem-type-" ~ problem.kind)}} Icon"/>
+                                 alt="{{ fl("problem-type-heading") }} {{ fl("problem-type-" ~ problem.kind) }} Icon" />
                         </figure>
                         <div id="problem-type-heading-{{ loop.index0 }}"
-                             class="text-center order-1 md:order-1 font-bold">
-                            {{ fl("problem-type-heading") }}
-                        </div>
+                             class="text-center order-1 md:order-1 font-bold">{{ fl("problem-type-heading") }}</div>
                         <figure class="flex justify-center items-center"
                                 aria-labelledby="aspect-elevation-chart-heading-{{ loop.index0 }}">
                             <img class="min-w-0 max-h-60"
                                  src="{{ problem.aspect_elevation_chart }}"
-                                 alt="{{ fl("aspect-elevation-chart-caption") }}"/>
+                                 alt="{{ fl('aspect-elevation-chart-caption') }}" />
                         </figure>
                         <div id="aspect-elevation-chart-heading-{{ loop.index0 }}"
                              class="text-center order-1 md:order-1 font-bold">
@@ -143,17 +137,15 @@
                                 aria-labelledby="size-bar-heading-{{ loop.index0 }}">
                             <img class="pl-8 min-w-0 max-h-60 h-3/4"
                                  src="/diagrams/size.svg?size={{ problem.size }}"
-                                 alt="{{ fl("avalanche-size-heading") }}"/>
+                                 alt="{{ fl('avalanche-size-heading') }}" />
                         </figure>
                         <div id="size-bar-heading-{{ loop.index0 }}"
-                             class="text-center order-2 md:order-1 font-bold">
-                            {{ fl("avalanche-size-heading") }}
-                        </div>
+                             class="text-center order-2 md:order-1 font-bold">{{ fl("avalanche-size-heading") }}</div>
                         <figure class="flex justify-center items-center order-1 md:order-none"
                                 aria-labelledby="probability-bar-heading-{{ loop.index0 }}">
                             <img class="pl-8 min-w-0 max-h-60 h-3/4"
                                  src="/diagrams/probability.svg?probability={{ problem.probability }}"
-                                 alt="{{ fl("avalanche-likelihood-heading") }}"/>
+                                 alt="{{ fl('avalanche-likelihood-heading') }}" />
                         </figure>
                         <div id="probability-bar-heading-{{ loop.index0 }}"
                              class="text-center order-2 md:order-1 font-bold">
@@ -177,56 +169,34 @@
                             {% if problem.time_of_day %}
                                 <tr class="odd:bg-gray-100">
                                     <td class="text-right font-bold p-2">{{ fl("problem-time-of-day-heading") }}</td>
-                                    <td class="p-2">
-                                        {{ fl("time-of-day-" ~ problem.time_of_day) }}
-                                    </td>
+                                    <td class="p-2">{{ fl("time-of-day-" ~ problem.time_of_day) }}</td>
                                 </tr>
                             {% endif %}
                             <tr class="odd:bg-gray-100">
-                                <td class="text-right font-bold p-2">
-                                    {{ fl("trend-heading") }}
-                                </td>
-                                <td class="p-2">
-                                    {{ fl("trend-" ~ problem.trend) }}
-                                </td>
+                                <td class="text-right font-bold p-2">{{ fl("trend-heading") }}</td>
+                                <td class="p-2">{{ fl("trend-" ~ problem.trend) }}</td>
                             </tr>
                             {% if problem.confidence %}
                                 <tr class="odd:bg-gray-100">
-                                    <td class="text-center font-bold p-2">
-                                        {{ fl("confidence-heading") }}
-                                    </td>
-                                    <td class="p-2">
-                                        {{ fl("confidence-" ~ problem.confidence) }}
-                                    </td>
+                                    <td class="text-center font-bold p-2">{{ fl("confidence-heading") }}</td>
+                                    <td class="p-2">{{ fl("confidence-" ~ problem.confidence) }}</td>
                                 </tr>
                             {% endif %}
                         </table>
                     </div>
                     {% if not loop.last %}{{ divider() }}{% endif %}
                 {% endfor %}
-                <h2 class="text-4xl text-center py-4">
-                    {{ fl("recent-relevant-observations-heading") }}
-                </h2>
-                <div class="pb-2 prose max-w-full leading-normal text-black">
-                    {{ translated_string(recent_observations) | md }}
-                </div>
-                <h2 class="text-4xl text-center py-2">
-                    {{ fl("weather-heading") }}
-                </h2>
-                <div class="pb-2 prose max-w-full leading-normal text-black">
-                    {{ translated_string(weather_forecast) | md }}
-                </div>
+                <h2 class="text-4xl text-center py-4">{{ fl("recent-relevant-observations-heading") }}</h2>
+                <div class="pb-2 prose max-w-full leading-normal text-black">{{ translated_string(recent_observations) | md }}</div>
+                <h2 class="text-4xl text-center py-2">{{ fl("weather-heading") }}</h2>
+                <div class="pb-2 prose max-w-full leading-normal text-black">{{ translated_string(weather_forecast) | md }}</div>
                 {% if is_current %}
                     {{ weather(external_weather.wind_unit, show_wind_unit_select=true, weather_maps=external_weather.weather_maps) }}
                 {% endif %}
             </div>
             <div class="pt-4">
-                <h2 class="text-4xl text-center">
-                    {{ fl("disclaimer-title") }}
-                </h2>
-                <p class="md:text-justify pb-4">
-                    {{ fl("disclaimer-message") }}
-                </p>
+                <h2 class="text-4xl text-center">{{ fl("disclaimer-title") }}</h2>
+                <p class="md:text-justify pb-4">{{ fl("disclaimer-message") }}</p>
             </div>
         </div>
     </div>

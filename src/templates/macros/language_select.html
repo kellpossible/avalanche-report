@@ -7,9 +7,7 @@
                 onchange="window.location.replace(`/user-preferences-redirect?lang=${this.value}`)">
             {% for (id, name) in LANGUAGE_DISPLAY_NAMES %}
                 <option value="{{ id }}"
-                        {% if LANGUAGE == id %}selected="selected"{% endif %}>
-                    🌍 {{ name }}
-                </option>
+                        {% if LANGUAGE == id %}selected="selected"{% endif %}>🌍 {{ name }}</option>
             {% endfor %}
         </select>
     </span>

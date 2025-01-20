@@ -2,7 +2,7 @@
 {% macro weather(wind_unit, show_wind_unit_select=false, weather_maps=[]) %}
     {% set weather_id = "weather-" ~ uuid() %}
     {% if show_wind_unit_select %}
-        {{ wind_unit_select(wind_unit, hx_get="/weather", hx_target=("#" ~ weather_id)) }}
+        {{ wind_unit_select(wind_unit, hx_get="/weather", hx_target=("#" ~ weather_id) ) }}
     {% endif %}
     <div id="{{ weather_id }}">{{ weather_data(wind_unit, weather_maps) }}</div>
 {% endmacro %}
@@ -70,13 +70,9 @@
                 hx-get="{{ hx_get }}"
                 hx-target="{{ hx_target }}">
             <option value="KilometersPerHour"
-                    {% if wind_unit == "KilometersPerHour" %}selected="selected"{% endif %}>
-                km/h
-            </option>
+                    {% if wind_unit == "KilometersPerHour" %}selected="selected"{% endif %}>km/h</option>
             <option value="MetersPerSecond"
-                    {% if wind_unit == "MetersPerSecond" %}selected="selected"{% endif %}>
-                m/s
-            </option>
+                    {% if wind_unit == "MetersPerSecond" %}selected="selected"{% endif %}>m/s</option>
         </select>
     </span>
 {% endmacro %}
