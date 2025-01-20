@@ -283,9 +283,35 @@ wind-direction-label = ქარის მიმართულება
 atmospheric-temperature-label = ტემპერატურა
 # Label for the current atmospheric humidity
 atmospheric-humidity-label = ნესტიანობა
+# Title for the weather stations section
+weather-stations-title = Weather Stations
 # Label for the weather station located on top of Kudebi at elevation of 3000 m
 weather-station-kudebi_top-label = კუდების ამინდის სადგური (3000 მ)
 # Label for the weather station located in lower Gudauri at elevation of 1950 m
 weather-station-lower_gudauri-label = ქვემო გუდაურის სადგური (1950 მ)
 # Label for the weather station located at AltiHut at elevation of 3000 m
 weather-station-altihut-label = ალტიჰატი (3000 მ)
+# Title for the donations section
+donations-title = Support/Donate
+# Description for the donations section
+donation-description =
+    We are a non-profit organisation and rely on the contributions of volunteers and donors to keep the project running.
+    If you would like to support our work, please consider making a donation.
+    
+    Using Patreon <https://www.patreon.com/AvalancheGeorgia>
+    
+    Using Wise <https://wise.com/pay/business/avalanchegeorgia>
+    
+    For GEL Bank Transfers:
+    ```
+    BANK CODE : TBCBGE 22
+    NAME OF BENEFICIARY: Avalanche Georgia
+    ACCOUNT: GE39TB7640836020100012
+    ```
+    
+    For USD and EUR Bank Transfers:
+    ```
+    BANK CODE (SWIFT CODE) : TBCBGE 22
+    ACCOUNT: GE78TB7640836120100005
+    Address: 5 Luarsab Sharashidze Street, T'bilisi 0108, Georgia
+    ```
