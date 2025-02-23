@@ -47,6 +47,7 @@ pub struct Options {
     /// See [`GoogleDrive`].
     pub google_drive: GoogleDrive,
     #[serde(serialize_with = "hide_secret::serialize")]
+    // TODO: move to Admin struct.
     /// (REQUIRED) Hash of the `admin` user password, used to access `/admin/*` routes.
     pub admin_password_hash: SecretString,
     /// See [`WeatherMap`].
@@ -68,6 +69,26 @@ pub struct Options {
     /// See [`StaticFiles`].
     #[serde(default)]
     pub static_files: StaticFiles,
+    /// See [`Admin`].
+    #[serde(default)]
+    pub admin: Admin,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct Admin {
+    /// Whether to enable the SQLite admin interface.
+    ///
+    /// **IMPORTANT:** For debugging purposes only. Exposes raw sql query
+    /// capabilities to admin interface.
+    ///
+    /// Default is `false`.
+    #[serde(default = "default_admin_sqlite_enabled")]
+    pub sqlite_enabled: bool,
+}
+
+fn default_admin_sqlite_enabled() -> bool {
+    false
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -215,7 +236,7 @@ mod serde_cron {
 pub struct Analytics {
     /// Schedule for when analytics data compaction is performed.
     ///
-    /// Default is `0 1 * * *`.
+    /// Default is `0 1 * * *` (at 01:00 UTC every day).
     #[serde(with = "serde_cron")]
     pub compaction_schedule: CronSchedule,
     /// Number of analytics event batches that will be submited to the database per hour.

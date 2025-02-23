@@ -180,6 +180,7 @@ async fn main() -> eyre::Result<()> {
                     admin::router(admin::Config {
                         reporting: reporting_options,
                         admin_password_hash: &options.admin_password_hash,
+                        sqlite_enabled: options.admin.sqlite_enabled,
                     }),
                 )
                 .layer(middleware::from_fn(cache_control::no_store_middleware)),

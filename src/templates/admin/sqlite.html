@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}
+    Sqlite Query
+{% endblock title %}
+{% block body %}
+    <h1>Sqlite Query</h1>
+    <form action="/admin/sqlite" method="post">
+        <p><textarea name="query" placeholder="Enter your query" class="w-full resize-y" rows="10">{{ query }}</textarea></p>
+        <p><button class="bg-blue-500 text-white px-4 py-2 rounded-md" type="submit">Execute</button></p>
+    </form>
+    <h2>Result</h2>
+    <pre>{{ result }}</pre>
+{% endblock body %}

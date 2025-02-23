@@ -122,12 +122,21 @@ pub fn spawn_compaction_task(CompactionConfig { schedule, database }: Compaction
     );
 }
 
+async fn count_analytics(database: &Database) -> eyre::Result<i64> {
+    let count = sqlx::query_scalar!(r#"SELECT COUNT(*) FROM analytics"#)
+        .fetch_one(database)
+        .await
+        .wrap_err("Error counting analytics")?;
+    Ok(count)
+}
+
 /// Compact analytics entries in the database.
 ///
 /// Older entries with the same key will be combined within some window. This results in a loss of resolution in the
 /// time domain, in exchange for a much smaller database.
 pub async fn compact(database: &Database, window: Duration, keep: Duration) -> eyre::Result<()> {
-    tracing::info!("Compacting analytics...");
+    let count = count_analytics(database).await.wrap_err("Error counting analytics")?;
+    tracing::info!("Compacting analytics (row count: {count})...");
 
     let min = if let Some((min, _max)) = get_time_bounds(database)
         .await
@@ -163,7 +172,7 @@ pub async fn compact(database: &Database, window: Duration, keep: Duration) -> e
         }
         let to_time = types::Time::from(to_time);
         tracing::debug!(
-            "{} .. {}",
+            "Compacting {} .. {}",
             from_time
                 .format(&Rfc3339)
                 .wrap_err("Error formatting from_time")?,
@@ -212,21 +221,26 @@ pub async fn compact(database: &Database, window: Duration, keep: Duration) -> e
                 query = query.bind(id);
             }
 
-            query
-                .execute(database)
+            {
+                // Use a transaction to ensure atomicity so we don't lose rows if
+                // cancelled between queries.
+                let mut tx = database.begin().await.wrap_err("Error beginning transaction")?;
+                query
+                    .execute(&mut *tx)
+                    .await
+                    .wrap_err("Error deleting analytics rows")?;
+                sqlx::query!(
+                    "INSERT INTO analytics VALUES ($1, $2, $3, $4);",
+                    new.id,
+                    new.uri,
+                    new.visits,
+                    new.time
+                )
+                .execute(&mut *tx)
                 .await
-                .wrap_err("Error deleting analytics rows")?;
-
-            sqlx::query!(
-                "INSERT INTO analytics VALUES ($1, $2, $3, $4);",
-                new.id,
-                new.uri,
-                new.visits,
-                new.time
-            )
-            .execute(database)
-            .await
-            .wrap_err("Error inserting analytics rows")?;
+                .wrap_err("Error inserting analytics rows")?;
+                tx.commit().await.wrap_err("Error committing transaction")?;
+            }
         }
         if *to_time >= end_time {
             break;
@@ -234,7 +248,8 @@ pub async fn compact(database: &Database, window: Duration, keep: Duration) -> e
         from_time = to_time;
     }
 
-    tracing::info!("Finished compacting analytics!");
+    let count = count_analytics(database).await.wrap_err("Error counting analytics")?;
+    tracing::info!("Finished compacting analytics! (row count: {count})");
 
     Ok(())
 }

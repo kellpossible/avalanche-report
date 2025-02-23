@@ -15,6 +15,12 @@ kill_timeout = "5s"
     base_url="https://avalanche.ge/"
     default_language_order=["en-UK", "ka-GE"]
 
+    # [admin]
+    # sqlite_enabled=true
+
+    [analytics]
+    compaction_schedule="*/15 * * * *" # For debugging.
+
     [backup]
     schedule="0 0 * * *"
     aws_access_key_id="AKIAZDRMYMOA6VPVQQYX"

@@ -175,3 +175,53 @@ impl sqlx::Decode<'_, sqlx::Sqlite> for Uri {
         }
     }
 }
+
+/// Represents any value that can be stored in a SQLite database.
+#[derive(Debug)]
+pub enum AnyValue {
+    Null,
+    Integer(i64),
+    Real(f64),
+    Text(String),
+    Blob(Vec<u8>),
+}
+
+impl std::fmt::Display for AnyValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Null => write!(f, "NULL"),
+            Self::Integer(value) => write!(f, "{value}"),
+            Self::Real(value) => write!(f, "{value}"),
+            Self::Text(value) => write!(f, "{value}"),
+            Self::Blob(value) => write!(f, "{value:?}"),
+        }
+    }
+}
+
+impl sqlx::Decode<'_, sqlx::Sqlite> for AnyValue {
+    fn decode(value: sqlx::sqlite::SqliteValueRef<'_>) -> Result<Self, sqlx::error::BoxDynError> {
+        match value.type_info().name() {
+            "NULL" => Ok(Self::Null),
+            "INTEGER" => Ok(Self::Integer(value.to_owned().try_decode()?)),
+            "REAL" => Ok(Self::Real(value.to_owned().try_decode()?)),
+            "TEXT" => Ok(Self::Text(value.to_owned().try_decode()?)),
+            "BLOB" => Ok(Self::Blob(value.to_owned().try_decode()?)),
+            unsupported_type => {
+                Err(format!("Unsupported column type for AnyValue: {unsupported_type}").into())
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_parse_time_roudtrip() {
+        let mut original = Time::now_utc();
+        original = Time(original.replace_microsecond(0).unwrap());
+        let parsed: Time = original.to_string().parse().unwrap();
+        assert_eq!(original, parsed);
+    }
+}
