@@ -275,6 +275,10 @@ about-description =
     You can contact us via email [zvavisaqartvelo@gmail.com](mailto:zvavisaqartvelo@gmail.com)
     or [Facebook](https://www.facebook.com/avalanche.ge).
     
+    Become a member [Membership Form](https://forms.gle/3adsnWwxdvgtEhoJ6).
+    
+    If you'd like to learn more about avalanches, you can sign up for an [Avalanche Awareness Course](https://forms.gle/NGN3TP8uR3rWqHV97).
+    
     The website software `avalanche-report` is open source, available over at
     <https://github.com/kellpossible/avalanche-report>, new contributors are
     welcome! Feel free to contact the team there if you wish to deploy
@@ -303,9 +307,7 @@ donations-title = Support/Donate
 donation-description =
     We are a non-profit organisation and rely on the contributions of volunteers and donors to keep the project running.
     
-    Become a member [Membership Form](https://forms.gle/3adsnWwxdvgtEhoJ6).
-    
-    If you would like to support our work, please consider making a donation.
+    If you would like to support our work, please consider [becoming a member](https://forms.gle/3adsnWwxdvgtEhoJ6) or making a donation.
     
     Using Patreon <https://www.patreon.com/AvalancheGeorgia>
     
