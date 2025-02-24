@@ -302,6 +302,9 @@ donations-title = Support/Donate
 # Description for the donations section
 donation-description = 
     We are a non-profit organisation and rely on the contributions of volunteers and donors to keep the project running.
+    
+    Become a member [Membership Form](https://forms.gle/3adsnWwxdvgtEhoJ6).
+    
     If you would like to support our work, please consider making a donation.
 
     Using Patreon <https://www.patreon.com/AvalancheGeorgia>
