@@ -237,19 +237,39 @@ pub struct Analytics {
     /// Schedule for when analytics data compaction is performed.
     ///
     /// Default is `0 1 * * *` (at 01:00 UTC every day).
-    #[serde(with = "serde_cron")]
+    #[serde(with = "serde_cron", default = "default_compaction_schedule")]
     pub compaction_schedule: CronSchedule,
+    /// Whether analytics compaction is enabled.
+    ///
+    /// Default is `true`.
+    #[serde(default = "default_compaction_enabled")]
+    pub compaction_enabled: bool,
     /// Number of analytics event batches that will be submited to the database per hour.
     ///
     /// Default is 60 (one time per minute).
     pub event_batch_rate: NonZeroU32,
 }
 
+/// Default for [`Analytics::compaction_enabled`].
+fn default_compaction_enabled() -> bool {
+    true
+}
+
+/// Default for [`Analytics::compaction_schedule`].
+fn default_compaction_schedule() -> CronSchedule {
+    CronSchedule::parse_str("0 1 * * *").expect("Invalid cron schedule")
+}
+
+/// Default for [`Analytics::event_batch_rate`].
+fn default_analytics_batch_rate() -> NonZeroU32 {
+    nonzero!(60u32)
+}
+
 impl Default for Analytics {
     fn default() -> Self {
         Self {
-            compaction_schedule: CronSchedule::parse_str("0 1 * * *")
-                .expect("Invalid cron schedule"),
+            compaction_schedule: default_compaction_schedule(),
+            compaction_enabled: default_compaction_enabled(),
             event_batch_rate: default_analytics_batch_rate(),
         }
     }
@@ -318,10 +338,6 @@ fn default_data_dir() -> PathBuf {
 
 fn default_listen_address() -> SocketAddr {
     SocketAddr::from(([127, 0, 0, 1], 3000))
-}
-
-fn default_analytics_batch_rate() -> NonZeroU32 {
-    nonzero!(60u32)
 }
 
 fn default_default_language_order() -> Vec<unic_langid::LanguageIdentifier> {

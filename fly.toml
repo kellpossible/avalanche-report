@@ -19,7 +19,8 @@ kill_timeout = "5s"
     # sqlite_enabled=true
 
     [analytics]
-    compaction_schedule="*/15 * * * *" # For debugging.
+    compaction_enabled=false
+    # compaction_schedule="*/30 * * * *" # For debugging.
 
     [backup]
     schedule="0 0 * * *"

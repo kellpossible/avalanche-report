@@ -96,10 +96,12 @@ async fn main() -> eyre::Result<()> {
         });
     }
 
-    analytics::spawn_compaction_task(CompactionConfig {
-        schedule: options.analytics.compaction_schedule.clone(),
-        database: database.clone(),
-    });
+    if options.analytics.compaction_enabled {
+        analytics::spawn_compaction_task(CompactionConfig {
+            schedule: options.analytics.compaction_schedule.clone(),
+            database: database.clone(),
+        });
+    }
 
     let (analytics_sx, analytics_rx) = analytics::channel();
     let database_analytics = database.clone();

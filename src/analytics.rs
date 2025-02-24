@@ -135,7 +135,9 @@ async fn count_analytics(database: &Database) -> eyre::Result<i64> {
 /// Older entries with the same key will be combined within some window. This results in a loss of resolution in the
 /// time domain, in exchange for a much smaller database.
 pub async fn compact(database: &Database, window: Duration, keep: Duration) -> eyre::Result<()> {
-    let count = count_analytics(database).await.wrap_err("Error counting analytics")?;
+    let count = count_analytics(database)
+        .await
+        .wrap_err("Error counting analytics")?;
     tracing::info!("Compacting analytics (row count: {count})...");
 
     let min = if let Some((min, _max)) = get_time_bounds(database)
@@ -194,53 +196,42 @@ pub async fn compact(database: &Database, window: Duration, keep: Duration) -> e
 
         let operations = compact_operations(map)?;
         tracing::debug!("{} operations", operations.len());
-        for CompactOperation { delete, new } in &operations {
-            tracing::debug!("Replacing {} entries with {new:?}", delete.len());
-        }
 
         for CompactOperation { delete, new } in operations {
-            let delete_ids: Vec<String> = delete
-                .into_iter()
-                .map(|entry| entry.id.to_string())
-                .collect();
+            tracing::debug!("Replacing {} entries with {new:?}", delete.len());
+            let delete_ids = sqlx::types::Json(
+                delete
+                    .into_iter()
+                    .map(|entry| entry.id.to_string())
+                    .collect::<Vec<String>>(),
+            );  
 
-            // Generate placeholders for the IN clause
-            let placeholders = delete_ids
-                .iter()
-                .map(|_| "?")
-                .collect::<Vec<_>>()
-                .join(", ");
+            tracing::debug!("delete_ids: {:?}", delete_ids.0);
 
-            // Generate the SQL query dynamically
-            let query = format!("DELETE FROM analytics WHERE id IN ({})", placeholders);
-
-            // Execute the dynamic query with the delete_ids as parameters
-            let mut query = sqlx::query(&query);
-
-            for id in delete_ids {
-                query = query.bind(id);
-            }
-
-            {
-                // Use a transaction to ensure atomicity so we don't lose rows if
-                // cancelled between queries.
-                let mut tx = database.begin().await.wrap_err("Error beginning transaction")?;
-                query
-                    .execute(&mut *tx)
-                    .await
-                    .wrap_err("Error deleting analytics rows")?;
-                sqlx::query!(
-                    "INSERT INTO analytics VALUES ($1, $2, $3, $4);",
-                    new.id,
-                    new.uri,
-                    new.visits,
-                    new.time
-                )
-                .execute(&mut *tx)
+            // Use a transaction to ensure atomicity so we don't lose rows if
+            // cancelled between queries.
+            let mut tx = database
+                .begin()
                 .await
-                .wrap_err("Error inserting analytics rows")?;
-                tx.commit().await.wrap_err("Error committing transaction")?;
-            }
+                .wrap_err("Error beginning transaction")?;
+            sqlx::query!(
+                "DELETE FROM analytics WHERE id IN (SELECT value FROM json_each(?));",
+                delete_ids
+            )
+            .execute(&mut *tx)
+            .await
+            .wrap_err("Error deleting analytics rows")?;
+            sqlx::query!(
+                "INSERT INTO analytics VALUES ($1, $2, $3, $4);",
+                new.id,
+                new.uri,
+                new.visits,
+                new.time
+            )
+            .execute(&mut *tx)
+            .await
+            .wrap_err("Error inserting analytics rows")?;
+            tx.commit().await.wrap_err("Error committing transaction")?;
         }
         if *to_time >= end_time {
             break;
@@ -248,7 +239,9 @@ pub async fn compact(database: &Database, window: Duration, keep: Duration) -> e
         from_time = to_time;
     }
 
-    let count = count_analytics(database).await.wrap_err("Error counting analytics")?;
+    let count = count_analytics(database)
+        .await
+        .wrap_err("Error counting analytics")?;
     tracing::info!("Finished compacting analytics! (row count: {count})");
 
     Ok(())

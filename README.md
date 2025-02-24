@@ -165,7 +165,9 @@ s3_bucket_region="eu-central-1"
 [AVALANCHE_REPORT.analytics]
 # Schedule for when analytics data compaction is performed (in cron format).
 # Default is `0 1 * * *` (once per day at 01:00 UTC).
-compaction_schedule = "0 1 * * *"
+compaction_schedule="0 1 * * *"
+# Whether analytics compaction is enabled.
+compaction_enabled=true
 # Number of analytics event batches that will be submited to the database per hour.
 batch_rate = 60
 
