@@ -106,7 +106,24 @@ impl FromStr for Aspect {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
+pub struct Colour(String);
+
+impl Colour {
+    pub fn try_from_hex(hex: String) -> eyre::Result<Self> {
+        if HEX_COLOUR_RE.is_match(&hex) {
+            Ok(Self(hex))
+        } else {
+            Err(eyre::eyre!("Invalid hex colour string: {hex:?}"))
+        }
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Debug)]
 pub struct AspectElevation {
     pub high_alpine: HashSet<Aspect>,
     pub high_alpine_text: Option<String>,
@@ -114,6 +131,21 @@ pub struct AspectElevation {
     pub alpine_text: Option<String>,
     pub sub_alpine: HashSet<Aspect>,
     pub sub_alpine_text: Option<String>,
+    pub colour: Colour,
+}
+
+impl Default for AspectElevation {
+    fn default() -> Self {
+        Self {
+            high_alpine: Default::default(),
+            high_alpine_text: Default::default(),
+            alpine: Default::default(),
+            alpine_text: Default::default(),
+            sub_alpine: Default::default(),
+            sub_alpine_text: Default::default(),
+            colour: Colour(DEFAULT_FILLED_COLOUR.to_owned()),
+        }
+    }
 }
 
 impl AspectElevation {
@@ -164,6 +196,11 @@ impl TryFrom<Query> for AspectElevation {
             .map(comma_separated_to_vec)
             .unwrap_or(Ok(HashSet::default()))
             .wrap_err("Error deserializing sub_alpine")?;
+        let colour = query
+            .colour
+            .map(Colour::try_from_hex)
+            .unwrap_or(Ok(Colour(DEFAULT_FILLED_COLOUR.to_owned())))
+            .wrap_err("Error parsing colour query parameter")?;
         Ok(Self {
             high_alpine,
             high_alpine_text: query.high_alpine_text,
@@ -171,6 +208,7 @@ impl TryFrom<Query> for AspectElevation {
             alpine_text: query.alpine_text,
             sub_alpine,
             sub_alpine_text: query.sub_alpine_text,
+            colour,
         })
     }
 }
@@ -183,6 +221,7 @@ pub struct Query {
     alpine_text: Option<String>,
     sub_alpine: Option<String>,
     sub_alpine_text: Option<String>,
+    colour: Option<String>,
 }
 
 impl From<AspectElevation> for Query {
@@ -194,18 +233,22 @@ impl From<AspectElevation> for Query {
             alpine_text: value.alpine_text,
             sub_alpine: Some(iter_to_comma_separated(value.sub_alpine)),
             sub_alpine_text: value.sub_alpine_text,
+            colour: Some(value.colour.as_str().to_owned()),
         }
     }
 }
 
 const SVG_TEMPLATE: &str = include_str!("./aspect_elevation.svg");
-const FILLED_COLOUR: &str = "#276fdcff";
+const DEFAULT_FILLED_COLOUR: &str = "#276fdcff";
 static PATH_ID_RE: Lazy<Regex> = Lazy::new(|| {
     Regex::new(
         r#"<path\s*style="(?P<fill>fill:(?P<colour>#ffffff);)([^/])*id="(?P<id>[a-z\-]+)"\s*[/]>"#,
     )
     .expect("Unable to compile svg path id regex")
 });
+
+static HEX_COLOUR_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r#"^#([A-Fa-f0-9]{6})$"#).expect("Unable to compile hex colour RE"));
 
 static TEXT_RE: Lazy<Regex> = Lazy::new(|| {
     Regex::new(
@@ -231,7 +274,7 @@ fn generate_svg(aspect_elevation: AspectElevation, i18n: Arc<FluentLanguageLoade
     let colour_map: HashMap<String, &str> = high_alpine_ids
         .chain(alpine_ids)
         .chain(sub_alpine_ids)
-        .map(|id| (id, FILLED_COLOUR))
+        .map(|id| (id, aspect_elevation.colour.as_str()))
         .collect();
 
     let svg = PATH_ID_RE.replace_all(SVG_TEMPLATE, |captures: &Captures| {
@@ -335,7 +378,7 @@ pub async fn png_handler(
 mod test {
     use std::collections::HashSet;
 
-    use crate::i18n::{self, load_available_languages, I18nLoader};
+    use crate::{diagrams::aspect_elevation::Colour, i18n::{self, load_available_languages, I18nLoader}};
 
     use super::{generate_svg, Aspect, AspectElevation};
 
@@ -363,6 +406,22 @@ mod test {
                 high_alpine: all_aspects.clone(),
                 alpine: all_aspects.clone(),
                 sub_alpine: all_aspects.clone(),
+                ..AspectElevation::default()
+            },
+            LOADER.clone(),
+        );
+        insta::assert_snapshot!(svg);
+    }
+
+    #[test]
+    fn test_generate_svg_all_aspects_colour() {
+        let all_aspects: HashSet<Aspect> = Aspect::enumerate().into_iter().cloned().collect();
+        let svg = generate_svg(
+            AspectElevation {
+                high_alpine: all_aspects.clone(),
+                alpine: all_aspects.clone(),
+                sub_alpine: all_aspects.clone(),
+                colour: Colour::try_from_hex("#ff5500".to_owned()).unwrap(),
                 ..AspectElevation::default()
             },
             LOADER.clone(),
