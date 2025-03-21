@@ -120,7 +120,7 @@ expression: svg
          id="g13171-2"
          transform="matrix(0.77377649,0,0,0.77377649,12.014638,12.743225)"
          style="filter:url(#filter14548)"><path
-           style="fill:#276fdcff;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           style="fill:#276fdc;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
            d="M 40.442995,20.357528 53.614589,52.089988 66.790797,20.357528 53.616896,11.420351 40.442995,20.357528"
            id="alpine-n" /><path
            style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -141,7 +141,7 @@ expression: svg
            style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
            d="M 21.788067,65.377483 53.520528,52.205888 21.788067,39.02968 12.85089,52.203583 l 8.937177,13.1739"
            id="alpine-w" /><path
-           style="fill:#276fdcff;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           style="fill:#276fdc;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
            d="M 21.765855,39.000415 53.517817,52.12493 40.396565,20.369705 24.761671,23.365523 21.765855,39.000415"
            id="alpine-nw" /><g
            id="g12330-6"><path
