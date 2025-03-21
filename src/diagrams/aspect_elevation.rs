@@ -239,7 +239,7 @@ impl From<AspectElevation> for Query {
 }
 
 const SVG_TEMPLATE: &str = include_str!("./aspect_elevation.svg");
-const DEFAULT_FILLED_COLOUR: &str = "#276fdcff";
+const DEFAULT_FILLED_COLOUR: &str = "#276fdc";
 static PATH_ID_RE: Lazy<Regex> = Lazy::new(|| {
     Regex::new(
         r#"<path\s*style="(?P<fill>fill:(?P<colour>#ffffff);)([^/])*id="(?P<id>[a-z\-]+)"\s*[/]>"#,
