@@ -378,7 +378,10 @@ pub async fn png_handler(
 mod test {
     use std::collections::HashSet;
 
-    use crate::{diagrams::aspect_elevation::Colour, i18n::{self, load_available_languages, I18nLoader}};
+    use crate::{
+        diagrams::aspect_elevation::Colour,
+        i18n::{self, load_available_languages, I18nLoader},
+    };
 
     use super::{generate_svg, Aspect, AspectElevation};
 

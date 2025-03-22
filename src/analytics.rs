@@ -204,7 +204,7 @@ pub async fn compact(database: &Database, window: Duration, keep: Duration) -> e
                     .into_iter()
                     .map(|entry| entry.id.to_string())
                     .collect::<Vec<String>>(),
-            );  
+            );
 
             tracing::debug!("delete_ids: {:?}", delete_ids.0);
 

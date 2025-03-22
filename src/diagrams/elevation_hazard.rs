@@ -6,10 +6,14 @@ use axum::{
 };
 use eyre::Context;
 use i18n_embed::fluent::FluentLanguageLoader;
-use resvg::{tiny_skia, usvg};
+use resvg::{
+    tiny_skia,
+    usvg::{self, PostProcessingSteps},
+};
 use serde::Deserialize;
 
 use crate::{
+    diagrams::FONT_DB,
     error::{map_eyre_error, map_std_error},
     i18n::I18nLoader,
 };
@@ -129,7 +133,13 @@ pub async fn svg_handler(
 fn generate_png(elevation_hazard: Query, i18n: Arc<FluentLanguageLoader>) -> eyre::Result<Vec<u8>> {
     let svg = generate_svg(elevation_hazard, i18n);
     let options = usvg::Options::default();
-    let tree = usvg::Tree::from_str(&svg, &options)?;
+    let mut tree = usvg::Tree::from_str(&svg, &options)?;
+    tree.postprocess(
+        PostProcessingSteps {
+            convert_text_into_paths: true,
+        },
+        &FONT_DB,
+    );
     let pixmap_size = tree.size.to_int_size();
     let mut pixmap = tiny_skia::Pixmap::new(pixmap_size.width(), pixmap_size.height())
         .ok_or_else(|| eyre::eyre!("Unable to create pixmap"))?;
